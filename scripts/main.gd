@@ -248,14 +248,15 @@ func _enemy_data(kind: String, pos: Vector2) -> Dictionary:
 	return data
 
 
-func _hazard_data(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color) -> Dictionary:
+func _hazard_data(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color, arming: float = 0.0) -> Dictionary:
 	return {
 		"pos": pos,
 		"radius": radius,
 		"timer": lifetime,
 		"damage": damage,
 		"tick": 0.0,
-		"color": color
+		"color": color,
+		"arming": arming
 	}
 
 
@@ -550,8 +551,9 @@ func _update_farmer(enemy: Dictionary, delta: float) -> void:
 	if float(enemy["special"]) <= 0.0:
 		enemy["special"] = 2.4
 		var seed_pos := player_position + player_velocity.normalized() * 26.0
-		hazards.append(_hazard_data(seed_pos, 30.0, 2.8, 9, Color(0.62, 0.08, 0.07, 0.55)))
-		_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
+		hazards.append(_hazard_data(seed_pos, 34.0, 2.2, 8, Color(0.62, 0.08, 0.07, 0.55), 0.85))
+		_emit_text_effect(pos + Vector2(0.0, -42.0), "农夫抬手", Color(0.96, 0.72, 0.38))
+		_emit_text_effect(seed_pos, "即将破土", Color(0.94, 0.46, 0.34))
 
 
 func _update_scarecrow(enemy: Dictionary, delta: float) -> void:
@@ -612,8 +614,11 @@ func _update_hazards(delta: float) -> void:
 		var hazard: Dictionary = hazards[i]
 		hazard["timer"] = float(hazard["timer"]) - delta
 		hazard["tick"] = maxf(0.0, float(hazard["tick"]) - delta)
+		hazard["arming"] = maxf(0.0, float(hazard["arming"]) - delta)
 		if float(hazard["timer"]) <= 0.0:
 			hazards.remove_at(i)
+			continue
+		if float(hazard["arming"]) > 0.0:
 			continue
 		if player_position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS and float(hazard["tick"]) <= 0.0:
 			hazard["tick"] = 0.65
@@ -624,6 +629,8 @@ func _update_hazards(delta: float) -> void:
 
 func _player_inside_hazard() -> bool:
 	for hazard: Dictionary in hazards:
+		if float(hazard["arming"]) > 0.0:
+			continue
 		if player_position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS:
 			return true
 	return false
@@ -665,6 +672,9 @@ func _check_room_progress() -> void:
 	if mode != RunMode.FIELD:
 		return
 	if enemies.is_empty():
+		if not room_cleared:
+			hazards.clear()
+			_emit_text_effect(player_position + Vector2(0.0, -48.0), "危险消退", Color(0.82, 0.76, 0.58))
 		room_cleared = true
 		if room_index < rooms.size() - 1:
 			if interact_buffered:
@@ -781,8 +791,14 @@ func _draw_field_room() -> void:
 	draw_rect(ARENA, Color(0.18, 0.12, 0.08))
 	_draw_field_marks()
 	for hazard: Dictionary in hazards:
-		draw_circle(hazard["pos"] as Vector2, float(hazard["radius"]), hazard["color"])
-		draw_arc(hazard["pos"] as Vector2, float(hazard["radius"]) + 3.0, 0.0, TAU, 32, Color(0.95, 0.30, 0.18, 0.45), 2.0)
+		var arming := float(hazard["arming"])
+		var fill_color: Color = hazard["color"]
+		if arming > 0.0:
+			fill_color = Color(0.72, 0.12, 0.08, 0.16)
+		draw_circle(hazard["pos"] as Vector2, float(hazard["radius"]), fill_color)
+		var outline_color := Color(1.0, 0.58, 0.30, 0.88) if arming > 0.0 else Color(0.95, 0.30, 0.18, 0.45)
+		var outline_width := 4.0 if arming > 0.0 else 2.0
+		draw_arc(hazard["pos"] as Vector2, float(hazard["radius"]) + 3.0, 0.0, TAU, 32, outline_color, outline_width)
 	for enemy: Dictionary in enemies:
 		_draw_enemy(enemy)
 	for slash: Dictionary in slashes:
