@@ -6,12 +6,19 @@ const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
 const PLAYER_MAX_HP: int = 100
 const PLAYER_SPEED: float = 270.0
+const PLAYER_ACCELERATION: float = 2100.0
+const PLAYER_DECELERATION: float = 1900.0
 const PLAYER_RADIUS: float = 17.0
 const BASE_DAMAGE: int = 18
 const SLASH_RANGE: float = 78.0
 const SLASH_HALF_ANGLE: float = 0.72
 const ATTACK_COOLDOWN: float = 0.28
 const INTERACT_HINT: String = "E 进入 / 继续"
+const HP_ICON: Texture2D = preload("res://assets/sprites/ui/ui_hp_heart.png")
+const STOMACH_OPEN_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_open.png")
+const STOMACH_CLOSED_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_closed.png")
+const STOMACH_OVERFLOW_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_overflow.png")
+const MEMORY_SHARD_ICON: Texture2D = preload("res://assets/sprites/ui/ui_memory_shard.png")
 
 var mode: RunMode = RunMode.SANCTUM
 var player_position: Vector2 = Vector2(640.0, 420.0)
@@ -45,7 +52,13 @@ var effects: Array[Dictionary] = []
 
 var room_label: Label
 var hp_label: Label
+var hp_bar: ProgressBar
+var hp_icon: TextureRect
 var relic_label: Label
+var stomach_label: Label
+var stomach_bar: ProgressBar
+var stomach_icon: TextureRect
+var memory_shard_icon: TextureRect
 var objective_label: Label
 var dialogue_label: Label
 var prompt_label: Label
@@ -112,6 +125,10 @@ func _setup_input() -> void:
 	_ensure_key_action("move_right", KEY_D, KEY_RIGHT)
 	_ensure_key_action("move_up", KEY_W, KEY_UP)
 	_ensure_key_action("move_down", KEY_S, KEY_DOWN)
+	_ensure_joy_axis_action("move_left", JOY_AXIS_LEFT_X, -1.0)
+	_ensure_joy_axis_action("move_right", JOY_AXIS_LEFT_X, 1.0)
+	_ensure_joy_axis_action("move_up", JOY_AXIS_LEFT_Y, -1.0)
+	_ensure_joy_axis_action("move_down", JOY_AXIS_LEFT_Y, 1.0)
 	_ensure_key_action("attack", KEY_J, KEY_SPACE)
 	_ensure_key_action("interact", KEY_E, KEY_ENTER)
 
@@ -128,6 +145,16 @@ func _ensure_key_action(action_name: String, primary: Key, secondary: Key = KEY_
 		var secondary_event := InputEventKey.new()
 		secondary_event.physical_keycode = secondary
 		InputMap.action_add_event(action_name, secondary_event)
+
+
+func _ensure_joy_axis_action(action_name: String, axis: JoyAxis, axis_value: float) -> void:
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		if event is InputEventJoypadMotion and event.axis == axis and is_equal_approx(event.axis_value, axis_value):
+			return
+	var joy_event := InputEventJoypadMotion.new()
+	joy_event.axis = axis
+	joy_event.axis_value = axis_value
+	InputMap.action_add_event(action_name, joy_event)
 
 
 func _build_rooms() -> void:
@@ -242,16 +269,130 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(root)
 
-	room_label = _make_label(root, "RoomLabel", Vector2(28.0, 20.0), Vector2(520.0, 38.0), 24, Color(0.93, 0.86, 0.76))
-	hp_label = _make_label(root, "HPLabel", Vector2(28.0, 62.0), Vector2(430.0, 30.0), 19, Color(0.90, 0.72, 0.66))
-	relic_label = _make_label(root, "RelicLabel", Vector2(28.0, 94.0), Vector2(520.0, 30.0), 17, Color(0.70, 0.86, 0.86))
-	objective_label = _make_label(root, "ObjectiveLabel", Vector2(760.0, 20.0), Vector2(480.0, 54.0), 18, Color(0.88, 0.82, 0.68))
+	_make_panel(root, Vector2(18.0, 14.0), Vector2(542.0, 146.0))
+	_make_panel(root, Vector2(746.0, 14.0), Vector2(516.0, 72.0))
+	_make_panel(root, Vector2(94.0, 594.0), Vector2(1092.0, 92.0))
+	_make_panel_marks(root, Vector2(18.0, 14.0), Vector2(542.0, 146.0), Color(0.68, 0.13, 0.12))
+	_make_panel_marks(root, Vector2(746.0, 14.0), Vector2(516.0, 72.0), Color(0.66, 0.58, 0.42))
+	_make_panel_marks(root, Vector2(94.0, 594.0), Vector2(1092.0, 92.0), Color(0.68, 0.13, 0.12))
+	_make_accent(root, Vector2(30.0, 28.0), Vector2(5.0, 118.0), Color(0.68, 0.13, 0.12))
+	_make_accent(root, Vector2(758.0, 26.0), Vector2(5.0, 48.0), Color(0.66, 0.58, 0.42))
+	_make_accent(root, Vector2(181.0, 68.0), Vector2(222.0, 18.0), Color(0.01, 0.008, 0.01, 0.88))
+	_make_accent(root, Vector2(181.0, 100.0), Vector2(222.0, 14.0), Color(0.01, 0.008, 0.01, 0.88))
+
+	room_label = _make_label(root, "RoomLabel", Vector2(48.0, 22.0), Vector2(490.0, 32.0), 24, Color(0.93, 0.86, 0.76))
+	hp_icon = _make_icon(root, HP_ICON, Vector2(48.0, 58.0), Vector2(26.0, 26.0))
+	hp_label = _make_label(root, "HPLabel", Vector2(84.0, 61.0), Vector2(92.0, 24.0), 17, Color(0.90, 0.72, 0.66))
+	hp_bar = _make_hp_bar(root, Vector2(185.0, 64.0), Vector2(214.0, 18.0))
+	stomach_icon = _make_icon(root, STOMACH_OPEN_ICON, Vector2(51.0, 94.0), Vector2(20.0, 20.0))
+	stomach_label = _make_label(root, "StomachLabel", Vector2(84.0, 92.0), Vector2(92.0, 24.0), 16, Color(0.72, 0.88, 0.86))
+	stomach_bar = _make_stomach_bar(root, Vector2(185.0, 96.0), Vector2(214.0, 14.0))
+	memory_shard_icon = _make_icon(root, MEMORY_SHARD_ICON, Vector2(48.0, 123.0), Vector2(24.0, 24.0))
+	relic_label = _make_label(root, "RelicLabel", Vector2(84.0, 126.0), Vector2(454.0, 24.0), 15, Color(0.66, 0.78, 0.78))
+	objective_label = _make_label(root, "ObjectiveLabel", Vector2(778.0, 28.0), Vector2(462.0, 44.0), 18, Color(0.88, 0.82, 0.68))
 	objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	dialogue_label = _make_label(root, "DialogueLabel", Vector2(110.0, 606.0), Vector2(1060.0, 70.0), 20, Color(0.86, 0.83, 0.78))
+	dialogue_label = _make_label(root, "DialogueLabel", Vector2(116.0, 610.0), Vector2(1048.0, 62.0), 19, Color(0.86, 0.83, 0.78))
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt_label = _make_label(root, "PromptLabel", Vector2(510.0, 548.0), Vector2(260.0, 32.0), 18, Color(0.92, 0.90, 0.74))
+	prompt_label = _make_label(root, "PromptLabel", Vector2(510.0, 548.0), Vector2(260.0, 32.0), 18, Color(0.96, 0.88, 0.66))
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+func _make_panel(parent: Node, pos: Vector2, size: Vector2) -> Panel:
+	var panel := Panel.new()
+	panel.position = pos
+	panel.size = size
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.045, 0.035, 0.038, 0.92)
+	style.border_color = Color(0.50, 0.47, 0.42, 0.82)
+	style.set_border_width_all(3)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(4.0, 4.0)
+	style.anti_aliasing = false
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
+	return panel
+
+
+func _make_panel_marks(parent: Node, pos: Vector2, size: Vector2, color: Color) -> void:
+	var inset := 6.0
+	var short_edge := 18.0
+	var thick := 3.0
+	_make_accent(parent, pos + Vector2(inset, inset), Vector2(short_edge, thick), color)
+	_make_accent(parent, pos + Vector2(inset, inset), Vector2(thick, short_edge), color)
+	_make_accent(parent, pos + Vector2(size.x - inset - short_edge, size.y - inset - thick), Vector2(short_edge, thick), color)
+	_make_accent(parent, pos + Vector2(size.x - inset - thick, size.y - inset - short_edge), Vector2(thick, short_edge), color)
+
+
+func _make_accent(parent: Node, pos: Vector2, size: Vector2, color: Color) -> ColorRect:
+	var accent := ColorRect.new()
+	accent.position = pos
+	accent.size = size
+	accent.color = color
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(accent)
+	return accent
+
+
+func _make_icon(parent: Node, texture: Texture2D, pos: Vector2, size: Vector2) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = texture
+	icon.position = pos
+	icon.size = size
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(icon)
+	return icon
+
+
+func _make_hp_bar(parent: Node, pos: Vector2, size: Vector2) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.position = pos
+	bar.size = size
+	bar.max_value = PLAYER_MAX_HP
+	bar.show_percentage = false
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.10, 0.055, 0.06, 0.94)
+	background.border_color = Color(0.58, 0.55, 0.48, 0.88)
+	background.set_border_width_all(2)
+	background.anti_aliasing = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.56, 0.08, 0.09, 0.98)
+	fill.border_color = Color(0.88, 0.24, 0.20, 0.72)
+	fill.set_border_width_all(1)
+	fill.anti_aliasing = false
+	bar.add_theme_stylebox_override("background", background)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+	return bar
+
+
+func _make_stomach_bar(parent: Node, pos: Vector2, size: Vector2) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.position = pos
+	bar.size = size
+	bar.max_value = 2.2
+	bar.show_percentage = false
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.10, 0.055, 0.06, 0.94)
+	background.border_color = Color(0.48, 0.52, 0.48, 0.80)
+	background.set_border_width_all(1)
+	background.anti_aliasing = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.56, 0.70, 0.66, 0.96)
+	fill.border_color = Color(0.80, 0.90, 0.84, 0.72)
+	fill.set_border_width_all(1)
+	fill.anti_aliasing = false
+	bar.add_theme_stylebox_override("background", background)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+	return bar
 
 
 func _make_label(parent: Node, node_name: String, pos: Vector2, size: Vector2, font_size: int, color: Color) -> Label:
@@ -286,9 +427,9 @@ func _update_player_movement(delta: float, bounds: Rect2) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_dir != Vector2.ZERO:
 		facing = input_dir.normalized()
-		player_velocity = player_velocity.move_toward(input_dir * PLAYER_SPEED, 1800.0 * delta)
+		player_velocity = player_velocity.move_toward(input_dir * PLAYER_SPEED, PLAYER_ACCELERATION * delta)
 	else:
-		player_velocity = player_velocity.move_toward(Vector2.ZERO, 1500.0 * delta)
+		player_velocity = player_velocity.move_toward(Vector2.ZERO, PLAYER_DECELERATION * delta)
 
 	var speed_scale := 1.0
 	if _player_inside_hazard():
@@ -383,6 +524,8 @@ func _update_enemies(delta: float) -> void:
 
 		enemy["pos"] = _clamp_to_arena(enemy["pos"] as Vector2, float(enemy["radius"]))
 		_try_enemy_contact(enemy)
+		if mode != RunMode.FIELD:
+			return
 
 
 func _update_empty(enemy: Dictionary, delta: float) -> void:
@@ -475,6 +618,8 @@ func _update_hazards(delta: float) -> void:
 		if player_position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS and float(hazard["tick"]) <= 0.0:
 			hazard["tick"] = 0.65
 			_take_player_damage(int(hazard["damage"]), "咬人麦穗")
+			if mode != RunMode.FIELD:
+				return
 
 
 func _player_inside_hazard() -> bool:
@@ -606,8 +751,15 @@ func _update_ui() -> void:
 
 	var lock_text := "闭合 %.1fs" % hunger_lock if hunger_lock > 0.0 else "可吞噬"
 	var buff_text := " | 溢血刃 %.1fs" % overflow_power if overflow_power > 0.0 else ""
-	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_hp, PLAYER_MAX_HP, lock_text, buff_text]
-	relic_label.text = "残骸：神之胃囊" + (" 已归档" if has_god_stomach else " 试用中") + " | 记忆晶片 " + str(memory_shards)
+	hp_label.text = "%d / %d" % [player_hp, PLAYER_MAX_HP]
+	hp_bar.value = player_hp
+	stomach_label.text = lock_text
+	stomach_label.add_theme_color_override("font_color", Color(0.88, 0.54, 0.48) if hunger_lock > 0.0 else Color(0.72, 0.88, 0.86))
+	stomach_bar.value = hunger_lock if hunger_lock > 0.0 else 2.2
+	var stomach_fill := stomach_bar.get_theme_stylebox("fill") as StyleBoxFlat
+	stomach_fill.bg_color = Color(0.68, 0.16, 0.14, 0.96) if hunger_lock > 0.0 else Color(0.56, 0.70, 0.66, 0.96)
+	stomach_icon.texture = STOMACH_CLOSED_ICON if hunger_lock > 0.0 else (STOMACH_OVERFLOW_ICON if overflow_power > 0.0 else STOMACH_OPEN_ICON)
+	relic_label.text = "神之胃囊" + (" 已归档" if has_god_stomach else " 试用中") + buff_text + " | 晶片 " + str(memory_shards)
 
 
 func _draw_sanctum() -> void:
