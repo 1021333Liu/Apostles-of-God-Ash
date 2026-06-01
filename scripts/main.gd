@@ -4,6 +4,7 @@ enum RunMode { SANCTUM, FIELD, COMPLETE }
 
 const GOD_STOMACH_RELIC_SCRIPT := preload("res://scripts/systems/god_stomach_relic.gd")
 const COMBAT_DATA_FACTORY_SCRIPT := preload("res://scripts/systems/combat_data_factory.gd")
+const PlayerRuntimeScript := preload("res://scripts/systems/player_runtime.gd")
 
 const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
@@ -17,10 +18,7 @@ const ATTACK_COOLDOWN: float = 0.28
 const INTERACT_HINT: String = "E 进入 / 继续"
 
 var mode: RunMode = RunMode.SANCTUM
-var player_position: Vector2 = Vector2(640.0, 420.0)
-var player_velocity: Vector2 = Vector2.ZERO
-var facing: Vector2 = Vector2.RIGHT
-var player_hp: int = PLAYER_MAX_HP
+var player_runtime: PlayerRuntimeScript = PlayerRuntimeScript.new()
 var attack_cooldown: float = 0.0
 var combo_step: int = 0
 var combo_window: float = 0.0
@@ -55,6 +53,7 @@ func _ready() -> void:
 	_setup_input()
 	_build_rooms()
 	_build_ui()
+	player_runtime.configure(Vector2(640.0, 420.0), Vector2.RIGHT, PLAYER_MAX_HP)
 	_return_to_sanctum("收藏家：容器醒了。先别谈救世，先证明你能活过一片田。")
 	set_process(true)
 	set_physics_process(true)
@@ -260,18 +259,7 @@ func _update_timers(delta: float) -> void:
 
 func _update_player_movement(delta: float, bounds: Rect2) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	if input_dir != Vector2.ZERO:
-		facing = input_dir.normalized()
-		player_velocity = player_velocity.move_toward(input_dir * PLAYER_SPEED, 1800.0 * delta)
-	else:
-		player_velocity = player_velocity.move_toward(Vector2.ZERO, 1500.0 * delta)
-
-	var speed_scale := 1.0
-	if _player_inside_hazard():
-		speed_scale = 0.72
-	player_position += player_velocity * speed_scale * delta
-	player_position.x = clampf(player_position.x, bounds.position.x + PLAYER_RADIUS, bounds.end.x - PLAYER_RADIUS)
-	player_position.y = clampf(player_position.y, bounds.position.y + PLAYER_RADIUS, bounds.end.y - PLAYER_RADIUS)
+	player_runtime.update_movement(input_dir, delta, bounds, PLAYER_SPEED, PLAYER_RADIUS, _player_inside_hazard())
 
 
 func _try_player_attack() -> void:
@@ -282,23 +270,23 @@ func _try_player_attack() -> void:
 	combo_window = 0.72
 
 	var damage := BASE_DAMAGE + (8 if combo_step == 3 else 0) + god_stomach.attack_bonus()
-	var slash_center := player_position + facing * 42.0
-	slashes.append({"pos": slash_center, "dir": facing, "timer": 0.16, "combo": combo_step})
+	var slash_center: Vector2 = player_runtime.position + player_runtime.facing * 42.0
+	slashes.append({"pos": slash_center, "dir": player_runtime.facing, "timer": 0.16, "combo": combo_step})
 
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy: Dictionary = enemies[i]
 		var enemy_pos: Vector2 = enemy["pos"]
-		var to_enemy := enemy_pos - player_position
+		var to_enemy := enemy_pos - player_runtime.position
 		if to_enemy.length() > SLASH_RANGE + float(enemy["radius"]):
 			continue
-		var angle := absf(facing.angle_to(to_enemy.normalized()))
+		var angle := absf(player_runtime.facing.angle_to(to_enemy.normalized()))
 		if angle > SLASH_HALF_ANGLE and to_enemy.length() > 34.0:
 			continue
 		var final_damage := damage
 		if String(enemy["kind"]) == "barn_king" and boss_weak_exposed:
 			final_damage += 16
 			_emit_text_effect(enemy_pos + Vector2(0.0, -58.0), "胃囊暴露", Color(0.95, 0.42, 0.36))
-		_damage_enemy(i, final_damage, facing * 28.0)
+		_damage_enemy(i, final_damage, player_runtime.facing * 28.0)
 
 
 func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
@@ -320,13 +308,13 @@ func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
 
 
 func _on_enemy_killed(kind: String, enemy_name: String) -> void:
-	_emit_text_effect(player_position + Vector2(0.0, -34.0), "胃囊回响", Color(0.70, 0.92, 0.84))
-	var reward: Dictionary = god_stomach.apply_kill_reward(kind, player_hp, PLAYER_MAX_HP)
-	player_hp = int(reward["hp"])
+	_emit_text_effect(player_runtime.position + Vector2(0.0, -34.0), "胃囊回响", Color(0.70, 0.92, 0.84))
+	var reward: Dictionary = god_stomach.apply_kill_reward(kind, player_runtime.hp, PLAYER_MAX_HP)
+	player_runtime.apply_heal(int(reward["hp"]), PLAYER_MAX_HP)
 	if bool(reward["locked"]):
-		_emit_text_effect(player_position + Vector2(0.0, -58.0), "饥饿惩罚", Color(0.65, 0.55, 0.48))
+		_emit_text_effect(player_runtime.position + Vector2(0.0, -58.0), "饥饿惩罚", Color(0.65, 0.55, 0.48))
 	elif bool(reward["overflow"]):
-		_emit_text_effect(player_position + Vector2(0.0, -58.0), "溢血转刃", Color(0.95, 0.50, 0.45))
+		_emit_text_effect(player_runtime.position + Vector2(0.0, -58.0), "溢血转刃", Color(0.95, 0.50, 0.45))
 
 	if kind == "barn_king":
 		god_stomach.absorb_boss_memory()
@@ -361,13 +349,13 @@ func _update_empty(enemy: Dictionary, delta: float) -> void:
 	var pos: Vector2 = enemy["pos"]
 	var hp_ratio := float(enemy["hp"]) / float(enemy["max_hp"])
 	var speed := float(enemy["speed"]) * (1.42 if hp_ratio <= 0.35 else 1.0)
-	var dir := (player_position - pos).normalized()
+	var dir := (player_runtime.position - pos).normalized()
 	enemy["pos"] = pos + dir * speed * delta
 
 
 func _update_farmer(enemy: Dictionary, delta: float) -> void:
 	var pos: Vector2 = enemy["pos"]
-	var to_player := player_position - pos
+	var to_player := player_runtime.position - pos
 	var distance := to_player.length()
 	var move_dir := Vector2.ZERO
 	if distance < 175.0:
@@ -378,7 +366,7 @@ func _update_farmer(enemy: Dictionary, delta: float) -> void:
 
 	if float(enemy["special"]) <= 0.0:
 		enemy["special"] = 2.4
-		var seed_pos := player_position + player_velocity.normalized() * 26.0
+		var seed_pos := player_runtime.position + player_runtime.velocity.normalized() * 26.0
 		hazards.append(_hazard_data(seed_pos, 30.0, 2.8, 9, Color(0.62, 0.08, 0.07, 0.55)))
 		_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
 
@@ -388,10 +376,10 @@ func _update_scarecrow(enemy: Dictionary, delta: float) -> void:
 	if float(enemy["special"]) <= 0.0:
 		enemy["special"] = 2.8
 		for offset in [Vector2(-95.0, 0.0), Vector2(0.0, 0.0), Vector2(95.0, 0.0)]:
-			hazards.append(_hazard_data(player_position + offset.rotated(randf_range(-0.35, 0.35)), 32.0, 1.5, 13, Color(0.67, 0.12, 0.04, 0.46)))
+			hazards.append(_hazard_data(player_runtime.position + offset.rotated(randf_range(-0.35, 0.35)), 32.0, 1.5, 13, Color(0.67, 0.12, 0.04, 0.46)))
 		_emit_text_effect(pos + Vector2(0.0, -48.0), "麦浪", Color(0.92, 0.63, 0.32))
 	else:
-		var dir := (player_position - pos).normalized()
+		var dir := (player_runtime.position - pos).normalized()
 		enemy["pos"] = pos + dir * float(enemy["speed"]) * delta
 
 
@@ -406,7 +394,7 @@ func _update_barn_king(enemy: Dictionary, delta: float) -> void:
 		_emit_text_effect(pos + Vector2(0.0, -70.0), "阶段 " + str(boss_phase), Color(1.0, 0.62, 0.42))
 
 	var speed := float(enemy["speed"]) * (1.0 + 0.22 * float(boss_phase - 1))
-	enemy["pos"] = pos + (player_position - pos).normalized() * speed * delta
+	enemy["pos"] = pos + (player_runtime.position - pos).normalized() * speed * delta
 
 	if float(enemy["special"]) <= 0.0:
 		enemy["special"] = 3.2 if boss_phase == 1 else 2.45
@@ -414,8 +402,8 @@ func _update_barn_king(enemy: Dictionary, delta: float) -> void:
 			enemies.append(_enemy_data("empty", pos + Vector2(randf_range(-90.0, 90.0), randf_range(-65.0, 65.0))))
 			_emit_text_effect(pos + Vector2(0.0, -76.0), "开仓", Color(0.86, 0.47, 0.35))
 		elif boss_phase == 2:
-			hazards.append(_hazard_data(player_position, 52.0, 3.3, 14, Color(0.64, 0.10, 0.08, 0.56)))
-			_emit_text_effect(player_position + Vector2(0.0, -42.0), "消化液", Color(0.86, 0.34, 0.26))
+			hazards.append(_hazard_data(player_runtime.position, 52.0, 3.3, 14, Color(0.64, 0.10, 0.08, 0.56)))
+			_emit_text_effect(player_runtime.position + Vector2(0.0, -42.0), "消化液", Color(0.86, 0.34, 0.26))
 		else:
 			for n in 4:
 				var angle := TAU * float(n) / 4.0 + randf_range(-0.25, 0.25)
@@ -427,13 +415,13 @@ func _try_enemy_contact(enemy: Dictionary) -> void:
 	if float(enemy["cooldown"]) > 0.0:
 		return
 	var enemy_pos: Vector2 = enemy["pos"]
-	var distance := enemy_pos.distance_to(player_position)
+	var distance := enemy_pos.distance_to(player_runtime.position)
 	if distance > float(enemy["radius"]) + PLAYER_RADIUS:
 		return
 	enemy["cooldown"] = 0.85
 	_take_player_damage(int(enemy["damage"]), String(enemy["name"]))
-	var push_dir := (player_position - enemy_pos).normalized()
-	player_position += push_dir * 22.0
+	var push_dir := (player_runtime.position - enemy_pos).normalized()
+	player_runtime.apply_impulse(push_dir * 22.0)
 
 
 func _update_hazards(delta: float) -> void:
@@ -444,24 +432,24 @@ func _update_hazards(delta: float) -> void:
 		if float(hazard["timer"]) <= 0.0:
 			hazards.remove_at(i)
 			continue
-		if player_position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS and float(hazard["tick"]) <= 0.0:
+		if player_runtime.position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS and float(hazard["tick"]) <= 0.0:
 			hazard["tick"] = 0.65
 			_take_player_damage(int(hazard["damage"]), "咬人麦穗")
 
 
 func _player_inside_hazard() -> bool:
 	for hazard: Dictionary in hazards:
-		if player_position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS:
+		if player_runtime.position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS:
 			return true
 	return false
 
 
 func _take_player_damage(amount: int, source: String) -> void:
-	player_hp = maxi(0, player_hp - amount)
+	player_runtime.apply_damage(amount)
 	god_stomach.close_from_damage()
-	_emit_text_effect(player_position + Vector2(0.0, -42.0), "-" + str(amount), Color(1.0, 0.34, 0.30))
+	_emit_text_effect(player_runtime.position + Vector2(0.0, -42.0), "-" + str(amount), Color(1.0, 0.34, 0.30))
 	dialogue_label.text = "受击：" + source + " 让神之胃囊短暂闭合，击杀回血暂停。"
-	if player_hp <= 0:
+	if player_runtime.hp <= 0:
 		death_count += 1
 		last_death_note = source
 		_return_to_sanctum("收藏家：第 " + str(death_count) + " 次回收。死因：" + source + "。田野学会了你的停顿。")
@@ -504,10 +492,7 @@ func _check_room_progress() -> void:
 func _start_run() -> void:
 	mode = RunMode.FIELD
 	god_stomach.reset_for_run()
-	player_hp = PLAYER_MAX_HP
-	player_position = Vector2(640.0, 500.0)
-	player_velocity = Vector2.ZERO
-	facing = Vector2.UP
+	player_runtime.reset_for_run(Vector2(640.0, 500.0), Vector2.UP, PLAYER_MAX_HP)
 	_load_room(0)
 
 
@@ -518,7 +503,7 @@ func _load_room(index: int) -> void:
 	boss_phase = 1
 	boss_expose_timer = 2.5
 	boss_weak_exposed = false
-	player_position = Vector2(640.0, 500.0)
+	player_runtime.position = Vector2(640.0, 500.0)
 	enemies.clear()
 	hazards.clear()
 	slashes.clear()
@@ -540,9 +525,7 @@ func _return_to_sanctum(text: String) -> void:
 	hazards.clear()
 	slashes.clear()
 	effects.clear()
-	player_hp = PLAYER_MAX_HP
-	player_position = Vector2(640.0, 410.0)
-	player_velocity = Vector2.ZERO
+	player_runtime.reset_for_sanctum(Vector2(640.0, 410.0), PLAYER_MAX_HP)
 	god_stomach.reset_for_sanctum()
 	dialogue_label.text = text
 
@@ -574,7 +557,7 @@ func _update_ui() -> void:
 			objective_label.text = "神之胃囊已获得：按 E 回圣匣"
 			prompt_label.text = INTERACT_HINT
 
-	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_hp, PLAYER_MAX_HP, god_stomach.status_text(), god_stomach.buff_text()]
+	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_runtime.hp, PLAYER_MAX_HP, god_stomach.status_text(), god_stomach.buff_text()]
 	relic_label.text = "残骸：神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + " | 记忆晶片 " + str(god_stomach.memory_shards)
 
 
@@ -622,10 +605,10 @@ func _draw_complete() -> void:
 func _draw_player() -> void:
 	var body_color := Color(0.82, 0.86, 0.82)
 	var stomach_color := Color(0.64, 0.08, 0.08) if god_stomach.has_relic or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
-	draw_circle(player_position, PLAYER_RADIUS, body_color)
-	draw_circle(player_position + facing * 8.0, 5.0, Color(0.12, 0.14, 0.15))
-	draw_circle(player_position + Vector2(0.0, 5.0), 6.0, stomach_color)
-	draw_line(player_position, player_position + facing * 28.0, Color(0.76, 0.78, 0.75), 4.0)
+	draw_circle(player_runtime.position, PLAYER_RADIUS, body_color)
+	draw_circle(player_runtime.position + player_runtime.facing * 8.0, 5.0, Color(0.12, 0.14, 0.15))
+	draw_circle(player_runtime.position + Vector2(0.0, 5.0), 6.0, stomach_color)
+	draw_line(player_runtime.position, player_runtime.position + player_runtime.facing * 28.0, Color(0.76, 0.78, 0.75), 4.0)
 
 
 func _draw_enemy(enemy: Dictionary) -> void:
