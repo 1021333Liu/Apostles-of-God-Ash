@@ -5,6 +5,7 @@ enum RunMode { SANCTUM, FIELD, COMPLETE }
 const GOD_STOMACH_RELIC_SCRIPT := preload("res://scripts/systems/god_stomach_relic.gd")
 const COMBAT_DATA_FACTORY_SCRIPT := preload("res://scripts/systems/combat_data_factory.gd")
 const PlayerRuntimeScript := preload("res://scripts/systems/player_runtime.gd")
+const EnemyRuntimeScript := preload("res://scripts/systems/enemy_runtime.gd")
 
 const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
@@ -27,6 +28,7 @@ var interact_buffered: bool = false
 var death_count: int = 0
 var last_death_note: String = ""
 var god_stomach := GOD_STOMACH_RELIC_SCRIPT.new()
+var enemy_runtime: EnemyRuntimeScript = EnemyRuntimeScript.new()
 
 var room_index: int = -1
 var room_clock: float = 0.0
@@ -327,101 +329,67 @@ func _on_enemy_killed(kind: String, enemy_name: String) -> void:
 func _update_enemies(delta: float) -> void:
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy: Dictionary = enemies[i]
-		enemy["cooldown"] = maxf(0.0, float(enemy["cooldown"]) - delta)
-		enemy["special"] = maxf(0.0, float(enemy["special"]) - delta)
-		enemy["hit_flash"] = maxf(0.0, float(enemy["hit_flash"]) - delta)
+		enemy_runtime.update_timers(enemy, delta)
 
 		match String(enemy["kind"]):
 			"empty":
-				_update_empty(enemy, delta)
+				enemy_runtime.update_empty(enemy, delta, player_runtime.position)
 			"farmer":
-				_update_farmer(enemy, delta)
+				_handle_enemy_event(enemy_runtime.update_farmer(enemy, delta, player_runtime.position, player_runtime.velocity))
 			"scarecrow":
-				_update_scarecrow(enemy, delta)
+				_handle_enemy_event(enemy_runtime.update_scarecrow(enemy, delta, player_runtime.position))
 			"barn_king":
 				_update_barn_king(enemy, delta)
 
-		enemy["pos"] = _clamp_to_arena(enemy["pos"] as Vector2, float(enemy["radius"]))
+		enemy_runtime.clamp_to_arena(enemy, ARENA)
 		_try_enemy_contact(enemy)
-
-
-func _update_empty(enemy: Dictionary, delta: float) -> void:
-	var pos: Vector2 = enemy["pos"]
-	var hp_ratio := float(enemy["hp"]) / float(enemy["max_hp"])
-	var speed := float(enemy["speed"]) * (1.42 if hp_ratio <= 0.35 else 1.0)
-	var dir := (player_runtime.position - pos).normalized()
-	enemy["pos"] = pos + dir * speed * delta
-
-
-func _update_farmer(enemy: Dictionary, delta: float) -> void:
-	var pos: Vector2 = enemy["pos"]
-	var to_player := player_runtime.position - pos
-	var distance := to_player.length()
-	var move_dir := Vector2.ZERO
-	if distance < 175.0:
-		move_dir = -to_player.normalized()
-	elif distance > 260.0:
-		move_dir = to_player.normalized()
-	enemy["pos"] = pos + move_dir * float(enemy["speed"]) * delta
-
-	if float(enemy["special"]) <= 0.0:
-		enemy["special"] = 2.4
-		var seed_pos := player_runtime.position + player_runtime.velocity.normalized() * 26.0
-		hazards.append(_hazard_data(seed_pos, 30.0, 2.8, 9, Color(0.62, 0.08, 0.07, 0.55)))
-		_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
-
-
-func _update_scarecrow(enemy: Dictionary, delta: float) -> void:
-	var pos: Vector2 = enemy["pos"]
-	if float(enemy["special"]) <= 0.0:
-		enemy["special"] = 2.8
-		for offset in [Vector2(-95.0, 0.0), Vector2(0.0, 0.0), Vector2(95.0, 0.0)]:
-			hazards.append(_hazard_data(player_runtime.position + offset.rotated(randf_range(-0.35, 0.35)), 32.0, 1.5, 13, Color(0.67, 0.12, 0.04, 0.46)))
-		_emit_text_effect(pos + Vector2(0.0, -48.0), "麦浪", Color(0.92, 0.63, 0.32))
-	else:
-		var dir := (player_runtime.position - pos).normalized()
-		enemy["pos"] = pos + dir * float(enemy["speed"]) * delta
 
 
 func _update_barn_king(enemy: Dictionary, delta: float) -> void:
 	var pos: Vector2 = enemy["pos"]
-	var hp_ratio := float(enemy["hp"]) / float(enemy["max_hp"])
-	var next_phase := 3 if hp_ratio <= 0.34 else (2 if hp_ratio <= 0.67 else 1)
+	var next_phase := enemy_runtime.resolve_barn_king_phase(enemy)
 	if next_phase != boss_phase:
 		boss_phase = next_phase
 		var phase_text := "谷仓王撕开胃室。" if boss_phase == 2 else "谷仓王露出神之胃囊。"
 		dialogue_label.text = phase_text
 		_emit_text_effect(pos + Vector2(0.0, -70.0), "阶段 " + str(boss_phase), Color(1.0, 0.62, 0.42))
 
-	var speed := float(enemy["speed"]) * (1.0 + 0.22 * float(boss_phase - 1))
-	enemy["pos"] = pos + (player_runtime.position - pos).normalized() * speed * delta
+	_handle_enemy_event(enemy_runtime.update_barn_king(enemy, delta, player_runtime.position, boss_phase))
 
-	if float(enemy["special"]) <= 0.0:
-		enemy["special"] = 3.2 if boss_phase == 1 else 2.45
-		if boss_phase == 1:
+
+func _handle_enemy_event(event: Dictionary) -> void:
+	if event.is_empty():
+		return
+
+	match String(event["type"]):
+		"farmer_seed":
+			var seed_pos: Vector2 = event["pos"]
+			hazards.append(_hazard_data(seed_pos, 30.0, 2.8, 9, Color(0.62, 0.08, 0.07, 0.55)))
+			_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
+		"scarecrow_wave":
+			for center: Vector2 in event["centers"]:
+				hazards.append(_hazard_data(center, 32.0, 1.5, 13, Color(0.67, 0.12, 0.04, 0.46)))
+			_emit_text_effect((event["pos"] as Vector2) + Vector2(0.0, -48.0), "麦浪", Color(0.92, 0.63, 0.32))
+		"barn_open":
+			var pos: Vector2 = event["pos"]
 			enemies.append(_enemy_data("empty", pos + Vector2(randf_range(-90.0, 90.0), randf_range(-65.0, 65.0))))
 			_emit_text_effect(pos + Vector2(0.0, -76.0), "开仓", Color(0.86, 0.47, 0.35))
-		elif boss_phase == 2:
-			hazards.append(_hazard_data(player_runtime.position, 52.0, 3.3, 14, Color(0.64, 0.10, 0.08, 0.56)))
-			_emit_text_effect(player_runtime.position + Vector2(0.0, -42.0), "消化液", Color(0.86, 0.34, 0.26))
-		else:
-			for n in 4:
-				var angle := TAU * float(n) / 4.0 + randf_range(-0.25, 0.25)
-				hazards.append(_hazard_data(pos + Vector2.RIGHT.rotated(angle) * 125.0, 38.0, 1.8, 16, Color(0.78, 0.08, 0.07, 0.50)))
-			_emit_text_effect(pos + Vector2(0.0, -82.0), "胃室收缩", Color(0.95, 0.28, 0.22))
+		"barn_acid":
+			var acid_pos: Vector2 = event["pos"]
+			hazards.append(_hazard_data(acid_pos, 52.0, 3.3, 14, Color(0.64, 0.10, 0.08, 0.56)))
+			_emit_text_effect(acid_pos + Vector2(0.0, -42.0), "消化液", Color(0.86, 0.34, 0.26))
+		"barn_contract":
+			for center: Vector2 in event["centers"]:
+				hazards.append(_hazard_data(center, 38.0, 1.8, 16, Color(0.78, 0.08, 0.07, 0.50)))
+			_emit_text_effect((event["pos"] as Vector2) + Vector2(0.0, -82.0), "胃室收缩", Color(0.95, 0.28, 0.22))
 
 
 func _try_enemy_contact(enemy: Dictionary) -> void:
-	if float(enemy["cooldown"]) > 0.0:
+	var contact: Dictionary = enemy_runtime.try_contact(enemy, player_runtime.position, PLAYER_RADIUS)
+	if not bool(contact["hit"]):
 		return
-	var enemy_pos: Vector2 = enemy["pos"]
-	var distance := enemy_pos.distance_to(player_runtime.position)
-	if distance > float(enemy["radius"]) + PLAYER_RADIUS:
-		return
-	enemy["cooldown"] = 0.85
-	_take_player_damage(int(enemy["damage"]), String(enemy["name"]))
-	var push_dir := (player_runtime.position - enemy_pos).normalized()
-	player_runtime.apply_impulse(push_dir * 22.0)
+	_take_player_damage(int(contact["damage"]), String(contact["name"]))
+	player_runtime.apply_impulse(contact["push"])
 
 
 func _update_hazards(delta: float) -> void:
@@ -528,13 +496,6 @@ func _return_to_sanctum(text: String) -> void:
 	player_runtime.reset_for_sanctum(Vector2(640.0, 410.0), PLAYER_MAX_HP)
 	god_stomach.reset_for_sanctum()
 	dialogue_label.text = text
-
-
-func _clamp_to_arena(pos: Vector2, radius: float) -> Vector2:
-	return Vector2(
-		clampf(pos.x, ARENA.position.x + radius, ARENA.end.x - radius),
-		clampf(pos.y, ARENA.position.y + radius, ARENA.end.y - radius)
-	)
 
 
 func _update_ui() -> void:
