@@ -1,0 +1,39 @@
+# Godot editor data
+.godot/
+
+# Godot imports and generated caches
+.import/
+*.import
+
+# Export artifacts
+export/
+*.apk
+*.aab
+*.ipa
+*.exe
+*.x86_64
+*.x86_32
+*.arm32
+*.arm64
+*.pck
+*.zip
+
+# C# / Mono output, if enabled later
+.mono/
+bin/
+obj/
+*.csproj.user
+*.sln.user
+*.user
+
+# IDE and OS files
+.vs/
+.vscode/settings.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local scratch
+*.tmp
+*.bak
