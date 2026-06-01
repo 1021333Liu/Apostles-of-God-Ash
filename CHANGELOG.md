@@ -34,6 +34,24 @@
 
 ## 2026-06-01
 
+### 协作交接：新增文案与关卡 HUD 任务说明
+
+- 负责人：刘秉昂 / Codex
+- 改动：
+  - 新增 `docs/planning/08_NARRATIVE_HANDOFF_PROMPT.md`，用于交给文案同学或她的 Codex。
+  - 新增 `docs/planning/09_LEVEL_HUD_HANDOFF.md`，明确关卡/HUD/表现同学先用占位资产推进，不等待正式美术。
+  - 新增 `docs/planning/10_JIN_RONGJUN_LEVEL_HUD_TASK_CARD.md`，作为金荣俊拉取 `feature/level-hud` 后的个人开工任务卡。
+  - 更新 `docs/planning/00_PRODUCTION_INDEX.md` 的文档入口。
+- 原因：
+  - 三人协作需要更具体的个人任务说明，避免“等资产”“等文案”“不知道先做什么”。
+- 影响范围：
+  - 团队任务分配、文案交付、关卡/HUD 工作流。
+- 验证：
+  - 新文档已加入制作索引。
+- 后续：
+  - 文案同学交付第一版 Markdown 后，整理进 `docs/planning/03_NARRATIVE_COPY.md`。
+  - 关卡/HUD 同学在 `feature/level-hud` 分支推进占位布局和反馈。
+
 ### 项目初始化：低语田野垂直切片骨架
 
 - 负责人：刘秉昂 / Codex

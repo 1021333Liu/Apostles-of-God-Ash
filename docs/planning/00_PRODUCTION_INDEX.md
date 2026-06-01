@@ -18,6 +18,9 @@
 | `04_ITEMS_RELICS.md` | 系统策划、程序、数值 | 道具、残骸、武器和后续扩展规则 |
 | `05_BALANCE_TABLES.md` | 数值、程序、测试 | 玩家、敌人、Boss、房间、奖励首版数值 |
 | `06_TASK_BREAKDOWN.md` | 全组 | 按里程碑拆任务、验收标准和优先级 |
+| `08_NARRATIVE_HANDOFF_PROMPT.md` | 文案、文案 Codex | 文案同学第一批文本交付说明 |
+| `09_LEVEL_HUD_HANDOFF.md` | 关卡/HUD 技术 | 关卡表现同学的占位资产、HUD 和反馈任务 |
+| `10_JIN_RONGJUN_LEVEL_HUD_TASK_CARD.md` | 金荣俊 | 拉取 `feature/level-hud` 后优先阅读的个人任务卡 |
 
 ## 当前版本形态
 
