@@ -14,11 +14,11 @@ const SLASH_RANGE: float = 78.0
 const SLASH_HALF_ANGLE: float = 0.72
 const ATTACK_COOLDOWN: float = 0.28
 const INTERACT_HINT: String = "E 进入 / 继续"
-const HP_ICON: Texture2D = preload("res://assets/sprites/ui/ui_hp_heart.png")
-const STOMACH_OPEN_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_open.png")
-const STOMACH_CLOSED_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_closed.png")
-const STOMACH_OVERFLOW_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_overflow.png")
-const MEMORY_SHARD_ICON: Texture2D = preload("res://assets/sprites/ui/ui_memory_shard.png")
+const HP_ICON: Texture2D = preload("res://assets/sprites/ui/ui_hp_heart.svg")
+const STOMACH_OPEN_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_open.svg")
+const STOMACH_CLOSED_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_closed.svg")
+const STOMACH_OVERFLOW_ICON: Texture2D = preload("res://assets/sprites/ui/ui_stomach_overflow.svg")
+const MEMORY_SHARD_ICON: Texture2D = preload("res://assets/sprites/ui/ui_memory_shard.svg")
 
 var mode: RunMode = RunMode.SANCTUM
 var player_position: Vector2 = Vector2(640.0, 420.0)
