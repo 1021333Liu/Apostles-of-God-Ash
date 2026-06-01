@@ -1,4 +1,4 @@
-# 神烬使徒 Godot
+# 神烬使徒 Godot / Apostles of God-Ash
 
 《神烬使徒》Godot 独立项目工作区。
 
