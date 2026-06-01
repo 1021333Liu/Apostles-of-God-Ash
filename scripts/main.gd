@@ -166,9 +166,9 @@ func _build_rooms() -> void:
 				_enemy_data("empty", Vector2(650.0, 500.0))
 			],
 			"hazards": [
-				_hazard_data(Vector2(460.0, 355.0), 58.0, 999.0, 11, Color(0.52, 0.11, 0.09, 0.50)),
-				_hazard_data(Vector2(640.0, 345.0), 58.0, 999.0, 11, Color(0.52, 0.11, 0.09, 0.50)),
-				_hazard_data(Vector2(820.0, 355.0), 58.0, 999.0, 11, Color(0.52, 0.11, 0.09, 0.50))
+				_hazard_data(Vector2(460.0, 355.0), 48.0, 999.0, 8, Color(0.52, 0.11, 0.09, 0.50), 0.0),
+				_hazard_data(Vector2(640.0, 345.0), 48.0, 999.0, 8, Color(0.52, 0.11, 0.09, 0.50), 0.0),
+				_hazard_data(Vector2(820.0, 355.0), 48.0, 999.0, 8, Color(0.52, 0.11, 0.09, 0.50), 0.0)
 			]
 		},
 		{
@@ -182,7 +182,7 @@ func _build_rooms() -> void:
 				_enemy_data("empty", Vector2(850.0, 245.0))
 			],
 			"hazards": [
-				_hazard_data(Vector2(640.0, 430.0), 44.0, 999.0, 10, Color(0.50, 0.13, 0.05, 0.46))
+				_hazard_data(Vector2(640.0, 430.0), 40.0, 999.0, 8, Color(0.50, 0.13, 0.05, 0.46), 0.0)
 			]
 		},
 		{
@@ -202,8 +202,8 @@ func _enemy_data(kind: String, pos: Vector2) -> Dictionary:
 	return COMBAT_DATA_FACTORY_SCRIPT.enemy(kind, pos)
 
 
-func _hazard_data(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color) -> Dictionary:
-	return COMBAT_DATA_FACTORY_SCRIPT.hazard(pos, radius, lifetime, damage, color)
+func _hazard_data(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color, arm_time: float = 0.55) -> Dictionary:
+	return COMBAT_DATA_FACTORY_SCRIPT.hazard(pos, radius, lifetime, damage, color, arm_time)
 
 
 func _build_ui() -> void:
@@ -366,7 +366,7 @@ func _handle_enemy_event(event: Dictionary) -> void:
 	match String(event["type"]):
 		"farmer_seed":
 			var seed_pos: Vector2 = event["pos"]
-			hazards.append(_hazard_data(seed_pos, 30.0, 2.8, 9, Color(0.62, 0.08, 0.07, 0.55)))
+			hazards.append(_hazard_data(seed_pos, 28.0, 2.8, 6, Color(0.62, 0.08, 0.07, 0.55), 0.65))
 			_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
 		"scarecrow_wave":
 			for center: Vector2 in event["centers"]:
@@ -403,8 +403,11 @@ func _update_hazards(delta: float) -> void:
 		var hazard: Dictionary = hazards[i]
 		hazard["timer"] = float(hazard["timer"]) - delta
 		hazard["tick"] = maxf(0.0, float(hazard["tick"]) - delta)
+		hazard["arm_time"] = maxf(0.0, float(hazard.get("arm_time", 0.0)) - delta)
 		if float(hazard["timer"]) <= 0.0:
 			hazards.remove_at(i)
+			continue
+		if float(hazard["arm_time"]) > 0.0:
 			continue
 		if player_runtime.position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS and float(hazard["tick"]) <= 0.0:
 			hazard["tick"] = 0.65
@@ -415,6 +418,8 @@ func _update_hazards(delta: float) -> void:
 
 func _player_inside_hazard() -> bool:
 	for hazard: Dictionary in hazards:
+		if float(hazard.get("arm_time", 0.0)) > 0.0:
+			continue
 		if player_runtime.position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS:
 			return true
 	return false
@@ -551,7 +556,10 @@ func _draw_field_room() -> void:
 	draw_rect(ARENA, Color(0.18, 0.12, 0.08))
 	_draw_field_marks()
 	for hazard: Dictionary in hazards:
-		draw_circle(hazard["pos"] as Vector2, float(hazard["radius"]), hazard["color"])
+		var hazard_color: Color = hazard["color"]
+		if float(hazard.get("arm_time", 0.0)) > 0.0:
+			hazard_color.a *= 0.35
+		draw_circle(hazard["pos"] as Vector2, float(hazard["radius"]), hazard_color)
 		draw_arc(hazard["pos"] as Vector2, float(hazard["radius"]) + 3.0, 0.0, TAU, 32, Color(0.95, 0.30, 0.18, 0.45), 2.0)
 	for enemy: Dictionary in enemies:
 		_draw_enemy(enemy)

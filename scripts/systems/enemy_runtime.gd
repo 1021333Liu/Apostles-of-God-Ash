@@ -2,7 +2,7 @@ class_name EnemyRuntime
 extends RefCounted
 
 const CONTACT_COOLDOWN: float = 0.85
-const FARMER_SPECIAL_COOLDOWN: float = 2.4
+const FARMER_SPECIAL_COOLDOWN: float = 2.8
 const SCARECROW_SPECIAL_COOLDOWN: float = 2.8
 const BARN_KING_PHASE_ONE_SPECIAL_COOLDOWN: float = 3.2
 const BARN_KING_LATE_SPECIAL_COOLDOWN: float = 2.45
@@ -37,9 +37,14 @@ func update_farmer(enemy: Dictionary, delta: float, player_position: Vector2, pl
 		return {}
 
 	enemy["special"] = FARMER_SPECIAL_COOLDOWN
+	var cast_dir := player_velocity.normalized()
+	if cast_dir == Vector2.ZERO:
+		cast_dir = (player_position - pos).normalized()
+		if cast_dir == Vector2.ZERO:
+			cast_dir = Vector2.RIGHT
 	return {
 		"type": "farmer_seed",
-		"pos": player_position + player_velocity.normalized() * 26.0
+		"pos": player_position + cast_dir * 92.0
 	}
 
 

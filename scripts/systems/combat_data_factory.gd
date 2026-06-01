@@ -22,12 +22,13 @@ static func enemy(kind: String, pos: Vector2) -> Dictionary:
 	return data
 
 
-static func hazard(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color) -> Dictionary:
+static func hazard(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color, arm_time: float = 0.55) -> Dictionary:
 	return {
 		"pos": pos,
 		"radius": radius,
 		"timer": lifetime,
 		"damage": damage,
 		"tick": 0.0,
+		"arm_time": arm_time,
 		"color": color
 	}
