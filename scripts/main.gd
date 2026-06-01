@@ -326,6 +326,8 @@ func _on_enemy_killed(kind: String, enemy_name: String) -> void:
 
 func _update_enemies(delta: float) -> void:
 	for i in range(enemies.size() - 1, -1, -1):
+		if i >= enemies.size():
+			continue
 		var enemy: Dictionary = enemies[i]
 		enemy_runtime.update_timers(enemy, delta)
 
@@ -341,6 +343,8 @@ func _update_enemies(delta: float) -> void:
 
 		enemy_runtime.clamp_to_arena(enemy, ARENA)
 		_try_enemy_contact(enemy)
+		if mode != RunMode.FIELD:
+			return
 
 
 func _update_barn_king(enemy: Dictionary, delta: float) -> void:
@@ -387,11 +391,15 @@ func _try_enemy_contact(enemy: Dictionary) -> void:
 	if not bool(contact["hit"]):
 		return
 	_take_player_damage(int(contact["damage"]), String(contact["name"]))
+	if mode != RunMode.FIELD:
+		return
 	player_runtime.apply_impulse(contact["push"])
 
 
 func _update_hazards(delta: float) -> void:
 	for i in range(hazards.size() - 1, -1, -1):
+		if i >= hazards.size():
+			continue
 		var hazard: Dictionary = hazards[i]
 		hazard["timer"] = float(hazard["timer"]) - delta
 		hazard["tick"] = maxf(0.0, float(hazard["tick"]) - delta)
@@ -401,6 +409,8 @@ func _update_hazards(delta: float) -> void:
 		if player_runtime.position.distance_to(hazard["pos"] as Vector2) <= float(hazard["radius"]) + PLAYER_RADIUS and float(hazard["tick"]) <= 0.0:
 			hazard["tick"] = 0.65
 			_take_player_damage(int(hazard["damage"]), "咬人麦穗")
+			if mode != RunMode.FIELD:
+				return
 
 
 func _player_inside_hazard() -> bool:
