@@ -4,20 +4,25 @@
 
 ## 已接入
 
+### 项目内原创 SVG 像素占位图
+
+- 来源：项目内原创。
+- 用途：HUD 首版占位，后续可由正式美术直接替换。
+- 已使用：
+  - `ui_hp_heart.svg`
+  - `ui_stomach_open.svg`
+  - `ui_stomach_closed.svg`
+  - `ui_stomach_overflow.svg`
+  - `ui_memory_shard.svg`
+
+## 已下载但尚未接入
+
 ### `tstamborski/pixelart-icons`
 
 - 来源：<https://github.com/tstamborski/pixelart-icons>
 - 许可证：`CC0 1.0 Universal`
-- 项目内许可证副本：
-  `assets/sprites/ui/LICENSE.pixelart-icons-CC0.txt`
-- 已使用：
-  - `ui_hp_heart.png`
-  - `ui_stomach_open.png`
-  - `ui_stomach_closed.png`
-  - `ui_stomach_overflow.png`
-  - `ui_memory_shard.png`
-
-## 已下载但尚未接入
+- 用途候选：
+  - 通用 UI 图标参考。
 
 ### `sparklinlabs/superpowers-asset-packs`
 
