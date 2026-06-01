@@ -14,6 +14,8 @@
 
 ### 已完成
 
+- 已接受原仓库协作者邀请，后续修改直接提交到
+  `1021333Liu/Apostles-of-God-Ash` 的 `feature/level-hud` 分支。
 - 已将首次试玩反馈发布到 GitHub：
   [Issue #1](https://github.com/1021333Liu/Apostles-of-God-Ash/issues/1)。
 - HUD 已从纯文字占位调整为紧凑双层状态布局：
@@ -36,6 +38,8 @@
   - 对角线速度保持归一化，避免斜向移动更快。
 - 已修复玩家死亡回收后，危险区或敌人循环继续读取已清空数组导致的越界错误。
 - 已建立 `assets/` 资源目录和第三方素材来源清单。
+- 已下载原仓库 `feature/level-hud` 分支快照，独立完成 SVG 导入与 Godot
+  无窗口启动检查。
 
 ### 试玩结论
 
