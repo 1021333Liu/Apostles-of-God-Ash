@@ -62,7 +62,7 @@ func _ready() -> void:
 	_build_rooms()
 	_build_ui()
 	player_runtime.configure(Vector2(640.0, 420.0), Vector2.RIGHT, PLAYER_MAX_HP)
-	_return_to_sanctum("收藏家：容器醒了。先别谈救世，先证明你能活过一片田。")
+	_return_to_sanctum("收藏家：容器醒了。先别谈救世，先确认你还能站稳。")
 	set_process(true)
 	set_physics_process(true)
 
@@ -142,7 +142,7 @@ func _build_rooms() -> void:
 		{
 			"id": "field_gate",
 			"title": "低语田野入口",
-			"tagline": "第一块土地还在判断你是不是粮食。",
+			"tagline": "这里没有风。麦浪是从地下喘出来的。",
 			"dossier": "任务档案 01 | 低语田野入口\n异常：空腹者会追逐活体热源。\n建议：用三段斩击采样，观察胃囊吞噬反应。",
 			"palette": Color(0.22, 0.18, 0.12),
 			"enemies": [
@@ -170,7 +170,7 @@ func _build_rooms() -> void:
 		{
 			"id": "gut_canal",
 			"title": "肠道灌溉渠",
-			"tagline": "水渠不是水渠，是谷仓还没合拢的喉咙。",
+			"tagline": "水声太厚了。那不是水在流。",
 			"dossier": "任务档案 03 | 肠道灌溉渠\n异常：固定麦脉会拖慢容器移动。\n建议：贴边绕行，优先处理远处农夫。",
 			"palette": Color(0.19, 0.10, 0.12),
 			"enemies": [
@@ -187,7 +187,7 @@ func _build_rooms() -> void:
 		{
 			"id": "hungry_barn",
 			"title": "饥饿谷仓",
-			"tagline": "稻草人守着粮仓，也守着一场主动献祭。",
+			"tagline": "门在咀嚼。它等的不是粮车。",
 			"dossier": "任务档案 04 | 饥饿谷仓\n异常：稻草人会展开麦浪封路。\n建议：等麦浪落空后近身，不要在场地中央贪刀。",
 			"palette": Color(0.24, 0.13, 0.08),
 			"enemies": [
@@ -202,7 +202,7 @@ func _build_rooms() -> void:
 		{
 			"id": "barn_king",
 			"title": "谷仓王胃室",
-			"tagline": "他曾经想吃掉饥荒。后来他只记得吃。",
+			"tagline": "所有祈祷最后都落进了这里。",
 			"dossier": "任务档案 05 | 谷仓王胃室\n异常：王的胃囊会周期性暴露。\n建议：红核外翻时进攻，样本伤害会被放大。",
 			"palette": Color(0.15, 0.07, 0.07),
 			"enemies": [
@@ -411,6 +411,10 @@ func _update_barn_king(enemy: Dictionary, delta: float) -> void:
 	if next_phase != boss_phase:
 		boss_phase = next_phase
 		var phase_text := "谷仓王撕开胃室。" if boss_phase == 2 else "谷仓王露出神之胃囊。"
+		if boss_phase == 2:
+			phase_text = "还不够。地还在喊，仓还在空。"
+		elif boss_phase == 3:
+			phase_text = "开仓。开腹。开一切还能装下东西的地方。"
 		dialogue_label.text = phase_text
 		_emit_text_effect(pos + Vector2(0.0, -70.0), "阶段 " + str(boss_phase), Color(1.0, 0.62, 0.42))
 		boss_rite_timer = 1.35
@@ -493,7 +497,7 @@ func _take_player_damage(amount: int, source: String) -> void:
 		death_count += 1
 		last_death_note = source
 		var archive_text := "回收失败样本 #" + str(death_count) + "\n死因：" + source + "\n土地学习：你的停顿、贪刀和路径选择已被低语田野记录。"
-		_return_to_sanctum("收藏家：第 " + str(death_count) + " 次回收。死因：" + source + "。田野学会了你的停顿。")
+		_return_to_sanctum(_death_recovery_line(source))
 		dossier_text = archive_text
 		dossier_timer = 7.0
 
@@ -634,6 +638,24 @@ func _sanctum_archive_text() -> String:
 	if death_count <= 0:
 		return "圣匣档案：暂无失败样本\n建议：进入田野，采回第一份胃囊反应。"
 	return "圣匣档案：失败样本 " + str(death_count) + " 份\n最近死因：" + last_death_note + "\n土地学习仍在继续。"
+
+
+func _death_recovery_line(source: String) -> String:
+	if death_count == 1:
+		return "收藏家：首次死亡回收完成。疼痛记录完整，容器损毁程度低于预期。"
+	match source:
+		"空腹者":
+			return "收藏家：空腹者没有吃饱的概念。你被它当成了一次短暂延迟。"
+		"饥民农夫":
+			return "收藏家：他们挥下农具时很平静。长期制度会把谋杀训练成劳动。"
+		"饥饿稻草人":
+			return "收藏家：它守的不是田，是一份旧命令。命令比人活得久。"
+		"咬人麦穗":
+			return "收藏家：灌溉渠接受了你。下次别把血留在会流动的地方。"
+		"谷仓王":
+			return "收藏家：谷仓王尝过你的频率。下一次，它会更快认出你。"
+		_:
+			return "收藏家：你正在学习这片田的节奏。它每次咀嚼，都比上次更熟练。"
 
 
 func _draw_sanctum() -> void:
