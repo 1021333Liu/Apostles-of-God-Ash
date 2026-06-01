@@ -2,6 +2,9 @@ extends Node2D
 
 enum RunMode { SANCTUM, FIELD, COMPLETE }
 
+const GOD_STOMACH_RELIC_SCRIPT := preload("res://scripts/systems/god_stomach_relic.gd")
+const COMBAT_DATA_FACTORY_SCRIPT := preload("res://scripts/systems/combat_data_factory.gd")
+
 const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
 const PLAYER_MAX_HP: int = 100
@@ -21,14 +24,11 @@ var player_hp: int = PLAYER_MAX_HP
 var attack_cooldown: float = 0.0
 var combo_step: int = 0
 var combo_window: float = 0.0
-var hunger_lock: float = 0.0
-var overflow_power: float = 0.0
 var attack_buffered: bool = false
 var interact_buffered: bool = false
 var death_count: int = 0
-var memory_shards: int = 0
-var has_god_stomach: bool = false
 var last_death_note: String = ""
+var god_stomach := GOD_STOMACH_RELIC_SCRIPT.new()
 
 var room_index: int = -1
 var room_clock: float = 0.0
@@ -202,34 +202,11 @@ func _build_rooms() -> void:
 
 
 func _enemy_data(kind: String, pos: Vector2) -> Dictionary:
-	var data: Dictionary = {
-		"kind": kind,
-		"pos": pos,
-		"cooldown": 0.0,
-		"special": 1.4,
-		"hit_flash": 0.0
-	}
-	match kind:
-		"empty":
-			data.merge({"hp": 42.0, "max_hp": 42.0, "speed": 82.0, "radius": 18.0, "damage": 10, "name": "空腹者"})
-		"farmer":
-			data.merge({"hp": 54.0, "max_hp": 54.0, "speed": 58.0, "radius": 19.0, "damage": 8, "name": "饥民农夫"})
-		"scarecrow":
-			data.merge({"hp": 130.0, "max_hp": 130.0, "speed": 34.0, "radius": 28.0, "damage": 16, "name": "饥饿稻草人"})
-		"barn_king":
-			data.merge({"hp": 360.0, "max_hp": 360.0, "speed": 46.0, "radius": 48.0, "damage": 20, "name": "谷仓王"})
-	return data
+	return COMBAT_DATA_FACTORY_SCRIPT.enemy(kind, pos)
 
 
 func _hazard_data(pos: Vector2, radius: float, lifetime: float, damage: int, color: Color) -> Dictionary:
-	return {
-		"pos": pos,
-		"radius": radius,
-		"timer": lifetime,
-		"damage": damage,
-		"tick": 0.0,
-		"color": color
-	}
+	return COMBAT_DATA_FACTORY_SCRIPT.hazard(pos, radius, lifetime, damage, color)
 
 
 func _build_ui() -> void:
@@ -273,8 +250,7 @@ func _make_label(parent: Node, node_name: String, pos: Vector2, size: Vector2, f
 func _update_timers(delta: float) -> void:
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	combo_window = maxf(0.0, combo_window - delta)
-	hunger_lock = maxf(0.0, hunger_lock - delta)
-	overflow_power = maxf(0.0, overflow_power - delta)
+	god_stomach.update(delta)
 	if mode == RunMode.FIELD and room_index == rooms.size() - 1:
 		boss_expose_timer -= delta
 		if boss_expose_timer <= 0.0:
@@ -305,7 +281,7 @@ func _try_player_attack() -> void:
 	combo_step = 1 if combo_window <= 0.0 else (combo_step % 3) + 1
 	combo_window = 0.72
 
-	var damage := BASE_DAMAGE + (8 if combo_step == 3 else 0) + (12 if overflow_power > 0.0 else 0)
+	var damage := BASE_DAMAGE + (8 if combo_step == 3 else 0) + god_stomach.attack_bonus()
 	var slash_center := player_position + facing * 42.0
 	slashes.append({"pos": slash_center, "dir": facing, "timer": 0.16, "combo": combo_step})
 
@@ -345,19 +321,15 @@ func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
 
 func _on_enemy_killed(kind: String, enemy_name: String) -> void:
 	_emit_text_effect(player_position + Vector2(0.0, -34.0), "胃囊回响", Color(0.70, 0.92, 0.84))
-	if hunger_lock <= 0.0:
-		var heal := 10 if kind == "barn_king" else 8
-		var old_hp := player_hp
-		player_hp = mini(PLAYER_MAX_HP, player_hp + heal)
-		if old_hp + heal > PLAYER_MAX_HP:
-			overflow_power = 4.0
-			_emit_text_effect(player_position + Vector2(0.0, -58.0), "溢血转刃", Color(0.95, 0.50, 0.45))
-	else:
+	var reward: Dictionary = god_stomach.apply_kill_reward(kind, player_hp, PLAYER_MAX_HP)
+	player_hp = int(reward["hp"])
+	if bool(reward["locked"]):
 		_emit_text_effect(player_position + Vector2(0.0, -58.0), "饥饿惩罚", Color(0.65, 0.55, 0.48))
+	elif bool(reward["overflow"]):
+		_emit_text_effect(player_position + Vector2(0.0, -58.0), "溢血转刃", Color(0.95, 0.50, 0.45))
 
 	if kind == "barn_king":
-		has_god_stomach = true
-		memory_shards += 1
+		god_stomach.absorb_boss_memory()
 		mode = RunMode.COMPLETE
 		dialogue_label.text = "记忆：谷仓王剖开自己，把胃交给土地。他以为只要自己足够饥饿，人民就不用再饿。"
 	else:
@@ -486,7 +458,7 @@ func _player_inside_hazard() -> bool:
 
 func _take_player_damage(amount: int, source: String) -> void:
 	player_hp = maxi(0, player_hp - amount)
-	hunger_lock = 2.2
+	god_stomach.close_from_damage()
 	_emit_text_effect(player_position + Vector2(0.0, -42.0), "-" + str(amount), Color(1.0, 0.34, 0.30))
 	dialogue_label.text = "受击：" + source + " 让神之胃囊短暂闭合，击杀回血暂停。"
 	if player_hp <= 0:
@@ -524,21 +496,18 @@ func _check_room_progress() -> void:
 		if room_index < rooms.size() - 1:
 			if interact_buffered:
 				_load_room(room_index + 1)
-		elif not has_god_stomach:
-			has_god_stomach = true
+		elif not god_stomach.has_relic:
+			god_stomach.has_relic = true
 			mode = RunMode.COMPLETE
 
 
 func _start_run() -> void:
 	mode = RunMode.FIELD
-	has_god_stomach = false
+	god_stomach.reset_for_run()
 	player_hp = PLAYER_MAX_HP
 	player_position = Vector2(640.0, 500.0)
 	player_velocity = Vector2.ZERO
 	facing = Vector2.UP
-	hunger_lock = 0.0
-	overflow_power = 0.0
-	memory_shards = 0
 	_load_room(0)
 
 
@@ -574,6 +543,7 @@ func _return_to_sanctum(text: String) -> void:
 	player_hp = PLAYER_MAX_HP
 	player_position = Vector2(640.0, 410.0)
 	player_velocity = Vector2.ZERO
+	god_stomach.reset_for_sanctum()
 	dialogue_label.text = text
 
 
@@ -604,10 +574,8 @@ func _update_ui() -> void:
 			objective_label.text = "神之胃囊已获得：按 E 回圣匣"
 			prompt_label.text = INTERACT_HINT
 
-	var lock_text := "闭合 %.1fs" % hunger_lock if hunger_lock > 0.0 else "可吞噬"
-	var buff_text := " | 溢血刃 %.1fs" % overflow_power if overflow_power > 0.0 else ""
-	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_hp, PLAYER_MAX_HP, lock_text, buff_text]
-	relic_label.text = "残骸：神之胃囊" + (" 已归档" if has_god_stomach else " 试用中") + " | 记忆晶片 " + str(memory_shards)
+	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_hp, PLAYER_MAX_HP, god_stomach.status_text(), god_stomach.buff_text()]
+	relic_label.text = "残骸：神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + " | 记忆晶片 " + str(god_stomach.memory_shards)
 
 
 func _draw_sanctum() -> void:
@@ -653,7 +621,7 @@ func _draw_complete() -> void:
 
 func _draw_player() -> void:
 	var body_color := Color(0.82, 0.86, 0.82)
-	var stomach_color := Color(0.64, 0.08, 0.08) if has_god_stomach or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
+	var stomach_color := Color(0.64, 0.08, 0.08) if god_stomach.has_relic or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
 	draw_circle(player_position, PLAYER_RADIUS, body_color)
 	draw_circle(player_position + facing * 8.0, 5.0, Color(0.12, 0.14, 0.15))
 	draw_circle(player_position + Vector2(0.0, 5.0), 6.0, stomach_color)
@@ -715,6 +683,6 @@ func _draw_relic_slots(origin: Vector2) -> void:
 	for i in 7:
 		var pos := origin + Vector2(float(i) * 28.0, 0.0)
 		var color := Color(0.55, 0.58, 0.55, 0.65)
-		if i == 0 and (has_god_stomach or mode == RunMode.FIELD):
+		if i == 0 and (god_stomach.has_relic or mode == RunMode.FIELD):
 			color = Color(0.76, 0.14, 0.12, 0.95)
 		draw_circle(pos, 10.0, color)

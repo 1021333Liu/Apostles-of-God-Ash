@@ -34,6 +34,22 @@
 
 ## 2026-06-01
 
+### 核心战斗：抽出胃囊系统和战斗数据工厂
+
+- 负责人：刘秉昂 / Codex
+- 改动：
+  - 新增 `scripts/systems/god_stomach_relic.gd`，集中管理神之胃囊的击杀回血、受击闭合、溢血加伤和记忆晶片。
+  - 新增 `scripts/systems/combat_data_factory.gd`，集中生成敌人与危险区数据。
+  - 更新 `scripts/main.gd`，让主脚本只调度核心流程，不再直接维护胃囊计时和战斗数据模板。
+- 原因：
+  - 我们的 `feature/core-combat` 分支要先把战斗核心从单文件原型里拆出来，后续才能继续拆 `Player`、敌人、Boss 和房间控制器。
+- 影响范围：
+  - 核心战斗、神之胃囊残骸奖励、敌人/危险区生成入口。
+- 验证：
+  - 已用 Godot 4.6.3 启动 `res://scenes/main.tscn`，无错误输出。
+- 后续：
+  - 继续拆分 `Player`、`Enemy`、`BarnKing`、`RoomController`，但每次只拆一个可验证边界。
+
 ### 协作交接：新增文案与关卡 HUD 任务说明
 
 - 负责人：刘秉昂 / Codex
