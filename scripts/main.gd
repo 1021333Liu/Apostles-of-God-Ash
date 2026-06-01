@@ -6,6 +6,7 @@ const GOD_STOMACH_RELIC_SCRIPT := preload("res://scripts/systems/god_stomach_rel
 const COMBAT_DATA_FACTORY_SCRIPT := preload("res://scripts/systems/combat_data_factory.gd")
 const PlayerRuntimeScript := preload("res://scripts/systems/player_runtime.gd")
 const EnemyRuntimeScript := preload("res://scripts/systems/enemy_runtime.gd")
+const AttackRuntimeScript := preload("res://scripts/systems/attack_runtime.gd")
 
 const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
@@ -13,22 +14,17 @@ const PLAYER_MAX_HP: int = 100
 const PLAYER_SPEED: float = 270.0
 const PLAYER_RADIUS: float = 17.0
 const BASE_DAMAGE: int = 18
-const SLASH_RANGE: float = 78.0
-const SLASH_HALF_ANGLE: float = 0.72
-const ATTACK_COOLDOWN: float = 0.28
 const INTERACT_HINT: String = "E 进入 / 继续"
 
 var mode: RunMode = RunMode.SANCTUM
 var player_runtime: PlayerRuntimeScript = PlayerRuntimeScript.new()
-var attack_cooldown: float = 0.0
-var combo_step: int = 0
-var combo_window: float = 0.0
 var attack_buffered: bool = false
 var interact_buffered: bool = false
 var death_count: int = 0
 var last_death_note: String = ""
 var god_stomach := GOD_STOMACH_RELIC_SCRIPT.new()
 var enemy_runtime: EnemyRuntimeScript = EnemyRuntimeScript.new()
+var attack_runtime: AttackRuntimeScript = AttackRuntimeScript.new()
 
 var room_index: int = -1
 var room_clock: float = 0.0
@@ -249,8 +245,7 @@ func _make_label(parent: Node, node_name: String, pos: Vector2, size: Vector2, f
 
 
 func _update_timers(delta: float) -> void:
-	attack_cooldown = maxf(0.0, attack_cooldown - delta)
-	combo_window = maxf(0.0, combo_window - delta)
+	attack_runtime.update(delta)
 	god_stomach.update(delta)
 	if mode == RunMode.FIELD and room_index == rooms.size() - 1:
 		boss_expose_timer -= delta
@@ -265,30 +260,33 @@ func _update_player_movement(delta: float, bounds: Rect2) -> void:
 
 
 func _try_player_attack() -> void:
-	if not attack_buffered or attack_cooldown > 0.0:
+	var attack: Dictionary = attack_runtime.try_start(
+		attack_buffered,
+		player_runtime.position,
+		player_runtime.facing,
+		BASE_DAMAGE,
+		god_stomach.attack_bonus()
+	)
+	if attack.is_empty():
 		return
-	attack_cooldown = ATTACK_COOLDOWN
-	combo_step = 1 if combo_window <= 0.0 else (combo_step % 3) + 1
-	combo_window = 0.72
 
-	var damage := BASE_DAMAGE + (8 if combo_step == 3 else 0) + god_stomach.attack_bonus()
-	var slash_center: Vector2 = player_runtime.position + player_runtime.facing * 42.0
-	slashes.append({"pos": slash_center, "dir": player_runtime.facing, "timer": 0.16, "combo": combo_step})
+	player_runtime.apply_impulse(attack["lunge"])
+	slashes.append(attack["slash"])
 
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy: Dictionary = enemies[i]
 		var enemy_pos: Vector2 = enemy["pos"]
-		var to_enemy := enemy_pos - player_runtime.position
-		if to_enemy.length() > SLASH_RANGE + float(enemy["radius"]):
+		var to_enemy := enemy_pos - (attack["origin"] as Vector2)
+		if to_enemy.length() > float(attack["range"]) + float(enemy["radius"]):
 			continue
-		var angle := absf(player_runtime.facing.angle_to(to_enemy.normalized()))
-		if angle > SLASH_HALF_ANGLE and to_enemy.length() > 34.0:
+		var angle := absf((attack["dir"] as Vector2).angle_to(to_enemy.normalized()))
+		if angle > float(attack["half_angle"]) and to_enemy.length() > 34.0:
 			continue
-		var final_damage := damage
+		var final_damage := int(attack["damage"])
 		if String(enemy["kind"]) == "barn_king" and boss_weak_exposed:
 			final_damage += 16
 			_emit_text_effect(enemy_pos + Vector2(0.0, -58.0), "胃囊暴露", Color(0.95, 0.42, 0.36))
-		_damage_enemy(i, final_damage, player_runtime.facing * 28.0)
+		_damage_enemy(i, final_damage, (attack["dir"] as Vector2) * float(attack["knockback"]))
 
 
 func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
@@ -460,6 +458,7 @@ func _check_room_progress() -> void:
 func _start_run() -> void:
 	mode = RunMode.FIELD
 	god_stomach.reset_for_run()
+	attack_runtime.reset()
 	player_runtime.reset_for_run(Vector2(640.0, 500.0), Vector2.UP, PLAYER_MAX_HP)
 	_load_room(0)
 
@@ -493,6 +492,7 @@ func _return_to_sanctum(text: String) -> void:
 	hazards.clear()
 	slashes.clear()
 	effects.clear()
+	attack_runtime.reset()
 	player_runtime.reset_for_sanctum(Vector2(640.0, 410.0), PLAYER_MAX_HP)
 	god_stomach.reset_for_sanctum()
 	dialogue_label.text = text
@@ -604,8 +604,9 @@ func _draw_enemy(enemy: Dictionary) -> void:
 func _draw_slash(slash: Dictionary) -> void:
 	var pos: Vector2 = slash["pos"]
 	var dir: Vector2 = slash["dir"]
-	var width := 5.0 + float(int(slash["combo"])) * 1.5
-	draw_arc(pos, 42.0, dir.angle() - 0.9, dir.angle() + 0.9, 24, Color(0.90, 0.88, 0.76, 0.88), width)
+	var width := float(slash.get("width", 5.0 + float(int(slash["combo"])) * 1.5))
+	var arc_radius := float(slash.get("arc_radius", 42.0))
+	draw_arc(pos, arc_radius, dir.angle() - 0.9, dir.angle() + 0.9, 24, Color(0.90, 0.88, 0.76, 0.88), width)
 
 
 func _draw_text_effect(effect: Dictionary) -> void:
