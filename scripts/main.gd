@@ -32,6 +32,11 @@ var room_cleared: bool = false
 var boss_phase: int = 1
 var boss_expose_timer: float = 2.5
 var boss_weak_exposed: bool = false
+var sample_record_text: String = ""
+var sample_record_timer: float = 0.0
+var dossier_text: String = ""
+var dossier_timer: float = 0.0
+var boss_rite_timer: float = 0.0
 
 var rooms: Array[Dictionary] = []
 var enemies: Array[Dictionary] = []
@@ -42,7 +47,12 @@ var effects: Array[Dictionary] = []
 var room_label: Label
 var hp_label: Label
 var relic_label: Label
+var organ_label: Label
 var objective_label: Label
+var dossier_label: Label
+var sample_label: Label
+var archive_label: Label
+var boss_rite_label: Label
 var dialogue_label: Label
 var prompt_label: Label
 
@@ -133,6 +143,7 @@ func _build_rooms() -> void:
 			"id": "field_gate",
 			"title": "低语田野入口",
 			"tagline": "第一块土地还在判断你是不是粮食。",
+			"dossier": "任务档案 01 | 低语田野入口\n异常：空腹者会追逐活体热源。\n建议：用三段斩击采样，观察胃囊吞噬反应。",
 			"palette": Color(0.22, 0.18, 0.12),
 			"enemies": [
 				_enemy_data("empty", Vector2(470.0, 305.0)),
@@ -144,6 +155,7 @@ func _build_rooms() -> void:
 			"id": "blood_wheat",
 			"title": "血肉麦田",
 			"tagline": "麦穗有牙。别把停顿交给土地。",
+			"dossier": "任务档案 02 | 血肉麦田\n异常：农夫会把饥饿种到你前方。\n建议：看见淡红预警先离开，别把脚交给土地。",
 			"palette": Color(0.26, 0.12, 0.10),
 			"enemies": [
 				_enemy_data("empty", Vector2(390.0, 245.0)),
@@ -159,6 +171,7 @@ func _build_rooms() -> void:
 			"id": "gut_canal",
 			"title": "肠道灌溉渠",
 			"tagline": "水渠不是水渠，是谷仓还没合拢的喉咙。",
+			"dossier": "任务档案 03 | 肠道灌溉渠\n异常：固定麦脉会拖慢容器移动。\n建议：贴边绕行，优先处理远处农夫。",
 			"palette": Color(0.19, 0.10, 0.12),
 			"enemies": [
 				_enemy_data("farmer", Vector2(420.0, 270.0)),
@@ -175,6 +188,7 @@ func _build_rooms() -> void:
 			"id": "hungry_barn",
 			"title": "饥饿谷仓",
 			"tagline": "稻草人守着粮仓，也守着一场主动献祭。",
+			"dossier": "任务档案 04 | 饥饿谷仓\n异常：稻草人会展开麦浪封路。\n建议：等麦浪落空后近身，不要在场地中央贪刀。",
 			"palette": Color(0.24, 0.13, 0.08),
 			"enemies": [
 				_enemy_data("scarecrow", Vector2(645.0, 320.0)),
@@ -189,6 +203,7 @@ func _build_rooms() -> void:
 			"id": "barn_king",
 			"title": "谷仓王胃室",
 			"tagline": "他曾经想吃掉饥荒。后来他只记得吃。",
+			"dossier": "任务档案 05 | 谷仓王胃室\n异常：王的胃囊会周期性暴露。\n建议：红核外翻时进攻，样本伤害会被放大。",
 			"palette": Color(0.15, 0.07, 0.07),
 			"enemies": [
 				_enemy_data("barn_king", Vector2(650.0, 300.0))
@@ -219,8 +234,22 @@ func _build_ui() -> void:
 	room_label = _make_label(root, "RoomLabel", Vector2(28.0, 20.0), Vector2(520.0, 38.0), 24, Color(0.93, 0.86, 0.76))
 	hp_label = _make_label(root, "HPLabel", Vector2(28.0, 62.0), Vector2(430.0, 30.0), 19, Color(0.90, 0.72, 0.66))
 	relic_label = _make_label(root, "RelicLabel", Vector2(28.0, 94.0), Vector2(520.0, 30.0), 17, Color(0.70, 0.86, 0.86))
+	organ_label = _make_label(root, "OrganLabel", Vector2(28.0, 126.0), Vector2(520.0, 50.0), 17, Color(0.86, 0.70, 0.70))
+	organ_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	objective_label = _make_label(root, "ObjectiveLabel", Vector2(760.0, 20.0), Vector2(480.0, 54.0), 18, Color(0.88, 0.82, 0.68))
 	objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	dossier_label = _make_label(root, "DossierLabel", Vector2(760.0, 82.0), Vector2(480.0, 104.0), 16, Color(0.76, 0.85, 0.78))
+	dossier_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dossier_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	sample_label = _make_label(root, "SampleLabel", Vector2(760.0, 492.0), Vector2(460.0, 88.0), 16, Color(0.90, 0.78, 0.68))
+	sample_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sample_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	archive_label = _make_label(root, "ArchiveLabel", Vector2(384.0, 136.0), Vector2(520.0, 90.0), 17, Color(0.74, 0.82, 0.78))
+	archive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	archive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_rite_label = _make_label(root, "BossRiteLabel", Vector2(390.0, 164.0), Vector2(500.0, 66.0), 22, Color(1.0, 0.34, 0.28))
+	boss_rite_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	boss_rite_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dialogue_label = _make_label(root, "DialogueLabel", Vector2(110.0, 606.0), Vector2(1060.0, 70.0), 20, Color(0.86, 0.83, 0.78))
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -247,11 +276,16 @@ func _make_label(parent: Node, node_name: String, pos: Vector2, size: Vector2, f
 func _update_timers(delta: float) -> void:
 	attack_runtime.update(delta)
 	god_stomach.update(delta)
+	sample_record_timer = maxf(0.0, sample_record_timer - delta)
+	dossier_timer = maxf(0.0, dossier_timer - delta)
+	boss_rite_timer = maxf(0.0, boss_rite_timer - delta)
 	if mode == RunMode.FIELD and room_index == rooms.size() - 1:
 		boss_expose_timer -= delta
 		if boss_expose_timer <= 0.0:
 			boss_weak_exposed = not boss_weak_exposed
 			boss_expose_timer = 1.25 if boss_weak_exposed else 3.0
+			if boss_weak_exposed:
+				boss_rite_timer = 1.25
 
 
 func _update_player_movement(delta: float, bounds: Rect2) -> void:
@@ -304,13 +338,14 @@ func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
 	var killed_kind := String(enemy["kind"])
 	var killed_name := String(enemy["name"])
 	enemies.remove_at(index)
-	_on_enemy_killed(killed_kind, killed_name)
+	_on_enemy_killed(killed_kind, killed_name, amount)
 
 
-func _on_enemy_killed(kind: String, enemy_name: String) -> void:
+func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> void:
 	_emit_text_effect(player_runtime.position + Vector2(0.0, -34.0), "胃囊回响", Color(0.70, 0.92, 0.84))
 	var reward: Dictionary = god_stomach.apply_kill_reward(kind, player_runtime.hp, PLAYER_MAX_HP)
 	player_runtime.apply_heal(int(reward["hp"]), PLAYER_MAX_HP)
+	_show_sample_record(kind, enemy_name, int(reward["healed"]), bool(reward["locked"]), bool(reward["overflow"]), final_damage)
 	if bool(reward["locked"]):
 		_emit_text_effect(player_runtime.position + Vector2(0.0, -58.0), "饥饿惩罚", Color(0.65, 0.55, 0.48))
 	elif bool(reward["overflow"]):
@@ -319,9 +354,32 @@ func _on_enemy_killed(kind: String, enemy_name: String) -> void:
 	if kind == "barn_king":
 		god_stomach.absorb_boss_memory()
 		mode = RunMode.COMPLETE
+		boss_rite_timer = 0.0
 		dialogue_label.text = "记忆：谷仓王剖开自己，把胃交给土地。他以为只要自己足够饥饿，人民就不用再饿。"
 	else:
 		dialogue_label.text = "采样记录：" + enemy_name + " 倒下后，土地短暂安静。你胸口的胃纹更深了一点。"
+
+
+func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: bool, overflow: bool, final_damage: int) -> void:
+	var reaction := "吞噬成功"
+	if locked:
+		reaction = "胃囊闭合，样本拒收"
+	elif overflow:
+		reaction = "血量溢出，转写为刃"
+
+	var shard_note := "记忆碎片：未归档"
+	match kind:
+		"empty":
+			shard_note = "记忆碎片：空腹、追逐、土腥味"
+		"farmer":
+			shard_note = "记忆碎片：播种、欠收、牙齿麦穗"
+		"scarecrow":
+			shard_note = "记忆碎片：守望、献祭、麦浪"
+		"barn_king":
+			shard_note = "记忆碎片：王权、饥荒、胃室"
+
+	sample_record_text = "采样记录 | " + enemy_name + "\n" + shard_note + "\n胃囊反应：" + reaction + " | 回收 HP +" + str(healed) + " | 末击 " + str(final_damage)
+	sample_record_timer = 4.0
 
 
 func _update_enemies(delta: float) -> void:
@@ -355,6 +413,7 @@ func _update_barn_king(enemy: Dictionary, delta: float) -> void:
 		var phase_text := "谷仓王撕开胃室。" if boss_phase == 2 else "谷仓王露出神之胃囊。"
 		dialogue_label.text = phase_text
 		_emit_text_effect(pos + Vector2(0.0, -70.0), "阶段 " + str(boss_phase), Color(1.0, 0.62, 0.42))
+		boss_rite_timer = 1.35
 
 	_handle_enemy_event(enemy_runtime.update_barn_king(enemy, delta, player_runtime.position, boss_phase))
 
@@ -433,7 +492,10 @@ func _take_player_damage(amount: int, source: String) -> void:
 	if player_runtime.hp <= 0:
 		death_count += 1
 		last_death_note = source
+		var archive_text := "回收失败样本 #" + str(death_count) + "\n死因：" + source + "\n土地学习：你的停顿、贪刀和路径选择已被低语田野记录。"
 		_return_to_sanctum("收藏家：第 " + str(death_count) + " 次回收。死因：" + source + "。田野学会了你的停顿。")
+		dossier_text = archive_text
+		dossier_timer = 7.0
 
 
 func _update_slashes(delta: float) -> void:
@@ -497,6 +559,8 @@ func _load_room(index: int) -> void:
 	for hazard: Dictionary in room["hazards"]:
 		hazards.append(hazard.duplicate(true))
 	dialogue_label.text = String(room["tagline"])
+	dossier_text = String(room["dossier"])
+	dossier_timer = 6.0
 
 
 func _return_to_sanctum(text: String) -> void:
@@ -510,6 +574,7 @@ func _return_to_sanctum(text: String) -> void:
 	attack_runtime.reset()
 	player_runtime.reset_for_sanctum(Vector2(640.0, 410.0), PLAYER_MAX_HP)
 	god_stomach.reset_for_sanctum()
+	boss_rite_timer = 0.0
 	dialogue_label.text = text
 
 
@@ -519,6 +584,8 @@ func _update_ui() -> void:
 			room_label.text = "无声圣匣"
 			objective_label.text = "目标：按 E 进入低语田野"
 			prompt_label.text = INTERACT_HINT
+			dossier_label.text = ""
+			archive_label.text = dossier_text if dossier_timer > 0.0 else _sanctum_archive_text()
 		RunMode.FIELD:
 			var room: Dictionary = rooms[room_index]
 			room_label.text = String(room["title"])
@@ -528,13 +595,45 @@ func _update_ui() -> void:
 			else:
 				objective_label.text = "清除敌人：" + str(enemies.size()) + " 个残响仍在活动"
 				prompt_label.text = "J / Space 近战"
+			dossier_label.text = dossier_text if dossier_timer > 0.0 else _field_dossier_summary(room)
+			archive_label.text = ""
 		RunMode.COMPLETE:
 			room_label.text = "回收完成"
 			objective_label.text = "神之胃囊已获得：按 E 回圣匣"
 			prompt_label.text = INTERACT_HINT
+			dossier_label.text = ""
+			archive_label.text = "残骸归档：神之胃囊\n状态：可转入圣匣收藏\n提示：按 E 回收样本"
 
 	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_runtime.hp, PLAYER_MAX_HP, god_stomach.status_text(), god_stomach.buff_text()]
 	relic_label.text = "残骸：神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + " | 记忆晶片 " + str(god_stomach.memory_shards)
+	organ_label.text = _organ_state_text()
+	sample_label.text = sample_record_text if sample_record_timer > 0.0 else ""
+	boss_rite_label.text = "胃囊暴露\n弱点窗口：样本伤害 +16" if boss_rite_timer > 0.0 and mode == RunMode.FIELD else ""
+
+
+func _organ_state_text() -> String:
+	var state := "饥饿"
+	var detail := "击杀会被吞入胃囊，转成生命。"
+	if god_stomach.hunger_lock > 0.0:
+		state = "闭合"
+		detail = "受击后胃囊拒收样本 %.1fs。" % god_stomach.hunger_lock
+	elif god_stomach.overflow_power > 0.0:
+		state = "溢血"
+		detail = "过量生命转写为刃，攻击强化 %.1fs。" % god_stomach.overflow_power
+	elif god_stomach.has_relic:
+		state = "归档"
+		detail = "圣匣已记录此残骸，可用于后续调谐。"
+	return "器官状态：" + state + "\n" + detail
+
+
+func _field_dossier_summary(room: Dictionary) -> String:
+	return "任务档案在线 | " + String(room["title"]) + "\n异常样本：" + str(enemies.size()) + " | 地表伤口：" + str(hazards.size())
+
+
+func _sanctum_archive_text() -> String:
+	if death_count <= 0:
+		return "圣匣档案：暂无失败样本\n建议：进入田野，采回第一份胃囊反应。"
+	return "圣匣档案：失败样本 " + str(death_count) + " 份\n最近死因：" + last_death_note + "\n土地学习仍在继续。"
 
 
 func _draw_sanctum() -> void:
@@ -552,6 +651,8 @@ func _draw_sanctum() -> void:
 func _draw_field_room() -> void:
 	var room: Dictionary = rooms[room_index]
 	draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), room["palette"])
+	if boss_weak_exposed and room_index == rooms.size() - 1:
+		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.42, 0.02, 0.02, 0.18))
 	draw_rect(ARENA.grow(18.0), Color(0.055, 0.045, 0.040))
 	draw_rect(ARENA, Color(0.18, 0.12, 0.08))
 	_draw_field_marks()
@@ -587,6 +688,10 @@ func _draw_player() -> void:
 	draw_circle(player_runtime.position, PLAYER_RADIUS, body_color)
 	draw_circle(player_runtime.position + player_runtime.facing * 8.0, 5.0, Color(0.12, 0.14, 0.15))
 	draw_circle(player_runtime.position + Vector2(0.0, 5.0), 6.0, stomach_color)
+	if god_stomach.hunger_lock > 0.0:
+		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 10.0, 0.0, TAU, 24, Color(0.18, 0.18, 0.18, 0.92), 2.0)
+	elif god_stomach.overflow_power > 0.0:
+		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 12.0, -0.4, TAU - 0.4, 32, Color(1.0, 0.26, 0.20, 0.86), 3.0)
 	draw_line(player_runtime.position, player_runtime.position + player_runtime.facing * 28.0, Color(0.76, 0.78, 0.75), 4.0)
 
 
