@@ -32,6 +32,58 @@
 - 后续：
 ```
 
+## 2026-06-02
+
+### 文案交付：孙慧完成低语田野第一版文本池
+
+- 负责人：孙慧 / 刘秉昂 / Codex
+- 改动：
+  - 将孙慧交付的低语田野世界观、收藏家开场、死亡回收、敌人图鉴、Boss 台词、神之胃囊记忆和静默者晶片文本整理进 `docs/planning/03_NARRATIVE_COPY.md`。
+  - 在 core 分支中将其中一部分短文本接入 Demo 的开场、房间档案、死亡回收和 Boss 阶段反馈。
+- 原因：
+  - 文案不应只停留在外部聊天或临时文件里，需要进入仓库成为后续 HUD、图鉴和战斗反馈的正式依据。
+- 影响范围：
+  - 文案池、房间进入提示、死亡反馈、Boss 阶段提示和后续 UI 文案接入。
+- 验证：
+  - 文案已进入仓库文档，并已在 core 分支通过 Godot 主场景启动检查。
+- 后续：
+  - 后续把敌人图鉴、静默者晶片和胃囊记忆进一步做成正式档案 UI。
+
+### 协作集成：吸收金荣俊分支的安全资料和 HUD 占位资产
+
+- 负责人：金荣俊 / 刘秉昂 / Codex
+- 改动：
+  - 从 `feature/level-hud` 带入 `Communication.md`，记录金荣俊的试玩结论、P0-P2 优先级、待验证事项和素材许可证规则。
+  - 带入 `assets/sprites/ui/` 下 5 个原创 SVG 像素占位图标：生命、胃囊开启、胃囊闭合、溢血、记忆晶片。
+  - 带入 `docs/planning/11_JIN_RONGJUN_PLAYTEST_CHECKLIST.md`、`12_JIN_RONGJUN_PLAYTEST_NOTES.md`、`13_PIXEL_ART_ASSET_REQUEST.md`、`14_THIRD_PARTY_ASSET_SOURCES.md`。
+  - 更新 `docs/planning/00_PRODUCTION_INDEX.md`，让新增协作文档有统一入口。
+- 原因：
+  - 金荣俊分支的关卡/HUD资料和素材是有效成果，但其 `scripts/main.gd` 与 core 分支的系统拆分冲突，必须先吸收低冲突资料，避免直接覆盖核心战斗结构。
+- 影响范围：
+  - 团队沟通、HUD 占位资产、试玩记录、美术资产需求、素材来源管理。
+- 验证：
+  - 已检查 `Communication.md` 内容，确认其记录了 HUD、移动、危险区前摇、清房喘息和素材规则。
+- 后续：
+  - 在 `feature/integration-vertical-slice` 中手工移植金荣俊分支的 HUD 像素化、危险区前摇和清房喘息逻辑。
+
+### 协作流程：明确 core、level-hud 与 main 的集成边界
+
+- 负责人：刘秉昂 / Codex
+- 改动：
+  - 更新 `docs/planning/07_TEAM_GIT_WORKFLOW.md`，明确 `main` 只接收稳定集成结果。
+  - 明确 `feature/core-combat` 由刘秉昂 / Codex 维护核心战斗和系统拆分。
+  - 明确 `feature/level-hud` 由金荣俊 / Codex 维护关卡、HUD、美术占位和试玩反馈。
+  - 新增推荐集成分支 `feature/integration-vertical-slice`，用于手工整合两个功能分支。
+  - 明确 `scripts/main.gd` 不能用覆盖方式解决冲突，必须保留 core 系统拆分并手工移植 level-hud 的表现逻辑。
+- 原因：
+  - 两个技术分支都改动了 `scripts/main.gd`，直接合并会产生冲突并可能删除 `scripts/systems/` 下的核心运行时脚本。
+- 影响范围：
+  - Git 分支策略、团队协作规则、后续 main 集成流程。
+- 验证：
+  - 已对比 `feature/core-combat` 与 `origin/feature/level-hud` 的差异，确认冲突集中在 `scripts/main.gd` 和 `CHANGELOG.md`。
+- 后续：
+  - 下一次进入 main 前，先创建 `feature/integration-vertical-slice` 做可运行集成版。
+
 ## 2026-06-01
 
 ### 文案更新：整合低语田野第 1 版文本

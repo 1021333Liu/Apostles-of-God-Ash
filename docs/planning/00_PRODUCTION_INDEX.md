@@ -18,9 +18,16 @@
 | `04_ITEMS_RELICS.md` | 系统策划、程序、数值 | 道具、残骸、武器和后续扩展规则 |
 | `05_BALANCE_TABLES.md` | 数值、程序、测试 | 玩家、敌人、Boss、房间、奖励首版数值 |
 | `06_TASK_BREAKDOWN.md` | 全组 | 按里程碑拆任务、验收标准和优先级 |
+| `07_TEAM_GIT_WORKFLOW.md` | 程序、协作负责人 | 三人 Git 分支、文件边界和集成规则 |
 | `08_NARRATIVE_HANDOFF_PROMPT.md` | 文案、文案 Codex | 文案同学第一批文本交付说明 |
 | `09_LEVEL_HUD_HANDOFF.md` | 关卡/HUD 技术 | 关卡表现同学的占位资产、HUD 和反馈任务 |
 | `10_JIN_RONGJUN_LEVEL_HUD_TASK_CARD.md` | 金荣俊 | 拉取 `feature/level-hud` 后优先阅读的个人任务卡 |
+| `11_JIN_RONGJUN_PLAYTEST_CHECKLIST.md` | 金荣俊、测试 | 关卡/HUD/表现试玩检查清单 |
+| `12_JIN_RONGJUN_PLAYTEST_NOTES.md` | 全组 | 试玩问题记录和后续改动依据 |
+| `13_PIXEL_ART_ASSET_REQUEST.md` | 美术、HUD | 像素占位和正式资产需求 |
+| `14_THIRD_PARTY_ASSET_SOURCES.md` | 美术、程序 | 第三方素材来源、许可证和接入规则 |
+
+根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 
 ## 当前版本形态
 

@@ -13,16 +13,25 @@
 主分支：
 
 - `main`：永远保持能打开、能运行。
+- 只接收已经验证过的稳定集成结果，不直接承接个人分支的大段实验改动。
 
 技术 A 分支：
 
 - `feature/core-combat`
 - 用于玩家、敌人、Boss、残骸系统、代码拆分。
+- 当前由刘秉昂 / Codex 维护，是核心战斗和系统拆分的主工作分支。
 
 技术 B 分支：
 
 - `feature/level-hud`
 - 用于房间、HUD、表现反馈、资产接入。
+- 当前由金荣俊 / Codex 维护，是关卡、HUD、美术占位和试玩反馈的主工作分支。
+
+集成分支：
+
+- `feature/integration-vertical-slice`
+- 用于把 `feature/core-combat` 和 `feature/level-hud` 的成果手工整合成可进 `main` 的评审版。
+- 不建议把 `feature/level-hud` 直接合并进 `feature/core-combat`，也不建议把任意个人分支直接合并进 `main`。
 
 临时修复：
 
@@ -72,9 +81,10 @@ git push
 - `scripts/player/`
 - `scripts/enemies/`
 - `scripts/boss/`
-- `scripts/systems/relic_system.gd`
+- `scripts/systems/`
 - `scenes/characters/`
 - `scenes/bosses/`
+- `scripts/main.gd` 中的玩家、敌人、Boss、胃囊、伤害、死亡和战斗节奏逻辑
 
 ### 技术 B 优先负责
 
@@ -83,6 +93,12 @@ git push
 - `assets/`
 - `scripts/ui/`
 - `scripts/levels/`
+- `Communication.md`
+- `docs/planning/11_JIN_RONGJUN_PLAYTEST_CHECKLIST.md`
+- `docs/planning/12_JIN_RONGJUN_PLAYTEST_NOTES.md`
+- `docs/planning/13_PIXEL_ART_ASSET_REQUEST.md`
+- `docs/planning/14_THIRD_PARTY_ASSET_SOURCES.md`
+- `scripts/main.gd` 中的 HUD 外观、危险区表现、房间提示和关卡可读性逻辑
 
 ### 需要先沟通再改
 
@@ -91,7 +107,45 @@ git push
 - `scripts/main.gd`
 - `docs/planning/05_BALANCE_TABLES.md`
 
-当前原型还集中在 `scripts/main.gd`，所以拆分前两位技术不要同时大改这个文件。先由技术 A 做结构拆分，技术 B 同期做关卡布局文档、HUD 草图和资产准备。
+当前原型还集中在 `scripts/main.gd`，所以两位技术如果都改了这个文件，最后必须手工集成。不能用“谁的版本覆盖谁的版本”的方式解决冲突。
+
+## 当前集成策略
+
+截至 2026-06-02，两个功能分支已经同时修改了 `scripts/main.gd`：
+
+- `feature/core-combat` 已经把胃囊、玩家运行时、敌人运行时、攻击运行时和战斗数据拆到 `scripts/systems/`。
+- `feature/level-hud` 已经推进 HUD 像素化、原创 SVG 图标、动态危险区前摇、房间清空喘息和试玩记录。
+
+因此当前策略是：
+
+1. `feature/core-combat` 可以先吸收 `feature/level-hud` 中低冲突的资料：`Communication.md`、`assets/sprites/ui/`、试玩文档、素材许可证文档。
+2. `feature/core-combat` 暂不直接吸收 `feature/level-hud` 的 `scripts/main.gd`，因为这会覆盖核心系统拆分。
+3. 后续创建 `feature/integration-vertical-slice`，以 `feature/core-combat` 为底，再手工移植金荣俊分支里 HUD、危险区预警、房间清空喘息和移动手感的有效逻辑。
+4. 移植完成后必须运行 Godot 主场景，并更新 `CHANGELOG.md`。
+5. 只有集成分支可稳定运行后，才合并进 `main`。
+
+## 金荣俊分支内容处理规则
+
+可以直接带入 core 或 main 的内容：
+
+- `Communication.md`
+- `assets/sprites/ui/*.svg`
+- `docs/planning/11_JIN_RONGJUN_PLAYTEST_CHECKLIST.md`
+- `docs/planning/12_JIN_RONGJUN_PLAYTEST_NOTES.md`
+- `docs/planning/13_PIXEL_ART_ASSET_REQUEST.md`
+- `docs/planning/14_THIRD_PARTY_ASSET_SOURCES.md`
+
+需要手工移植的内容：
+
+- `scripts/main.gd` 里的 HUD 像素化实现。
+- `scripts/main.gd` 里的类摇杆移动。
+- `scripts/main.gd` 里的农夫危险区前摇和清房喘息。
+
+移植原则：
+
+- 保留 `feature/core-combat` 的系统拆分。
+- 将金荣俊分支的表现逻辑拆进更明确的 HUD、关卡或危险区模块。
+- 不删除 `scripts/systems/` 下的核心运行时脚本。
 
 ## 文案交付方式
 
@@ -148,6 +202,24 @@ git push
 - `CHANGELOG.md` 已记录这次改动。
 - 不包含无关大文件。
 - 不覆盖别人正在做的文件。
+
+当前推荐合并路径：
+
+```bash
+git checkout feature/core-combat
+git pull
+git checkout -b feature/integration-vertical-slice
+git merge feature/core-combat
+git checkout origin/feature/level-hud -- Communication.md assets docs/planning/11_JIN_RONGJUN_PLAYTEST_CHECKLIST.md docs/planning/12_JIN_RONGJUN_PLAYTEST_NOTES.md docs/planning/13_PIXEL_ART_ASSET_REQUEST.md docs/planning/14_THIRD_PARTY_ASSET_SOURCES.md
+```
+
+然后手工移植 `feature/level-hud` 的 `scripts/main.gd` 有效逻辑。确认 Godot 主场景可运行后，再进入：
+
+```bash
+git checkout main
+git merge feature/integration-vertical-slice
+git push
+```
 
 ## 第一周建议节奏
 
