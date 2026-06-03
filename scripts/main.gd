@@ -78,7 +78,7 @@ func _ready() -> void:
 	_load_ui_textures()
 	_build_ui()
 	player_runtime.configure(Vector2(640.0, 420.0), Vector2.RIGHT, PLAYER_MAX_HP)
-	_return_to_sanctum("收藏家：容器醒了。先别谈救世，先确认你还能站稳。")
+	_return_to_sanctum("收藏家：你醒了。很好，这具身体还没有拒绝你。")
 	set_process(true)
 	set_physics_process(true)
 
@@ -112,7 +112,7 @@ func _physics_process(delta: float) -> void:
 		RunMode.COMPLETE:
 			_update_player_movement(delta, Rect2(Vector2(250.0, 170.0), Vector2(780.0, 360.0)))
 			if interact_buffered:
-				_return_to_sanctum("收藏家：胃囊已经归档。下一次，我们会知道它先吞掉敌人，还是先吞掉你。")
+				_return_to_sanctum("收藏家：神之胃囊已经归档。它不干净，但很适合活下去。")
 
 	attack_buffered = false
 	interact_buffered = false
@@ -174,7 +174,7 @@ func _build_rooms() -> void:
 		{
 			"id": "field_gate",
 			"title": "低语田野入口",
-			"tagline": "这里没有风。麦浪是从地下喘出来的。",
+			"tagline": "路边的牌子写着丰收，背面刻着名单。",
 			"dossier": "任务档案 01 | 低语田野入口\n异常：空腹者会追逐活体热源。\n建议：用三段斩击采样，观察胃囊吞噬反应。",
 			"palette": Color(0.22, 0.18, 0.12),
 			"enemies": [
@@ -186,7 +186,7 @@ func _build_rooms() -> void:
 		{
 			"id": "blood_wheat",
 			"title": "血肉麦田",
-			"tagline": "麦穗有牙。别把停顿交给土地。",
+			"tagline": "麦穗垂下来，像在等人低头。",
 			"dossier": "任务档案 02 | 血肉麦田\n异常：农夫会把饥饿种到你前方。\n建议：看见淡红预警先离开，别把脚交给土地。",
 			"palette": Color(0.26, 0.12, 0.10),
 			"enemies": [
@@ -202,7 +202,7 @@ func _build_rooms() -> void:
 		{
 			"id": "gut_canal",
 			"title": "肠道灌溉渠",
-			"tagline": "水声太厚了。那不是水在流。",
+			"tagline": "渠水很热，流过时会带走祷告。",
 			"dossier": "任务档案 03 | 肠道灌溉渠\n异常：固定麦脉会拖慢容器移动。\n建议：贴边绕行，优先处理远处农夫。",
 			"palette": Color(0.19, 0.10, 0.12),
 			"enemies": [
@@ -219,7 +219,7 @@ func _build_rooms() -> void:
 		{
 			"id": "hungry_barn",
 			"title": "饥饿谷仓",
-			"tagline": "门在咀嚼。它等的不是粮车。",
+			"tagline": "仓门半开着，里面没有粮声。",
 			"dossier": "任务档案 04 | 饥饿谷仓\n异常：稻草人会展开麦浪封路。\n建议：等麦浪落空后近身，不要在场地中央贪刀。",
 			"palette": Color(0.24, 0.13, 0.08),
 			"enemies": [
@@ -234,7 +234,7 @@ func _build_rooms() -> void:
 		{
 			"id": "barn_king",
 			"title": "谷仓王胃室",
-			"tagline": "所有祈祷最后都落进了这里。",
+			"tagline": "这里太满了，所以永远空着。",
 			"dossier": "任务档案 05 | 谷仓王胃室\n异常：王的胃囊会周期性暴露。\n建议：红核外翻时进攻，样本伤害会被放大。",
 			"palette": Color(0.15, 0.07, 0.07),
 			"enemies": [
@@ -526,7 +526,7 @@ func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> vo
 		god_stomach.absorb_boss_memory()
 		mode = RunMode.COMPLETE
 		boss_rite_timer = 0.0
-		dialogue_label.text = "记忆：谷仓王剖开自己，把胃交给土地。他以为只要自己足够饥饿，人民就不用再饿。"
+		dialogue_label.text = "记忆：谷仓王献出自己的胃，是为了让献祭到他为止。田地只安静了一夜。"
 	else:
 		dialogue_label.text = "采样记录：" + enemy_name + " 倒下后，土地短暂安静。你胸口的胃纹更深了一点。"
 
@@ -541,13 +541,13 @@ func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: 
 	var shard_note := "记忆碎片：未归档"
 	match kind:
 		"empty":
-			shard_note = "记忆碎片：空腹、追逐、土腥味"
+			shard_note = "记忆碎片：队伍末尾、空碗、田边剩粮"
 		"farmer":
-			shard_note = "记忆碎片：播种、欠收、牙齿麦穗"
+			shard_note = "记忆碎片：巡田、登记、哭完再干活"
 		"scarecrow":
-			shard_note = "记忆碎片：守望、献祭、麦浪"
+			shard_note = "记忆碎片：偷粮者衣服、旧命令、不是我"
 		"barn_king":
-			shard_note = "记忆碎片：王权、饥荒、胃室"
+			shard_note = "记忆碎片：开仓、献祭边界、谷仓王之胃"
 
 	sample_record_text = "采样记录 | " + enemy_name + "\n" + shard_note + "\n胃囊反应：" + reaction + " | 回收 HP +" + str(healed) + " | 末击 " + str(final_damage)
 	sample_record_timer = 4.0
@@ -822,20 +822,20 @@ func _sanctum_archive_text() -> String:
 
 func _death_recovery_line(source: String) -> String:
 	if death_count == 1:
-		return "收藏家：首次死亡回收完成。疼痛记录完整，容器损毁程度低于预期。"
+		return "收藏家：回来了。第一次死在田里的人，通常还会相信自己只是运气不好。"
 	match source:
 		"空腹者":
-			return "收藏家：空腹者没有吃饱的概念。你被它当成了一次短暂延迟。"
+			return "收藏家：它曾经站在队伍最后。最后的人最容易相信下一次会轮到自己。"
 		"饥民农夫":
-			return "收藏家：他们挥下农具时很平静。长期制度会把谋杀训练成劳动。"
+			return "收藏家：他们下手很稳。人只要重复得够久，什么事都像农活。"
 		"饥饿稻草人":
-			return "收藏家：它守的不是田，是一份旧命令。命令比人活得久。"
+			return "收藏家：那东西还在守田。守到田主死了，守到名字烂了。"
 		"咬人麦穗":
-			return "收藏家：灌溉渠接受了你。下次别把血留在会流动的地方。"
+			return "收藏家：你把血交给了渠。低语田野最会把一点点变成一整季。"
 		"谷仓王":
-			return "收藏家：谷仓王尝过你的频率。下一次，它会更快认出你。"
+			return "收藏家：他记住你了。不是记住脸，是记住你能喂养多少人。"
 		_:
-			return "收藏家：你正在学习这片田的节奏。它每次咀嚼，都比上次更熟练。"
+			return "收藏家：你开始听见差别了。哭声、命令、祈祷，它们不是同一种声音。"
 
 
 func _draw_sanctum() -> void:
