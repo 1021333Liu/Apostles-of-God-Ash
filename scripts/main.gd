@@ -15,6 +15,11 @@ const PLAYER_SPEED: float = 270.0
 const PLAYER_RADIUS: float = 17.0
 const BASE_DAMAGE: int = 18
 const INTERACT_HINT: String = "E 进入 / 继续"
+const HP_ICON_PATH: String = "res://assets/sprites/ui/ui_hp_heart.svg"
+const STOMACH_OPEN_ICON_PATH: String = "res://assets/sprites/ui/ui_stomach_open.svg"
+const STOMACH_CLOSED_ICON_PATH: String = "res://assets/sprites/ui/ui_stomach_closed.svg"
+const STOMACH_OVERFLOW_ICON_PATH: String = "res://assets/sprites/ui/ui_stomach_overflow.svg"
+const MEMORY_SHARD_ICON_PATH: String = "res://assets/sprites/ui/ui_memory_shard.svg"
 
 var mode: RunMode = RunMode.SANCTUM
 var player_runtime: PlayerRuntimeScript = PlayerRuntimeScript.new()
@@ -46,8 +51,18 @@ var effects: Array[Dictionary] = []
 
 var room_label: Label
 var hp_label: Label
+var hp_bar: ProgressBar
+var hp_icon: TextureRect
+var hp_icon_texture: Texture2D
 var relic_label: Label
 var organ_label: Label
+var stomach_bar: ProgressBar
+var stomach_icon: TextureRect
+var stomach_open_texture: Texture2D
+var stomach_closed_texture: Texture2D
+var stomach_overflow_texture: Texture2D
+var memory_shard_icon: TextureRect
+var memory_shard_texture: Texture2D
 var objective_label: Label
 var dossier_label: Label
 var sample_label: Label
@@ -60,6 +75,7 @@ var prompt_label: Label
 func _ready() -> void:
 	_setup_input()
 	_build_rooms()
+	_load_ui_textures()
 	_build_ui()
 	player_runtime.configure(Vector2(640.0, 420.0), Vector2.RIGHT, PLAYER_MAX_HP)
 	_return_to_sanctum("收藏家：容器醒了。先别谈救世，先确认你还能站稳。")
@@ -119,6 +135,10 @@ func _setup_input() -> void:
 	_ensure_key_action("move_right", KEY_D, KEY_RIGHT)
 	_ensure_key_action("move_up", KEY_W, KEY_UP)
 	_ensure_key_action("move_down", KEY_S, KEY_DOWN)
+	_ensure_joy_axis_action("move_left", JOY_AXIS_LEFT_X, -1.0)
+	_ensure_joy_axis_action("move_right", JOY_AXIS_LEFT_X, 1.0)
+	_ensure_joy_axis_action("move_up", JOY_AXIS_LEFT_Y, -1.0)
+	_ensure_joy_axis_action("move_down", JOY_AXIS_LEFT_Y, 1.0)
 	_ensure_key_action("attack", KEY_J, KEY_SPACE)
 	_ensure_key_action("interact", KEY_E, KEY_ENTER)
 
@@ -135,6 +155,18 @@ func _ensure_key_action(action_name: String, primary: Key, secondary: Key = KEY_
 		var secondary_event := InputEventKey.new()
 		secondary_event.physical_keycode = secondary
 		InputMap.action_add_event(action_name, secondary_event)
+
+
+func _ensure_joy_axis_action(action_name: String, axis: JoyAxis, axis_value: float) -> void:
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name)
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		if event is InputEventJoypadMotion and event.axis == axis and is_equal_approx(event.axis_value, axis_value):
+			return
+	var joy_event := InputEventJoypadMotion.new()
+	joy_event.axis = axis
+	joy_event.axis_value = axis_value
+	InputMap.action_add_event(action_name, joy_event)
 
 
 func _build_rooms() -> void:
@@ -231,17 +263,35 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(root)
 
-	room_label = _make_label(root, "RoomLabel", Vector2(28.0, 20.0), Vector2(520.0, 38.0), 24, Color(0.93, 0.86, 0.76))
-	hp_label = _make_label(root, "HPLabel", Vector2(28.0, 62.0), Vector2(430.0, 30.0), 19, Color(0.90, 0.72, 0.66))
-	relic_label = _make_label(root, "RelicLabel", Vector2(28.0, 94.0), Vector2(520.0, 30.0), 17, Color(0.70, 0.86, 0.86))
-	organ_label = _make_label(root, "OrganLabel", Vector2(28.0, 126.0), Vector2(520.0, 50.0), 17, Color(0.86, 0.70, 0.70))
+	_make_panel(root, Vector2(18.0, 14.0), Vector2(560.0, 174.0))
+	_make_panel(root, Vector2(746.0, 14.0), Vector2(516.0, 188.0))
+	_make_panel(root, Vector2(744.0, 482.0), Vector2(500.0, 112.0))
+	_make_panel(root, Vector2(94.0, 594.0), Vector2(1092.0, 92.0))
+	_make_panel_marks(root, Vector2(18.0, 14.0), Vector2(560.0, 174.0), Color(0.68, 0.13, 0.12))
+	_make_panel_marks(root, Vector2(746.0, 14.0), Vector2(516.0, 188.0), Color(0.66, 0.58, 0.42))
+	_make_panel_marks(root, Vector2(744.0, 482.0), Vector2(500.0, 112.0), Color(0.68, 0.13, 0.12))
+	_make_panel_marks(root, Vector2(94.0, 594.0), Vector2(1092.0, 92.0), Color(0.68, 0.13, 0.12))
+	_make_accent(root, Vector2(30.0, 28.0), Vector2(5.0, 146.0), Color(0.68, 0.13, 0.12))
+	_make_accent(root, Vector2(758.0, 26.0), Vector2(5.0, 164.0), Color(0.66, 0.58, 0.42))
+	_make_accent(root, Vector2(185.0, 68.0), Vector2(222.0, 18.0), Color(0.01, 0.008, 0.01, 0.88))
+	_make_accent(root, Vector2(185.0, 103.0), Vector2(222.0, 14.0), Color(0.01, 0.008, 0.01, 0.88))
+
+	room_label = _make_label(root, "RoomLabel", Vector2(48.0, 22.0), Vector2(500.0, 34.0), 24, Color(0.93, 0.86, 0.76))
+	hp_icon = _make_icon(root, hp_icon_texture, Vector2(48.0, 58.0), Vector2(26.0, 26.0))
+	hp_label = _make_label(root, "HPLabel", Vector2(84.0, 61.0), Vector2(96.0, 24.0), 17, Color(0.90, 0.72, 0.66))
+	hp_bar = _make_hp_bar(root, Vector2(185.0, 64.0), Vector2(214.0, 18.0))
+	stomach_icon = _make_icon(root, stomach_open_texture, Vector2(51.0, 95.0), Vector2(22.0, 22.0))
+	organ_label = _make_label(root, "OrganLabel", Vector2(84.0, 92.0), Vector2(438.0, 54.0), 16, Color(0.86, 0.70, 0.70))
 	organ_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective_label = _make_label(root, "ObjectiveLabel", Vector2(760.0, 20.0), Vector2(480.0, 54.0), 18, Color(0.88, 0.82, 0.68))
+	stomach_bar = _make_stomach_bar(root, Vector2(185.0, 100.0), Vector2(214.0, 14.0))
+	memory_shard_icon = _make_icon(root, memory_shard_texture, Vector2(48.0, 148.0), Vector2(24.0, 24.0))
+	relic_label = _make_label(root, "RelicLabel", Vector2(84.0, 148.0), Vector2(454.0, 24.0), 15, Color(0.66, 0.78, 0.78))
+	objective_label = _make_label(root, "ObjectiveLabel", Vector2(778.0, 28.0), Vector2(462.0, 44.0), 18, Color(0.88, 0.82, 0.68))
 	objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	dossier_label = _make_label(root, "DossierLabel", Vector2(760.0, 82.0), Vector2(480.0, 104.0), 16, Color(0.76, 0.85, 0.78))
+	dossier_label = _make_label(root, "DossierLabel", Vector2(778.0, 82.0), Vector2(442.0, 104.0), 16, Color(0.76, 0.85, 0.78))
 	dossier_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dossier_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	sample_label = _make_label(root, "SampleLabel", Vector2(760.0, 492.0), Vector2(460.0, 88.0), 16, Color(0.90, 0.78, 0.68))
+	sample_label = _make_label(root, "SampleLabel", Vector2(766.0, 492.0), Vector2(456.0, 88.0), 16, Color(0.90, 0.78, 0.68))
 	sample_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sample_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	archive_label = _make_label(root, "ArchiveLabel", Vector2(384.0, 136.0), Vector2(520.0, 90.0), 17, Color(0.74, 0.82, 0.78))
@@ -271,6 +321,127 @@ func _make_label(parent: Node, node_name: String, pos: Vector2, size: Vector2, f
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
 	return label
+
+
+func _load_ui_textures() -> void:
+	hp_icon_texture = _load_svg_texture(HP_ICON_PATH, Color(0.72, 0.12, 0.14, 1.0))
+	stomach_open_texture = _load_svg_texture(STOMACH_OPEN_ICON_PATH, Color(0.45, 0.68, 0.62, 1.0))
+	stomach_closed_texture = _load_svg_texture(STOMACH_CLOSED_ICON_PATH, Color(0.70, 0.18, 0.14, 1.0))
+	stomach_overflow_texture = _load_svg_texture(STOMACH_OVERFLOW_ICON_PATH, Color(0.95, 0.28, 0.20, 1.0))
+	memory_shard_texture = _load_svg_texture(MEMORY_SHARD_ICON_PATH, Color(0.58, 0.82, 0.90, 1.0))
+
+
+func _load_svg_texture(path: String, fallback_color: Color) -> Texture2D:
+	var image := Image.new()
+	var error := image.load(path)
+	if error == OK:
+		return ImageTexture.create_from_image(image)
+	return _make_fallback_texture(fallback_color)
+
+
+func _make_fallback_texture(color: Color) -> Texture2D:
+	var image := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.05, 0.04, 0.04, 1.0))
+	image.fill_rect(Rect2i(Vector2i(4, 4), Vector2i(16, 16)), color)
+	image.fill_rect(Rect2i(Vector2i(7, 7), Vector2i(5, 5)), color.lightened(0.25))
+	return ImageTexture.create_from_image(image)
+
+
+func _make_panel(parent: Node, pos: Vector2, size: Vector2) -> Panel:
+	var panel := Panel.new()
+	panel.position = pos
+	panel.size = size
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.045, 0.035, 0.038, 0.92)
+	style.border_color = Color(0.50, 0.47, 0.42, 0.82)
+	style.set_border_width_all(3)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(4.0, 4.0)
+	style.anti_aliasing = false
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
+	return panel
+
+
+func _make_panel_marks(parent: Node, pos: Vector2, size: Vector2, color: Color) -> void:
+	var inset := 6.0
+	var short_edge := 18.0
+	var thick := 3.0
+	_make_accent(parent, pos + Vector2(inset, inset), Vector2(short_edge, thick), color)
+	_make_accent(parent, pos + Vector2(inset, inset), Vector2(thick, short_edge), color)
+	_make_accent(parent, pos + Vector2(size.x - inset - short_edge, size.y - inset - thick), Vector2(short_edge, thick), color)
+	_make_accent(parent, pos + Vector2(size.x - inset - thick, size.y - inset - short_edge), Vector2(thick, short_edge), color)
+
+
+func _make_accent(parent: Node, pos: Vector2, size: Vector2, color: Color) -> ColorRect:
+	var accent := ColorRect.new()
+	accent.position = pos
+	accent.size = size
+	accent.color = color
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(accent)
+	return accent
+
+
+func _make_icon(parent: Node, texture: Texture2D, pos: Vector2, size: Vector2) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = texture
+	icon.position = pos
+	icon.size = size
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(icon)
+	return icon
+
+
+func _make_hp_bar(parent: Node, pos: Vector2, size: Vector2) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.position = pos
+	bar.size = size
+	bar.max_value = PLAYER_MAX_HP
+	bar.show_percentage = false
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.10, 0.055, 0.06, 0.94)
+	background.border_color = Color(0.58, 0.55, 0.48, 0.88)
+	background.set_border_width_all(2)
+	background.anti_aliasing = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.56, 0.08, 0.09, 0.98)
+	fill.border_color = Color(0.88, 0.24, 0.20, 0.72)
+	fill.set_border_width_all(1)
+	fill.anti_aliasing = false
+	bar.add_theme_stylebox_override("background", background)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+	return bar
+
+
+func _make_stomach_bar(parent: Node, pos: Vector2, size: Vector2) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.position = pos
+	bar.size = size
+	bar.max_value = 2.2
+	bar.show_percentage = false
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color(0.10, 0.055, 0.06, 0.94)
+	background.border_color = Color(0.48, 0.52, 0.48, 0.80)
+	background.set_border_width_all(1)
+	background.anti_aliasing = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(0.56, 0.70, 0.66, 0.96)
+	fill.border_color = Color(0.80, 0.90, 0.84, 0.72)
+	fill.set_border_width_all(1)
+	fill.anti_aliasing = false
+	bar.add_theme_stylebox_override("background", background)
+	bar.add_theme_stylebox_override("fill", fill)
+	parent.add_child(bar)
+	return bar
 
 
 func _update_timers(delta: float) -> void:
@@ -429,7 +600,7 @@ func _handle_enemy_event(event: Dictionary) -> void:
 	match String(event["type"]):
 		"farmer_seed":
 			var seed_pos: Vector2 = event["pos"]
-			hazards.append(_hazard_data(seed_pos, 28.0, 2.8, 6, Color(0.62, 0.08, 0.07, 0.55), 0.65))
+			hazards.append(_hazard_data(seed_pos, 34.0, 2.2, 8, Color(0.62, 0.08, 0.07, 0.55), 0.85))
 			_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
 		"scarecrow_wave":
 			for center: Vector2 in event["centers"]:
@@ -527,6 +698,9 @@ func _check_room_progress() -> void:
 	if mode != RunMode.FIELD:
 		return
 	if enemies.is_empty():
+		if not room_cleared and not hazards.is_empty():
+			hazards.clear()
+			_emit_text_effect(player_runtime.position + Vector2(0.0, -48.0), "危险消退", Color(0.82, 0.76, 0.58))
 		room_cleared = true
 		if room_index < rooms.size() - 1:
 			if interact_buffered:
@@ -608,9 +782,15 @@ func _update_ui() -> void:
 			dossier_label.text = ""
 			archive_label.text = "残骸归档：神之胃囊\n状态：可转入圣匣收藏\n提示：按 E 回收样本"
 
-	hp_label.text = "HP %d/%d | 胃囊：%s%s" % [player_runtime.hp, PLAYER_MAX_HP, god_stomach.status_text(), god_stomach.buff_text()]
-	relic_label.text = "残骸：神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + " | 记忆晶片 " + str(god_stomach.memory_shards)
+	hp_label.text = "HP %d/%d" % [player_runtime.hp, PLAYER_MAX_HP]
+	hp_bar.value = player_runtime.hp
+	relic_label.text = "神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + god_stomach.buff_text() + " | 记忆晶片 " + str(god_stomach.memory_shards)
 	organ_label.text = _organ_state_text()
+	stomach_bar.value = god_stomach.hunger_lock if god_stomach.hunger_lock > 0.0 else 2.2
+	var stomach_fill := stomach_bar.get_theme_stylebox("fill") as StyleBoxFlat
+	if stomach_fill:
+		stomach_fill.bg_color = Color(0.68, 0.16, 0.14, 0.96) if god_stomach.hunger_lock > 0.0 else Color(0.56, 0.70, 0.66, 0.96)
+	stomach_icon.texture = stomach_closed_texture if god_stomach.hunger_lock > 0.0 else (stomach_overflow_texture if god_stomach.overflow_power > 0.0 else stomach_open_texture)
 	sample_label.text = sample_record_text if sample_record_timer > 0.0 else ""
 	boss_rite_label.text = "胃囊暴露\n弱点窗口：样本伤害 +16" if boss_rite_timer > 0.0 and mode == RunMode.FIELD else ""
 
@@ -679,11 +859,14 @@ func _draw_field_room() -> void:
 	draw_rect(ARENA, Color(0.18, 0.12, 0.08))
 	_draw_field_marks()
 	for hazard: Dictionary in hazards:
+		var arm_time := float(hazard.get("arm_time", 0.0))
 		var hazard_color: Color = hazard["color"]
-		if float(hazard.get("arm_time", 0.0)) > 0.0:
-			hazard_color.a *= 0.35
+		if arm_time > 0.0:
+			hazard_color = Color(0.72, 0.12, 0.08, 0.16)
 		draw_circle(hazard["pos"] as Vector2, float(hazard["radius"]), hazard_color)
-		draw_arc(hazard["pos"] as Vector2, float(hazard["radius"]) + 3.0, 0.0, TAU, 32, Color(0.95, 0.30, 0.18, 0.45), 2.0)
+		var outline_color := Color(1.0, 0.58, 0.30, 0.88) if arm_time > 0.0 else Color(0.95, 0.30, 0.18, 0.45)
+		var outline_width := 4.0 if arm_time > 0.0 else 2.0
+		draw_arc(hazard["pos"] as Vector2, float(hazard["radius"]) + 3.0, 0.0, TAU, 32, outline_color, outline_width)
 	for enemy: Dictionary in enemies:
 		_draw_enemy(enemy)
 	for slash: Dictionary in slashes:
