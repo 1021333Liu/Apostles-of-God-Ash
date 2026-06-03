@@ -26,6 +26,7 @@
 | `12_JIN_RONGJUN_PLAYTEST_NOTES.md` | 全组 | 试玩问题记录和后续改动依据 |
 | `13_PIXEL_ART_ASSET_REQUEST.md` | 美术、HUD | 像素占位和正式资产需求 |
 | `14_THIRD_PARTY_ASSET_SOURCES.md` | 美术、程序 | 第三方素材来源、许可证和接入规则 |
+| `15_EXPERT_REVIEW_BRIEF.md` | 业内专家、导师、全组 | 项目介绍、美术方案、日志系统方案和评审问题 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 
