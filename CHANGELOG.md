@@ -32,6 +32,27 @@
 - 后续：
 ```
 
+## 2026-06-04
+
+### 美术接入：建立正式资产目录和自动加载准备
+
+- 负责人：刘秉昂 / Codex
+- 改动：
+  - 纳入美术师 Agent 产出的 `docs/planning/16_ART_ASSET_FORMAT_SPEC.md` 和 `docs/planning/17_IMAGE2_ART_GENERATION_PLAN.md`。
+  - 新增 `docs/planning/18_ART_INTEGRATION_GUIDE.md`，明确正式 PNG 资产的放置路径、命名和 Godot 接入方式。
+  - 新增美术资产目录：`assets/concepts/`、`assets/backgrounds/rooms/`、`assets/portraits/`、`assets/sprites/characters/`、`assets/sprites/pickups/`、`assets/vfx/`。
+  - 新增 `scripts/systems/art_asset_registry.gd`，用于可选加载玩家、敌人、Boss、房间背景和日志碎片 PNG。
+  - 更新 `scripts/main.gd`，让房间、玩家、敌人和 Boss 在指定 PNG 存在时优先显示正式美术，否则继续使用几何占位。
+  - 更新 `docs/planning/00_PRODUCTION_INDEX.md`，加入 16-18 号美术文档入口。
+- 原因：
+  - 后续 image2 或真人画师会陆续交付资产，项目需要先准备路径、格式和代码钩子，避免每来一张图都临时改结构。
+- 影响范围：
+  - 美术资产管线、Godot 绘制 fallback、低语田野房间背景、玩家/敌人/Boss 占位替换流程。
+- 验证：
+  - 已用 Godot 4.6.3 启动 `res://scenes/main.tscn`，无错误输出。
+- 后续：
+  - 第一批美术图到位后，按 `18_ART_INTEGRATION_GUIDE.md` 放入指定路径并做比例、可读性和碰撞范围检查。
+
 ## 2026-06-03
 
 ### 文案更新：整合低语田野第 2 版文本

@@ -27,6 +27,9 @@
 | `13_PIXEL_ART_ASSET_REQUEST.md` | 美术、HUD | 像素占位和正式资产需求 |
 | `14_THIRD_PARTY_ASSET_SOURCES.md` | 美术、程序 | 第三方素材来源、许可证和接入规则 |
 | `15_EXPERT_REVIEW_BRIEF.md` | 业内专家、导师、全组 | 项目介绍、美术方案、日志系统方案和评审问题 |
+| `16_ART_ASSET_FORMAT_SPEC.md` | 美术、程序 | Godot 2D 正式美术资产格式、尺寸、帧数和接入规格 |
+| `17_IMAGE2_ART_GENERATION_PLAN.md` | 美术、image2 操作者 | 斜俯视房间制美术生成提示词、负面约束和首批生成清单 |
+| `18_ART_INTEGRATION_GUIDE.md` | 美术、程序 | 正式 PNG 资产到达后的仓库路径、自动加载和 Godot 接入方式 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 

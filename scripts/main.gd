@@ -7,6 +7,7 @@ const COMBAT_DATA_FACTORY_SCRIPT := preload("res://scripts/systems/combat_data_f
 const PlayerRuntimeScript := preload("res://scripts/systems/player_runtime.gd")
 const EnemyRuntimeScript := preload("res://scripts/systems/enemy_runtime.gd")
 const AttackRuntimeScript := preload("res://scripts/systems/attack_runtime.gd")
+const ArtAssetRegistryScript := preload("res://scripts/systems/art_asset_registry.gd")
 
 const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
@@ -30,6 +31,7 @@ var last_death_note: String = ""
 var god_stomach := GOD_STOMACH_RELIC_SCRIPT.new()
 var enemy_runtime: EnemyRuntimeScript = EnemyRuntimeScript.new()
 var attack_runtime: AttackRuntimeScript = AttackRuntimeScript.new()
+var art_assets: ArtAssetRegistryScript = ArtAssetRegistryScript.new()
 
 var room_index: int = -1
 var room_clock: float = 0.0
@@ -75,6 +77,7 @@ var prompt_label: Label
 func _ready() -> void:
 	_setup_input()
 	_build_rooms()
+	art_assets.load_all()
 	_load_ui_textures()
 	_build_ui()
 	player_runtime.configure(Vector2(640.0, 420.0), Vector2.RIGHT, PLAYER_MAX_HP)
@@ -852,12 +855,16 @@ func _draw_sanctum() -> void:
 
 func _draw_field_room() -> void:
 	var room: Dictionary = rooms[room_index]
-	draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), room["palette"])
+	var background := art_assets.room_background(String(room["id"]))
+	if background:
+		draw_texture_rect(background, Rect2(Vector2.ZERO, VIEWPORT_SIZE), false)
+	else:
+		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), room["palette"])
+		draw_rect(ARENA.grow(18.0), Color(0.055, 0.045, 0.040))
+		draw_rect(ARENA, Color(0.18, 0.12, 0.08))
+		_draw_field_marks()
 	if boss_weak_exposed and room_index == rooms.size() - 1:
 		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.42, 0.02, 0.02, 0.18))
-	draw_rect(ARENA.grow(18.0), Color(0.055, 0.045, 0.040))
-	draw_rect(ARENA, Color(0.18, 0.12, 0.08))
-	_draw_field_marks()
 	for hazard: Dictionary in hazards:
 		var arm_time := float(hazard.get("arm_time", 0.0))
 		var hazard_color: Color = hazard["color"]
@@ -888,11 +895,15 @@ func _draw_complete() -> void:
 
 
 func _draw_player() -> void:
-	var body_color := Color(0.82, 0.86, 0.82)
-	var stomach_color := Color(0.64, 0.08, 0.08) if god_stomach.has_relic or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
-	draw_circle(player_runtime.position, PLAYER_RADIUS, body_color)
-	draw_circle(player_runtime.position + player_runtime.facing * 8.0, 5.0, Color(0.12, 0.14, 0.15))
-	draw_circle(player_runtime.position + Vector2(0.0, 5.0), 6.0, stomach_color)
+	var player_texture := art_assets.player_texture()
+	if player_texture:
+		_draw_centered_texture(player_texture, player_runtime.position, Vector2(72.0, 72.0))
+	else:
+		var body_color := Color(0.82, 0.86, 0.82)
+		var stomach_color := Color(0.64, 0.08, 0.08) if god_stomach.has_relic or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
+		draw_circle(player_runtime.position, PLAYER_RADIUS, body_color)
+		draw_circle(player_runtime.position + player_runtime.facing * 8.0, 5.0, Color(0.12, 0.14, 0.15))
+		draw_circle(player_runtime.position + Vector2(0.0, 5.0), 6.0, stomach_color)
 	if god_stomach.hunger_lock > 0.0:
 		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 10.0, 0.0, TAU, 24, Color(0.18, 0.18, 0.18, 0.92), 2.0)
 	elif god_stomach.overflow_power > 0.0:
@@ -917,15 +928,19 @@ func _draw_enemy(enemy: Dictionary) -> void:
 			color = Color(0.50, 0.08, 0.07)
 	if float(enemy["hit_flash"]) > 0.0:
 		color = Color(0.96, 0.78, 0.62)
-	draw_circle(pos, radius, color)
-	if kind == "farmer":
-		draw_line(pos + Vector2(-18.0, -18.0), pos + Vector2(18.0, 18.0), Color(0.82, 0.78, 0.60), 3.0)
-	elif kind == "scarecrow":
-		draw_line(pos + Vector2(-34.0, -6.0), pos + Vector2(34.0, -6.0), Color(0.82, 0.70, 0.42), 5.0)
-	elif kind == "barn_king":
-		draw_circle(pos, radius * 0.56, Color(0.28, 0.03, 0.03))
-		if boss_weak_exposed:
-			draw_circle(pos + Vector2(0.0, 8.0), radius * 0.34, Color(0.96, 0.20, 0.15))
+	var enemy_texture := art_assets.enemy_texture(kind)
+	if enemy_texture:
+		_draw_centered_texture(enemy_texture, pos, art_assets.enemy_draw_size(kind))
+	else:
+		draw_circle(pos, radius, color)
+		if kind == "farmer":
+			draw_line(pos + Vector2(-18.0, -18.0), pos + Vector2(18.0, 18.0), Color(0.82, 0.78, 0.60), 3.0)
+		elif kind == "scarecrow":
+			draw_line(pos + Vector2(-34.0, -6.0), pos + Vector2(34.0, -6.0), Color(0.82, 0.70, 0.42), 5.0)
+		elif kind == "barn_king":
+			draw_circle(pos, radius * 0.56, Color(0.28, 0.03, 0.03))
+	if kind == "barn_king" and boss_weak_exposed:
+		draw_circle(pos + Vector2(0.0, 8.0), radius * 0.34, Color(0.96, 0.20, 0.15, 0.88))
 	draw_rect(Rect2(pos + Vector2(-radius, -radius - 12.0), Vector2(radius * 2.0 * hp_ratio, 4.0)), Color(0.78, 0.10, 0.08))
 
 
@@ -942,6 +957,10 @@ func _draw_text_effect(effect: Dictionary) -> void:
 	var color: Color = effect["color"]
 	color.a = alpha
 	draw_string(ThemeDB.fallback_font, effect["pos"] as Vector2, String(effect["text"]), HORIZONTAL_ALIGNMENT_CENTER, 120.0, 18, color)
+
+
+func _draw_centered_texture(texture: Texture2D, center: Vector2, size: Vector2) -> void:
+	draw_texture_rect(texture, Rect2(center - size * 0.5, size), false)
 
 
 func _draw_field_marks() -> void:
