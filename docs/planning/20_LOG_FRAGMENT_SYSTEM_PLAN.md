@@ -128,6 +128,17 @@ feature/log-fragment-system
 - Godot 主场景启动无错误。
 - `CHANGELOG.md` 记录系统接入。
 
+## 2026-06-05 MVP 接入状态
+
+已在 `feature/log-fragment-system` 完成第一版闭环：
+
+- `data/log_fragments/low_whispering_field.json` 存放首批日志碎片、胃囊反应和第一故事正文。
+- `scripts/systems/log_fragment_database.gd` 负责读取 JSON、按敌人来源检索碎片、计算主线拼图进度。
+- `scripts/systems/log_archive_runtime.gd` 负责本轮收集、总归档、去重和最新碎片记录。
+- `scripts/main.gd` 已接入击杀自动归档、战斗短反馈、圣匣归档阅读和第一故事解锁。
+
+当前版本为了保证垂直切片可体验，先采用“击杀后自动归档”，还没有做地面 `Area2D` 拾取物。下一轮再补可拾取实体、圣匣三栏阅读 UI、已读/未读状态和筛选。
+
 ## 风险
 
 - 文本过长会拖慢战斗节奏。

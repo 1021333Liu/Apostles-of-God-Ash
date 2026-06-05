@@ -8,6 +8,8 @@ const PlayerRuntimeScript := preload("res://scripts/systems/player_runtime.gd")
 const EnemyRuntimeScript := preload("res://scripts/systems/enemy_runtime.gd")
 const AttackRuntimeScript := preload("res://scripts/systems/attack_runtime.gd")
 const ArtAssetRegistryScript := preload("res://scripts/systems/art_asset_registry.gd")
+const LogFragmentDatabaseScript := preload("res://scripts/systems/log_fragment_database.gd")
+const LogArchiveRuntimeScript := preload("res://scripts/systems/log_archive_runtime.gd")
 
 const VIEWPORT_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const ARENA: Rect2 = Rect2(Vector2(120.0, 112.0), Vector2(1040.0, 468.0))
@@ -32,6 +34,8 @@ var god_stomach := GOD_STOMACH_RELIC_SCRIPT.new()
 var enemy_runtime: EnemyRuntimeScript = EnemyRuntimeScript.new()
 var attack_runtime: AttackRuntimeScript = AttackRuntimeScript.new()
 var art_assets: ArtAssetRegistryScript = ArtAssetRegistryScript.new()
+var log_database: RefCounted = LogFragmentDatabaseScript.new()
+var log_archive: RefCounted = LogArchiveRuntimeScript.new()
 
 var room_index: int = -1
 var room_clock: float = 0.0
@@ -79,6 +83,8 @@ func _ready() -> void:
 	_setup_input()
 	_build_rooms()
 	art_assets.load_all()
+	log_database.call("load_from_disk")
+	log_archive.call("configure", log_database)
 	_load_ui_textures()
 	_build_ui()
 	player_runtime.configure(Vector2(640.0, 420.0), Vector2.RIGHT, PLAYER_MAX_HP)
@@ -298,7 +304,7 @@ func _build_ui() -> void:
 	sample_label = _make_label(root, "SampleLabel", Vector2(766.0, 492.0), Vector2(456.0, 88.0), 16, Color(0.90, 0.78, 0.68))
 	sample_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sample_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	archive_label = _make_label(root, "ArchiveLabel", Vector2(384.0, 136.0), Vector2(520.0, 90.0), 17, Color(0.74, 0.82, 0.78))
+	archive_label = _make_label(root, "ArchiveLabel", Vector2(286.0, 118.0), Vector2(708.0, 238.0), 16, Color(0.74, 0.82, 0.78))
 	archive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	archive_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_rite_label = _make_label(root, "BossRiteLabel", Vector2(390.0, 164.0), Vector2(500.0, 66.0), 22, Color(1.0, 0.34, 0.28))
@@ -521,7 +527,11 @@ func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> vo
 	_emit_text_effect(player_runtime.position + Vector2(0.0, -34.0), "胃囊回响", Color(0.70, 0.92, 0.84))
 	var reward: Dictionary = god_stomach.apply_kill_reward(kind, player_runtime.hp, PLAYER_MAX_HP)
 	player_runtime.apply_heal(int(reward["hp"]), PLAYER_MAX_HP)
-	_show_sample_record(kind, enemy_name, int(reward["healed"]), bool(reward["locked"]), bool(reward["overflow"]), final_damage)
+	var room_id := _current_room_id()
+	var archived_fragment: Dictionary = log_archive.call("try_collect_from_kill", kind, room_id)
+	if not archived_fragment.is_empty():
+		_emit_text_effect(player_runtime.position + Vector2(0.0, -78.0), "样本归档", Color(0.58, 0.84, 0.92))
+	_show_sample_record(kind, enemy_name, int(reward["healed"]), bool(reward["locked"]), bool(reward["overflow"]), final_damage, archived_fragment)
 	if bool(reward["locked"]):
 		_emit_text_effect(player_runtime.position + Vector2(0.0, -58.0), "饥饿惩罚", Color(0.65, 0.55, 0.48))
 	elif bool(reward["overflow"]):
@@ -531,31 +541,29 @@ func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> vo
 		god_stomach.absorb_boss_memory()
 		mode = RunMode.COMPLETE
 		boss_rite_timer = 0.0
-		dialogue_label.text = "记忆：谷仓王献出自己的胃，是为了让献祭到他为止。田地只安静了一夜。"
+		var progress: Dictionary = log_archive.call("story_progress")
+		dialogue_label.text = "记忆：" + ("第一故事已拼合。" if bool(progress["unlocked"]) else "谷仓王的胃还缺几份证词。")
 	else:
-		dialogue_label.text = "采样记录：" + enemy_name + " 倒下后，土地短暂安静。你胸口的胃纹更深了一点。"
+		dialogue_label.text = "采样记录：" + enemy_name + " 倒下后，" + ("一份记忆被圣匣接收。" if not archived_fragment.is_empty() else "土地短暂安静。")
 
 
-func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: bool, overflow: bool, final_damage: int) -> void:
+func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: bool, overflow: bool, final_damage: int, archived_fragment: Dictionary) -> void:
 	var reaction := "吞噬成功"
 	if locked:
 		reaction = "胃囊闭合，样本拒收"
 	elif overflow:
 		reaction = "血量溢出，转写为刃"
 
-	var shard_note := "记忆碎片：未归档"
-	match kind:
-		"empty":
-			shard_note = "记忆碎片：队伍末尾、空碗、田边剩粮"
-		"farmer":
-			shard_note = "记忆碎片：巡田、登记、哭完再干活"
-		"scarecrow":
-			shard_note = "记忆碎片：偷粮者衣服、旧命令、不是我"
-		"barn_king":
-			shard_note = "记忆碎片：开仓、献祭边界、谷仓王之胃"
+	var shard_note := _compact_sample_text(archived_fragment, "日志碎片：未归档")
+	if not archived_fragment.is_empty():
+		reaction = String(archived_fragment.get("stomach_reaction", reaction))
 
-	sample_record_text = "采样记录 | " + enemy_name + "\n" + shard_note + "\n胃囊反应：" + reaction + " | 回收 HP +" + str(healed) + " | 末击 " + str(final_damage)
-	sample_record_timer = 4.0
+	var progress_line := ""
+	if not archived_fragment.is_empty():
+		var progress: Dictionary = log_archive.call("story_progress")
+		progress_line = "\n谷仓王故事 " + str(progress["collected"]) + "/" + str(progress["required"])
+	sample_record_text = "采样记录 | " + enemy_name + "\n" + shard_note + progress_line
+	sample_record_timer = 2.4 if not archived_fragment.is_empty() else 1.8
 
 
 func _update_enemies(delta: float) -> void:
@@ -734,6 +742,7 @@ func _check_room_progress() -> void:
 func _start_run() -> void:
 	mode = RunMode.FIELD
 	god_stomach.reset_for_run()
+	log_archive.call("reset_run")
 	attack_runtime.reset()
 	player_runtime.reset_for_run(Vector2(640.0, 500.0), Vector2.UP, PLAYER_MAX_HP)
 	_load_room(0)
@@ -801,11 +810,12 @@ func _update_ui() -> void:
 			objective_label.text = "神之胃囊已获得：按 E 回圣匣"
 			prompt_label.text = INTERACT_HINT
 			dossier_label.text = ""
-			archive_label.text = "残骸归档：神之胃囊\n状态：可转入圣匣收藏\n提示：按 E 回收样本"
+			archive_label.text = "残骸归档：神之胃囊\n本轮日志：" + str(log_archive.call("run_count")) + " 份\n提示：按 E 回收样本"
 
 	hp_label.text = "HP %d/%d" % [player_runtime.hp, PLAYER_MAX_HP]
 	hp_bar.value = player_runtime.hp
-	relic_label.text = "神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + god_stomach.buff_text() + " | 记忆晶片 " + str(god_stomach.memory_shards)
+	var story_progress: Dictionary = log_archive.call("story_progress")
+	relic_label.text = "神之胃囊" + (" 已归档" if god_stomach.has_relic else " 试用中") + god_stomach.buff_text() + " | 日志 " + str(story_progress["collected"]) + "/" + str(story_progress["required"])
 	organ_label.text = _organ_state_text()
 	stomach_bar.value = god_stomach.hunger_lock if god_stomach.hunger_lock > 0.0 else 2.2
 	var stomach_fill := stomach_bar.get_theme_stylebox("fill") as StyleBoxFlat
@@ -836,9 +846,57 @@ func _field_dossier_summary(room: Dictionary) -> String:
 
 
 func _sanctum_archive_text() -> String:
-	if death_count <= 0:
-		return "圣匣档案：暂无失败样本\n建议：进入田野，采回第一份胃囊反应。"
-	return "圣匣档案：失败样本 " + str(death_count) + " 份\n最近死因：" + last_death_note + "\n土地学习仍在继续。"
+	return _compact_sanctum_text()
+
+
+func _compact_sample_text(fragment: Dictionary, fallback_note: String) -> String:
+	if fragment.is_empty():
+		return fallback_note
+	return "样本归档：" + String(fragment.get("title", ""))
+
+
+func _compact_sanctum_text() -> String:
+	var progress: Dictionary = log_archive.call("story_progress")
+	var lines: Array[String] = [
+		"活器官档案柜 | 低语田野",
+		"碎片：" + str(log_archive.call("collected_count")) + " 份 | 本轮：" + str(log_archive.call("run_count")) + " 份",
+		"主线：" + str(progress["collected"]) + "/" + str(progress["required"]) + " " + ("已拼合" if bool(progress["unlocked"]) else "待补证")
+	]
+
+	if death_count > 0:
+		lines.append("失败样本：" + str(death_count) + " | 最近死因：" + last_death_note)
+
+	var latest: Dictionary = log_archive.call("latest_fragment")
+	if latest.is_empty():
+		lines.append("空槽：尚未采回可归档记忆。")
+	else:
+		lines.append("最新：" + String(latest.get("title", "")) + " / " + _enemy_log_label(String(latest.get("source_enemy", ""))))
+		lines.append(String(latest.get("stomach_reaction", "")))
+
+	if bool(progress["unlocked"]):
+		lines.append("故事：" + String(progress["text"]))
+
+	return "\n".join(lines)
+
+
+func _enemy_log_label(kind: String) -> String:
+	match kind:
+		"empty":
+			return "空腹者"
+		"farmer":
+			return "饥民农夫"
+		"scarecrow":
+			return "饥饿稻草人"
+		"barn_king":
+			return "谷仓王"
+		_:
+			return kind
+
+
+func _current_room_id() -> String:
+	if room_index < 0 or room_index >= rooms.size():
+		return ""
+	return String(rooms[room_index].get("id", ""))
 
 
 func _death_recovery_line(source: String) -> String:

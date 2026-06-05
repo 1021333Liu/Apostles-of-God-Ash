@@ -1,0 +1,96 @@
+{
+  "story_key": "barn_king_stomach",
+  "story_title": "低语田野第一故事：谷仓王为什么献出胃",
+  "unlock_required": 5,
+  "story_text": "低语田野原本只是饥荒中的村庄。谷仓王第一次打开粮仓，是为了让活人撑过冬天；第二次打开粮仓时，账本已经开始把人写成粮。献祭从外乡人、罪犯和可以被牺牲的人开始，最后轮到每一户。谷仓王献出自己的胃，想让饥饿到他为止。血肉麦穗真的长出来以后，制度获得了成果，于是没人再愿意停止。",
+  "fragments": [
+    {
+      "id": "field_empty_01",
+      "title": "田边剩粮",
+      "source_enemy": "empty",
+      "source_room": "field_gate",
+      "rarity": "common",
+      "main_story_key": "barn_king_stomach",
+      "text": "碗是空的，但碗底被舔得很亮。",
+      "stomach_reaction": "胃囊轻微收缩，拒绝判断这是不是食物。",
+      "drop_weight": 4
+    },
+    {
+      "id": "field_empty_02",
+      "title": "队伍末尾",
+      "source_enemy": "empty",
+      "source_room": "field_gate",
+      "rarity": "common",
+      "main_story_key": "barn_king_stomach",
+      "text": "名单最后一行没有名字，只有一道被反复擦掉的指印。",
+      "stomach_reaction": "胃囊把指印吞下，像吞下一块冷泥。",
+      "drop_weight": 3
+    },
+    {
+      "id": "field_farmer_01",
+      "title": "巡田登记",
+      "source_enemy": "farmer",
+      "source_room": "blood_wheat",
+      "rarity": "uncommon",
+      "main_story_key": "barn_king_stomach",
+      "text": "农夫说自己只负责登记。谁被登记，谁就不再算饿。",
+      "stomach_reaction": "胃囊短暂闭合，像听见一句熟练的借口。",
+      "drop_weight": 5
+    },
+    {
+      "id": "field_farmer_02",
+      "title": "哭完再干活",
+      "source_enemy": "farmer",
+      "source_room": "gut_canal",
+      "rarity": "uncommon",
+      "main_story_key": "barn_king_stomach",
+      "text": "有人在沟边哭了一会儿，随后把锄头洗干净，继续翻地。",
+      "stomach_reaction": "胃囊开始溢血，把沉默转写成更锋利的脉搏。",
+      "drop_weight": 4
+    },
+    {
+      "id": "field_scarecrow_01",
+      "title": "旧命令",
+      "source_enemy": "scarecrow",
+      "source_room": "hungry_barn",
+      "rarity": "rare",
+      "main_story_key": "barn_king_stomach",
+      "text": "稻草人胸口别着一张命令：守住粮仓，哪怕粮仓已经开始吃人。",
+      "stomach_reaction": "胃囊把纸片碾碎，仍然吐不出那个签名。",
+      "drop_weight": 6
+    },
+    {
+      "id": "field_scarecrow_02",
+      "title": "偷粮者衣服",
+      "source_enemy": "scarecrow",
+      "source_room": "hungry_barn",
+      "rarity": "rare",
+      "main_story_key": "barn_king_stomach",
+      "text": "稻草下不是草，是很多件被脱下来的衣服。",
+      "stomach_reaction": "胃囊归档了布料上的汗味，却没有归档罪名。",
+      "drop_weight": 3
+    },
+    {
+      "id": "field_barn_king_01",
+      "title": "开仓之夜",
+      "source_enemy": "barn_king",
+      "source_room": "barn_king",
+      "rarity": "boss",
+      "main_story_key": "barn_king_stomach",
+      "text": "谷仓王第一次开仓时，所有人都叫他救主。",
+      "stomach_reaction": "胃囊安静了一瞬，像在辨认救赎腐烂前的味道。",
+      "drop_weight": 1
+    },
+    {
+      "id": "field_barn_king_02",
+      "title": "献胃边界",
+      "source_enemy": "barn_king",
+      "source_room": "barn_king",
+      "rarity": "boss",
+      "main_story_key": "barn_king_stomach",
+      "text": "他把自己的胃献出去，是想让祭品名单到此为止。",
+      "stomach_reaction": "胃囊剧烈收缩，像一座谷仓终于承认自己装过人。",
+      "drop_weight": 1
+    }
+  ]
+}
