@@ -34,6 +34,25 @@
 
 ## 2026-06-05
 
+### 协作规划：建立美术迭代分支和日志系统排期
+
+- 负责人：刘秉昂 / Codex
+- 改动：
+  - 新增 `docs/planning/19_ART_ITERATION_BRANCH_PLAN.md`，明确 `feature/art-iteration` 的美术轮次边界、可读性问题清单、交付格式和验收标准。
+  - 新增 `docs/planning/20_LOG_FRAGMENT_SYSTEM_PLAN.md`，将日志碎片掉落、拾取、归档、圣匣 UI 和第一故事拼接列为下一阶段核心系统。
+  - 更新 `docs/planning/00_PRODUCTION_INDEX.md`，加入 19-20 号文档入口，并把日志碎片系统列入第一阶段完成定义。
+  - 更新 `docs/planning/07_TEAM_GIT_WORKFLOW.md`，补充 `feature/art-iteration` 和 `feature/log-fragment-system` 的分支规则与文件边界。
+- 原因：
+  - 试玩反馈显示美术需要多轮调整，不能直接在 `main` 上试错；同时日志系统已经成为连接战斗和世界观的关键模块，需要正式排期。
+- 影响范围：
+  - 团队分支策略、美术迭代流程、日志系统开发计划、文案交付格式、后续 main 集成规则。
+- 验证：
+  - 文档已加入制作索引，Git 分支边界已写入团队协作流程。
+- 后续：
+  - 从当前 `main` 创建 `feature/art-iteration` 给美术轮次使用；日志系统开发时单开 `feature/log-fragment-system`。
+
+## 2026-06-05
+
 ### 美术接入：概念图资产进入当前可玩版
 
 - 负责人：美术 Agent / 刘秉昂 / Codex

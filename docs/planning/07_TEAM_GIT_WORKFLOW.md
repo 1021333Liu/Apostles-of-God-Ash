@@ -33,6 +33,20 @@
 - 用于把 `feature/core-combat` 和 `feature/level-hud` 的成果手工整合成可进 `main` 的评审版。
 - 不建议把 `feature/level-hud` 直接合并进 `feature/core-combat`，也不建议把任意个人分支直接合并进 `main`。
 
+美术迭代分支：
+
+- `feature/art-iteration`
+- 用于美术资产替换、比例调整、可读性测试、概念图轮次和 `.import` 导入配置。
+- 不用于实现日志系统、战斗数值、敌人 AI 或房间流程。
+- 详细规则见 `docs/planning/19_ART_ITERATION_BRANCH_PLAN.md`。
+
+日志系统分支：
+
+- `feature/log-fragment-system`
+- 用于日志碎片掉落、拾取、归档、圣匣日志 UI 和第一故事拼接。
+- 不和美术轮次混在一起；美术只提前准备日志碎片图标和圣匣 UI 概念图。
+- 详细规则见 `docs/planning/20_LOG_FRAGMENT_SYSTEM_PLAN.md`。
+
 临时修复：
 
 - `fix/<short-name>`
@@ -51,6 +65,20 @@ git merge main
 
 ```bash
 git checkout feature/level-hud
+git merge main
+```
+
+美术轮次把最后一行换成：
+
+```bash
+git checkout feature/art-iteration
+git merge main
+```
+
+日志系统开发把最后一行换成：
+
+```bash
+git checkout feature/log-fragment-system
 git merge main
 ```
 
@@ -106,6 +134,27 @@ git push
 - `scenes/main.tscn`
 - `scripts/main.gd`
 - `docs/planning/05_BALANCE_TABLES.md`
+- `scripts/systems/art_asset_registry.gd`
+
+### 美术迭代优先负责
+
+- `assets/concepts/`
+- `assets/backgrounds/rooms/`
+- `assets/portraits/`
+- `assets/sprites/characters/`
+- `assets/sprites/pickups/`
+- `assets/sprites/ui/`
+- `assets/vfx/`
+- 所有对应 `.import` 文件
+- `docs/planning/19_ART_ITERATION_BRANCH_PLAN.md`
+
+### 日志系统优先负责
+
+- `data/log_fragments/`
+- `scripts/systems/log_fragment_database.gd`
+- `scripts/systems/log_archive_runtime.gd`
+- `scripts/ui/log_archive_panel.gd`
+- `docs/planning/20_LOG_FRAGMENT_SYSTEM_PLAN.md`
 
 当前原型还集中在 `scripts/main.gd`，所以两位技术如果都改了这个文件，最后必须手工集成。不能用“谁的版本覆盖谁的版本”的方式解决冲突。
 

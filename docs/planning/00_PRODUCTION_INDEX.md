@@ -30,6 +30,8 @@
 | `16_ART_ASSET_FORMAT_SPEC.md` | 美术、程序 | Godot 2D 正式美术资产格式、尺寸、帧数和接入规格 |
 | `17_IMAGE2_ART_GENERATION_PLAN.md` | 美术、image2 操作者 | 斜俯视房间制美术生成提示词、负面约束和首批生成清单 |
 | `18_ART_INTEGRATION_GUIDE.md` | 美术、程序 | 正式 PNG 资产到达后的仓库路径、自动加载和 Godot 接入方式 |
+| `19_ART_ITERATION_BRANCH_PLAN.md` | 美术、程序、协作负责人 | 美术轮次分支、修改边界、可读性问题和验收标准 |
+| `20_LOG_FRAGMENT_SYSTEM_PLAN.md` | 文案、程序、系统策划 | 日志碎片掉落、归档、圣匣 UI 和第一故事拼接的 MVP 计划 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 
@@ -54,3 +56,4 @@
 - 死亡后回圣匣并触发不同文本。
 - 击败 Boss 后获得记忆文本。
 - 玩家能明确理解：自己在吸收别人的执念来构筑自己。
+- 击杀敌人能获得日志碎片，并在圣匣中查看和拼出低语田野第一段故事。
