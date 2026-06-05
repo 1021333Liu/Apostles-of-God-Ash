@@ -3,7 +3,6 @@
 
 # Godot imports and generated caches
 .import/
-*.import
 
 # Export artifacts
 export/

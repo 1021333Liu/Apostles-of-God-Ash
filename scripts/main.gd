@@ -44,6 +44,7 @@ var sample_record_timer: float = 0.0
 var dossier_text: String = ""
 var dossier_timer: float = 0.0
 var boss_rite_timer: float = 0.0
+var player_hit_anim_timer: float = 0.0
 
 var rooms: Array[Dictionary] = []
 var enemies: Array[Dictionary] = []
@@ -214,9 +215,9 @@ func _build_rooms() -> void:
 				_enemy_data("empty", Vector2(650.0, 500.0))
 			],
 			"hazards": [
-				_hazard_data(Vector2(460.0, 355.0), 48.0, 999.0, 8, Color(0.52, 0.11, 0.09, 0.50), 0.0),
-				_hazard_data(Vector2(640.0, 345.0), 48.0, 999.0, 8, Color(0.52, 0.11, 0.09, 0.50), 0.0),
-				_hazard_data(Vector2(820.0, 355.0), 48.0, 999.0, 8, Color(0.52, 0.11, 0.09, 0.50), 0.0)
+				_hazard_data(Vector2(470.0, 330.0), 34.0, 999.0, 6, Color(0.52, 0.11, 0.09, 0.42), 0.0),
+				_hazard_data(Vector2(640.0, 380.0), 34.0, 999.0, 6, Color(0.52, 0.11, 0.09, 0.42), 0.0),
+				_hazard_data(Vector2(810.0, 330.0), 34.0, 999.0, 6, Color(0.52, 0.11, 0.09, 0.42), 0.0)
 			]
 		},
 		{
@@ -335,10 +336,10 @@ func _load_ui_textures() -> void:
 
 
 func _load_svg_texture(path: String, fallback_color: Color) -> Texture2D:
-	var image := Image.new()
-	var error := image.load(path)
-	if error == OK:
-		return ImageTexture.create_from_image(image)
+	if ResourceLoader.exists(path):
+		var resource := ResourceLoader.load(path)
+		if resource is Texture2D:
+			return resource as Texture2D
 	return _make_fallback_texture(fallback_color)
 
 
@@ -453,6 +454,7 @@ func _update_timers(delta: float) -> void:
 	sample_record_timer = maxf(0.0, sample_record_timer - delta)
 	dossier_timer = maxf(0.0, dossier_timer - delta)
 	boss_rite_timer = maxf(0.0, boss_rite_timer - delta)
+	player_hit_anim_timer = maxf(0.0, player_hit_anim_timer - delta)
 	if mode == RunMode.FIELD and room_index == rooms.size() - 1:
 		boss_expose_timer -= delta
 		if boss_expose_timer <= 0.0:
@@ -603,9 +605,11 @@ func _handle_enemy_event(event: Dictionary) -> void:
 	match String(event["type"]):
 		"farmer_seed":
 			var seed_pos: Vector2 = event["pos"]
+			_limit_temporary_hazards(10)
 			hazards.append(_hazard_data(seed_pos, 34.0, 2.2, 8, Color(0.62, 0.08, 0.07, 0.55), 0.85))
 			_emit_text_effect(seed_pos, "牙齿作物", Color(0.88, 0.44, 0.34))
 		"scarecrow_wave":
+			_limit_temporary_hazards(10)
 			for center: Vector2 in event["centers"]:
 				hazards.append(_hazard_data(center, 32.0, 1.5, 13, Color(0.67, 0.12, 0.04, 0.46)))
 			_emit_text_effect((event["pos"] as Vector2) + Vector2(0.0, -48.0), "麦浪", Color(0.92, 0.63, 0.32))
@@ -615,12 +619,25 @@ func _handle_enemy_event(event: Dictionary) -> void:
 			_emit_text_effect(pos + Vector2(0.0, -76.0), "开仓", Color(0.86, 0.47, 0.35))
 		"barn_acid":
 			var acid_pos: Vector2 = event["pos"]
+			_limit_temporary_hazards(10)
 			hazards.append(_hazard_data(acid_pos, 52.0, 3.3, 14, Color(0.64, 0.10, 0.08, 0.56)))
 			_emit_text_effect(acid_pos + Vector2(0.0, -42.0), "消化液", Color(0.86, 0.34, 0.26))
 		"barn_contract":
+			_limit_temporary_hazards(10)
 			for center: Vector2 in event["centers"]:
 				hazards.append(_hazard_data(center, 38.0, 1.8, 16, Color(0.78, 0.08, 0.07, 0.50)))
 			_emit_text_effect((event["pos"] as Vector2) + Vector2(0.0, -82.0), "胃室收缩", Color(0.95, 0.28, 0.22))
+
+
+func _limit_temporary_hazards(max_count: int) -> void:
+	var temporary_indexes: Array[int] = []
+	for i in hazards.size():
+		if float(hazards[i].get("timer", 0.0)) < 900.0:
+			temporary_indexes.append(i)
+	while temporary_indexes.size() >= max_count:
+		hazards.remove_at(temporary_indexes.pop_front())
+		for n in temporary_indexes.size():
+			temporary_indexes[n] = int(temporary_indexes[n]) - 1
 
 
 func _try_enemy_contact(enemy: Dictionary) -> void:
@@ -664,6 +681,7 @@ func _player_inside_hazard() -> bool:
 
 func _take_player_damage(amount: int, source: String) -> void:
 	player_runtime.apply_damage(amount)
+	player_hit_anim_timer = 0.18
 	god_stomach.close_from_damage()
 	_emit_text_effect(player_runtime.position + Vector2(0.0, -42.0), "-" + str(amount), Color(1.0, 0.34, 0.30))
 	dialogue_label.text = "受击：" + source + " 让神之胃囊短暂闭合，击杀回血暂停。"
@@ -879,6 +897,7 @@ func _draw_field_room() -> void:
 	for slash: Dictionary in slashes:
 		_draw_slash(slash)
 	_draw_player()
+	_draw_active_log_fragment()
 	if room_cleared and room_index < rooms.size() - 1:
 		draw_rect(Rect2(Vector2(590.0, 108.0), Vector2(100.0, 22.0)), Color(0.80, 0.72, 0.45, 0.90))
 	for effect: Dictionary in effects:
@@ -895,9 +914,9 @@ func _draw_complete() -> void:
 
 
 func _draw_player() -> void:
-	var player_texture := art_assets.player_texture()
+	var player_texture := art_assets.player_frame(_player_anim_state(), _anim_frame_index(8.0))
 	if player_texture:
-		_draw_centered_texture(player_texture, player_runtime.position, Vector2(72.0, 72.0))
+		_draw_centered_texture(player_texture, player_runtime.position, Vector2(82.0, 82.0), player_runtime.facing.x < -0.05)
 	else:
 		var body_color := Color(0.82, 0.86, 0.82)
 		var stomach_color := Color(0.64, 0.08, 0.08) if god_stomach.has_relic or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
@@ -908,7 +927,27 @@ func _draw_player() -> void:
 		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 10.0, 0.0, TAU, 24, Color(0.18, 0.18, 0.18, 0.92), 2.0)
 	elif god_stomach.overflow_power > 0.0:
 		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 12.0, -0.4, TAU - 0.4, 32, Color(1.0, 0.26, 0.20, 0.86), 3.0)
-	draw_line(player_runtime.position, player_runtime.position + player_runtime.facing * 28.0, Color(0.76, 0.78, 0.75), 4.0)
+
+
+func _draw_active_log_fragment() -> void:
+	if sample_record_timer <= 0.0:
+		return
+	var shard_texture := art_assets.log_fragment_frame(_anim_frame_index(10.0))
+	var pos := player_runtime.position + Vector2(42.0, -46.0)
+	if shard_texture:
+		_draw_centered_texture(shard_texture, pos, Vector2(42.0, 42.0))
+	else:
+		draw_circle(pos, 12.0, Color(0.50, 0.82, 0.88, 0.90))
+
+
+func _player_anim_state() -> String:
+	if player_hit_anim_timer > 0.0:
+		return "hit"
+	if attack_runtime.cooldown > 0.08:
+		return "attack"
+	if player_runtime.velocity.length() > 12.0:
+		return "walk"
+	return "idle"
 
 
 func _draw_enemy(enemy: Dictionary) -> void:
@@ -928,9 +967,9 @@ func _draw_enemy(enemy: Dictionary) -> void:
 			color = Color(0.50, 0.08, 0.07)
 	if float(enemy["hit_flash"]) > 0.0:
 		color = Color(0.96, 0.78, 0.62)
-	var enemy_texture := art_assets.enemy_texture(kind)
+	var enemy_texture := art_assets.enemy_frame(kind, _enemy_anim_state(enemy), _anim_frame_index(7.0))
 	if enemy_texture:
-		_draw_centered_texture(enemy_texture, pos, art_assets.enemy_draw_size(kind))
+		_draw_centered_texture(enemy_texture, pos, art_assets.enemy_draw_size(kind), _enemy_should_flip(enemy))
 	else:
 		draw_circle(pos, radius, color)
 		if kind == "farmer":
@@ -942,6 +981,30 @@ func _draw_enemy(enemy: Dictionary) -> void:
 	if kind == "barn_king" and boss_weak_exposed:
 		draw_circle(pos + Vector2(0.0, 8.0), radius * 0.34, Color(0.96, 0.20, 0.15, 0.88))
 	draw_rect(Rect2(pos + Vector2(-radius, -radius - 12.0), Vector2(radius * 2.0 * hp_ratio, 4.0)), Color(0.78, 0.10, 0.08))
+
+
+func _enemy_anim_state(enemy: Dictionary) -> String:
+	var kind := String(enemy["kind"])
+	if kind == "barn_king":
+		var phase_state := "phase" + str(boss_phase)
+		if float(enemy["hit_flash"]) > 0.0:
+			return phase_state + "_hit"
+		if boss_rite_timer > 0.0 or float(enemy["special"]) > 2.15:
+			return phase_state + "_attack"
+		return phase_state
+	if float(enemy["hit_flash"]) > 0.0:
+		return "hit"
+	if float(enemy["cooldown"]) > 0.65 or float(enemy["special"]) > 2.35:
+		return "attack"
+	return "walk"
+
+
+func _enemy_should_flip(enemy: Dictionary) -> bool:
+	return player_runtime.position.x < (enemy["pos"] as Vector2).x
+
+
+func _anim_frame_index(fps: float) -> int:
+	return int(floor(Time.get_ticks_msec() * 0.001 * fps))
 
 
 func _draw_slash(slash: Dictionary) -> void:
@@ -959,8 +1022,13 @@ func _draw_text_effect(effect: Dictionary) -> void:
 	draw_string(ThemeDB.fallback_font, effect["pos"] as Vector2, String(effect["text"]), HORIZONTAL_ALIGNMENT_CENTER, 120.0, 18, color)
 
 
-func _draw_centered_texture(texture: Texture2D, center: Vector2, size: Vector2) -> void:
-	draw_texture_rect(texture, Rect2(center - size * 0.5, size), false)
+func _draw_centered_texture(texture: Texture2D, center: Vector2, size: Vector2, flip_h: bool = false) -> void:
+	if not flip_h:
+		draw_texture_rect(texture, Rect2(center - size * 0.5, size), false)
+		return
+	draw_set_transform(center, 0.0, Vector2(-1.0, 1.0))
+	draw_texture_rect(texture, Rect2(-size * 0.5, size), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_field_marks() -> void:
