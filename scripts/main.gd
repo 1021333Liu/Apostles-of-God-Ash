@@ -49,6 +49,8 @@ var dossier_text: String = ""
 var dossier_timer: float = 0.0
 var boss_rite_timer: float = 0.0
 var player_hit_anim_timer: float = 0.0
+var logbook_open: bool = false
+var logbook_index: int = 0
 
 var rooms: Array[Dictionary] = []
 var enemies: Array[Dictionary] = []
@@ -94,6 +96,18 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_logbook"):
+		_toggle_logbook()
+		get_viewport().set_input_as_handled()
+		return
+	if logbook_open:
+		if event.is_action_pressed("logbook_prev"):
+			_shift_logbook(-1)
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("logbook_next"):
+			_shift_logbook(1)
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("attack"):
 		attack_buffered = true
 		get_viewport().set_input_as_handled()
@@ -104,6 +118,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_timers(delta)
+	if logbook_open:
+		attack_buffered = false
+		interact_buffered = false
+		_update_ui()
+		queue_redraw()
+		return
 
 	match mode:
 		RunMode.SANCTUM:
@@ -138,6 +158,8 @@ func _draw() -> void:
 			_draw_field_room()
 		RunMode.COMPLETE:
 			_draw_complete()
+	if logbook_open:
+		_draw_logbook_overlay()
 
 
 func _setup_input() -> void:
@@ -151,6 +173,9 @@ func _setup_input() -> void:
 	_ensure_joy_axis_action("move_down", JOY_AXIS_LEFT_Y, 1.0)
 	_ensure_key_action("attack", KEY_J, KEY_SPACE)
 	_ensure_key_action("interact", KEY_E, KEY_ENTER)
+	_ensure_key_action("toggle_logbook", KEY_P, KEY_TAB)
+	_ensure_key_action("logbook_prev", KEY_A, KEY_LEFT)
+	_ensure_key_action("logbook_next", KEY_D, KEY_RIGHT)
 
 
 func _ensure_key_action(action_name: String, primary: Key, secondary: Key = KEY_NONE) -> void:
@@ -791,7 +816,7 @@ func _update_ui() -> void:
 		RunMode.SANCTUM:
 			room_label.text = "无声圣匣"
 			objective_label.text = "目标：按 E 进入低语田野"
-			prompt_label.text = INTERACT_HINT
+			prompt_label.text = "E 进入 | P 日志"
 			dossier_label.text = ""
 			archive_label.text = dossier_text if dossier_timer > 0.0 else _sanctum_archive_text()
 		RunMode.FIELD:
@@ -799,16 +824,16 @@ func _update_ui() -> void:
 			room_label.text = String(room["title"])
 			if room_cleared:
 				objective_label.text = "房间已清空：按 E 进入下一处" if room_index < rooms.size() - 1 else "Boss 已倒下"
-				prompt_label.text = INTERACT_HINT if room_index < rooms.size() - 1 else ""
+				prompt_label.text = ("E 下一处 | P 日志" if room_index < rooms.size() - 1 else "P 日志")
 			else:
 				objective_label.text = "清除敌人：" + str(enemies.size()) + " 个残响仍在活动"
-				prompt_label.text = "J / Space 近战"
+				prompt_label.text = "J / Space 近战 | P 日志"
 			dossier_label.text = dossier_text if dossier_timer > 0.0 else _field_dossier_summary(room)
 			archive_label.text = ""
 		RunMode.COMPLETE:
 			room_label.text = "回收完成"
 			objective_label.text = "神之胃囊已获得：按 E 回圣匣"
-			prompt_label.text = INTERACT_HINT
+			prompt_label.text = "E 回圣匣 | P 日志"
 			dossier_label.text = ""
 			archive_label.text = "残骸归档：神之胃囊\n本轮日志：" + str(log_archive.call("run_count")) + " 份\n提示：按 E 回收样本"
 
@@ -847,6 +872,23 @@ func _field_dossier_summary(room: Dictionary) -> String:
 
 func _sanctum_archive_text() -> String:
 	return _compact_sanctum_text()
+
+
+func _toggle_logbook() -> void:
+	logbook_open = not logbook_open
+	var count: int = int(log_archive.call("collected_count"))
+	if count <= 0:
+		logbook_index = 0
+	else:
+		logbook_index = clampi(logbook_index, 0, count - 1)
+
+
+func _shift_logbook(delta: int) -> void:
+	var count: int = int(log_archive.call("collected_count"))
+	if count <= 0:
+		logbook_index = 0
+		return
+	logbook_index = wrapi(logbook_index + delta, 0, count)
 
 
 func _compact_sample_text(fragment: Dictionary, fallback_note: String) -> String:
@@ -1078,6 +1120,105 @@ func _draw_text_effect(effect: Dictionary) -> void:
 	var color: Color = effect["color"]
 	color.a = alpha
 	draw_string(ThemeDB.fallback_font, effect["pos"] as Vector2, String(effect["text"]), HORIZONTAL_ALIGNMENT_CENTER, 120.0, 18, color)
+
+
+func _draw_logbook_overlay() -> void:
+	var dim := Color(0.0, 0.0, 0.0, 0.62)
+	draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), dim)
+
+	var panel := Rect2(Vector2(118.0, 78.0), Vector2(1044.0, 548.0))
+	draw_rect(panel, Color(0.035, 0.030, 0.032, 0.96))
+	draw_rect(panel, Color(0.60, 0.56, 0.48, 0.92), false, 3.0)
+	_draw_panel_corners(panel, Color(0.76, 0.12, 0.12), 28.0, 4.0)
+
+	draw_string(ThemeDB.fallback_font, Vector2(154.0, 128.0), "圣匣日志背包", HORIZONTAL_ALIGNMENT_LEFT, 430.0, 32, Color(0.94, 0.86, 0.70))
+	draw_string(ThemeDB.fallback_font, Vector2(760.0, 126.0), "P 关闭  |  A/D 或 ←/→ 切换", HORIZONTAL_ALIGNMENT_RIGHT, 360.0, 19, Color(0.74, 0.80, 0.78))
+
+	var count: int = int(log_archive.call("collected_count"))
+	var total: int = int(log_archive.call("fragment_count_total"))
+	var progress: Dictionary = log_archive.call("story_progress")
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(154.0, 162.0),
+		"归档碎片 " + str(count) + "/" + str(total) + "  |  谷仓王故事 " + str(progress["collected"]) + "/" + str(progress["required"]),
+		HORIZONTAL_ALIGNMENT_LEFT,
+		720.0,
+		20,
+		Color(0.64, 0.84, 0.84)
+	)
+
+	var list_rect := Rect2(Vector2(154.0, 194.0), Vector2(322.0, 352.0))
+	var detail_rect := Rect2(Vector2(510.0, 194.0), Vector2(574.0, 352.0))
+	draw_rect(list_rect, Color(0.08, 0.065, 0.060, 0.92))
+	draw_rect(detail_rect, Color(0.07, 0.055, 0.052, 0.92))
+	draw_rect(list_rect, Color(0.40, 0.38, 0.32, 0.78), false, 2.0)
+	draw_rect(detail_rect, Color(0.40, 0.38, 0.32, 0.78), false, 2.0)
+
+	if count <= 0:
+		_draw_wrapped_lines(Vector2(182.0, 250.0), "空槽：尚未采回日志碎片。\n击杀敌人后，圣匣会自动归档第一批样本。\n关闭此页，继续进入田野。", 34, 24, Color(0.84, 0.78, 0.68), 300.0)
+		_draw_wrapped_lines(Vector2(538.0, 250.0), "这里以后会显示：样本编号、来源敌人、来源房间、记忆文本、胃囊反应，以及它是否拼入谷仓王故事。", 30, 24, Color(0.82, 0.84, 0.78), 500.0)
+		return
+
+	logbook_index = clampi(logbook_index, 0, count - 1)
+	_draw_logbook_list(list_rect, count)
+	_draw_logbook_detail(detail_rect, progress)
+
+
+func _draw_logbook_list(list_rect: Rect2, count: int) -> void:
+	draw_string(ThemeDB.fallback_font, list_rect.position + Vector2(22.0, 34.0), "样本列表", HORIZONTAL_ALIGNMENT_LEFT, 260.0, 21, Color(0.90, 0.78, 0.62))
+	var first_index: int = clampi(logbook_index - 3, 0, maxi(0, count - 7))
+	for offset in range(0, min(8, count - first_index)):
+		var index := first_index + offset
+		var fragment: Dictionary = log_archive.call("fragment_at", index)
+		var y := list_rect.position.y + 72.0 + float(offset) * 32.0
+		var selected := index == logbook_index
+		if selected:
+			draw_rect(Rect2(Vector2(list_rect.position.x + 14.0, y - 22.0), Vector2(list_rect.size.x - 28.0, 28.0)), Color(0.36, 0.08, 0.07, 0.88))
+		var marker := "> " if selected else "  "
+		var label := marker + String(fragment.get("title", "未命名样本"))
+		draw_string(ThemeDB.fallback_font, Vector2(list_rect.position.x + 26.0, y), label, HORIZONTAL_ALIGNMENT_LEFT, 270.0, 18, Color(0.92, 0.88, 0.76) if selected else Color(0.70, 0.75, 0.72))
+
+
+func _draw_logbook_detail(detail_rect: Rect2, progress: Dictionary) -> void:
+	var fragment: Dictionary = log_archive.call("fragment_at", logbook_index)
+	var source := _enemy_log_label(String(fragment.get("source_enemy", "")))
+	var rarity := String(fragment.get("rarity", "common"))
+	var title := String(fragment.get("title", "未命名样本"))
+	draw_string(ThemeDB.fallback_font, detail_rect.position + Vector2(28.0, 40.0), title, HORIZONTAL_ALIGNMENT_LEFT, 510.0, 27, Color(0.95, 0.84, 0.66))
+	draw_string(ThemeDB.fallback_font, detail_rect.position + Vector2(28.0, 74.0), "来源：" + source + "  |  类型：" + rarity, HORIZONTAL_ALIGNMENT_LEFT, 510.0, 18, Color(0.62, 0.84, 0.84))
+	_draw_wrapped_lines(detail_rect.position + Vector2(28.0, 122.0), String(fragment.get("text", "")), 29, 26, Color(0.88, 0.85, 0.78), 506.0)
+	_draw_wrapped_lines(detail_rect.position + Vector2(28.0, 226.0), "胃囊反应：" + String(fragment.get("stomach_reaction", "")), 27, 24, Color(0.82, 0.62, 0.58), 506.0)
+	var story_line := "第一故事：" + ("已拼合" if bool(progress["unlocked"]) else "待补证") + "  " + str(progress["collected"]) + "/" + str(progress["required"])
+	draw_string(ThemeDB.fallback_font, detail_rect.position + Vector2(28.0, 326.0), story_line, HORIZONTAL_ALIGNMENT_LEFT, 506.0, 20, Color(0.90, 0.80, 0.52))
+
+
+func _draw_wrapped_lines(origin: Vector2, text: String, max_chars: int, line_height: int, color: Color, width: float) -> void:
+	var y := origin.y
+	for raw_line: String in text.split("\n"):
+		var remaining := raw_line
+		if remaining.is_empty():
+			y += float(line_height)
+			continue
+		while not remaining.is_empty():
+			var line := remaining.substr(0, max_chars)
+			draw_string(ThemeDB.fallback_font, Vector2(origin.x, y), line, HORIZONTAL_ALIGNMENT_LEFT, width, 19, color)
+			remaining = remaining.substr(max_chars)
+			y += float(line_height)
+
+
+func _draw_panel_corners(rect: Rect2, color: Color, length: float, width: float) -> void:
+	var left := rect.position.x
+	var top := rect.position.y
+	var right := rect.end.x
+	var bottom := rect.end.y
+	draw_line(Vector2(left, top), Vector2(left + length, top), color, width)
+	draw_line(Vector2(left, top), Vector2(left, top + length), color, width)
+	draw_line(Vector2(right, top), Vector2(right - length, top), color, width)
+	draw_line(Vector2(right, top), Vector2(right, top + length), color, width)
+	draw_line(Vector2(left, bottom), Vector2(left + length, bottom), color, width)
+	draw_line(Vector2(left, bottom), Vector2(left, bottom - length), color, width)
+	draw_line(Vector2(right, bottom), Vector2(right - length, bottom), color, width)
+	draw_line(Vector2(right, bottom), Vector2(right, bottom - length), color, width)
 
 
 func _draw_centered_texture(texture: Texture2D, center: Vector2, size: Vector2, flip_h: bool = false) -> void:

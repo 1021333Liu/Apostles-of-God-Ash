@@ -41,8 +41,20 @@ func collected_count() -> int:
 	return collected_fragments.size()
 
 
+func fragment_count_total() -> int:
+	if database == null:
+		return 0
+	return int(database.call("fragment_count"))
+
+
 func run_count() -> int:
 	return run_fragments.size()
+
+
+func fragment_at(index: int) -> Dictionary:
+	if index < 0 or index >= collected_fragments.size():
+		return {}
+	return collected_fragments[index].duplicate(true)
 
 
 func latest_fragment() -> Dictionary:
