@@ -305,35 +305,33 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(root)
 
-	_make_panel(root, Vector2(18.0, 14.0), Vector2(560.0, 174.0))
-	_make_panel(root, Vector2(746.0, 14.0), Vector2(516.0, 188.0))
-	_make_panel(root, Vector2(744.0, 482.0), Vector2(500.0, 112.0))
-	_make_panel(root, Vector2(94.0, 594.0), Vector2(1092.0, 92.0))
-	_make_panel_marks(root, Vector2(18.0, 14.0), Vector2(560.0, 174.0), Color(0.68, 0.13, 0.12))
-	_make_panel_marks(root, Vector2(746.0, 14.0), Vector2(516.0, 188.0), Color(0.66, 0.58, 0.42))
-	_make_panel_marks(root, Vector2(744.0, 482.0), Vector2(500.0, 112.0), Color(0.68, 0.13, 0.12))
-	_make_panel_marks(root, Vector2(94.0, 594.0), Vector2(1092.0, 92.0), Color(0.68, 0.13, 0.12))
-	_make_accent(root, Vector2(30.0, 28.0), Vector2(5.0, 146.0), Color(0.68, 0.13, 0.12))
-	_make_accent(root, Vector2(758.0, 26.0), Vector2(5.0, 164.0), Color(0.66, 0.58, 0.42))
-	_make_accent(root, Vector2(185.0, 68.0), Vector2(222.0, 18.0), Color(0.01, 0.008, 0.01, 0.88))
-	_make_accent(root, Vector2(185.0, 103.0), Vector2(222.0, 14.0), Color(0.01, 0.008, 0.01, 0.88))
+	_make_panel(root, Vector2(22.0, 18.0), Vector2(420.0, 138.0))
+	_make_panel(root, Vector2(858.0, 18.0), Vector2(400.0, 116.0))
+	_make_panel(root, Vector2(170.0, 624.0), Vector2(940.0, 56.0))
+	_make_panel_marks(root, Vector2(22.0, 18.0), Vector2(420.0, 138.0), Color(0.68, 0.13, 0.12))
+	_make_panel_marks(root, Vector2(858.0, 18.0), Vector2(400.0, 116.0), Color(0.66, 0.58, 0.42))
+	_make_panel_marks(root, Vector2(170.0, 624.0), Vector2(940.0, 56.0), Color(0.68, 0.13, 0.12))
+	_make_accent(root, Vector2(34.0, 30.0), Vector2(4.0, 108.0), Color(0.68, 0.13, 0.12))
+	_make_accent(root, Vector2(870.0, 30.0), Vector2(4.0, 86.0), Color(0.66, 0.58, 0.42))
+	_make_accent(root, Vector2(158.0, 63.0), Vector2(184.0, 14.0), Color(0.01, 0.008, 0.01, 0.74))
+	_make_accent(root, Vector2(158.0, 101.0), Vector2(184.0, 10.0), Color(0.01, 0.008, 0.01, 0.74))
 
-	room_label = _make_label(root, "RoomLabel", Vector2(48.0, 22.0), Vector2(500.0, 34.0), 24, Color(0.93, 0.86, 0.76))
-	hp_icon = _make_icon(root, hp_icon_texture, Vector2(48.0, 58.0), Vector2(26.0, 26.0))
-	hp_label = _make_label(root, "HPLabel", Vector2(84.0, 61.0), Vector2(96.0, 24.0), 17, Color(0.90, 0.72, 0.66))
-	hp_bar = _make_hp_bar(root, Vector2(185.0, 64.0), Vector2(214.0, 18.0))
-	stomach_icon = _make_icon(root, stomach_open_texture, Vector2(51.0, 95.0), Vector2(22.0, 22.0))
-	organ_label = _make_label(root, "OrganLabel", Vector2(84.0, 92.0), Vector2(438.0, 54.0), 16, Color(0.86, 0.70, 0.70))
+	room_label = _make_label(root, "RoomLabel", Vector2(48.0, 26.0), Vector2(360.0, 28.0), 21, Color(0.93, 0.86, 0.76))
+	hp_icon = _make_icon(root, hp_icon_texture, Vector2(48.0, 60.0), Vector2(22.0, 22.0))
+	hp_label = _make_label(root, "HPLabel", Vector2(78.0, 61.0), Vector2(76.0, 22.0), 16, Color(0.90, 0.72, 0.66))
+	hp_bar = _make_hp_bar(root, Vector2(158.0, 61.0), Vector2(178.0, 15.0))
+	stomach_icon = _make_icon(root, stomach_open_texture, Vector2(49.0, 94.0), Vector2(19.0, 19.0))
+	organ_label = _make_label(root, "OrganLabel", Vector2(78.0, 88.0), Vector2(340.0, 42.0), 14, Color(0.86, 0.70, 0.70))
 	organ_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	stomach_bar = _make_stomach_bar(root, Vector2(185.0, 100.0), Vector2(214.0, 14.0))
-	memory_shard_icon = _make_icon(root, memory_shard_texture, Vector2(48.0, 148.0), Vector2(24.0, 24.0))
-	relic_label = _make_label(root, "RelicLabel", Vector2(84.0, 148.0), Vector2(454.0, 24.0), 15, Color(0.66, 0.78, 0.78))
-	objective_label = _make_label(root, "ObjectiveLabel", Vector2(778.0, 28.0), Vector2(462.0, 44.0), 18, Color(0.88, 0.82, 0.68))
+	stomach_bar = _make_stomach_bar(root, Vector2(158.0, 101.0), Vector2(178.0, 10.0))
+	memory_shard_icon = _make_icon(root, memory_shard_texture, Vector2(49.0, 128.0), Vector2(18.0, 18.0))
+	relic_label = _make_label(root, "RelicLabel", Vector2(78.0, 125.0), Vector2(338.0, 22.0), 13, Color(0.66, 0.78, 0.78))
+	objective_label = _make_label(root, "ObjectiveLabel", Vector2(884.0, 32.0), Vector2(330.0, 28.0), 18, Color(0.88, 0.82, 0.68))
 	objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	dossier_label = _make_label(root, "DossierLabel", Vector2(778.0, 82.0), Vector2(442.0, 104.0), 16, Color(0.76, 0.85, 0.78))
+	dossier_label = _make_label(root, "DossierLabel", Vector2(884.0, 68.0), Vector2(330.0, 54.0), 14, Color(0.76, 0.85, 0.78))
 	dossier_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dossier_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	sample_label = _make_label(root, "SampleLabel", Vector2(766.0, 492.0), Vector2(456.0, 88.0), 16, Color(0.90, 0.78, 0.68))
+	sample_label = _make_label(root, "SampleLabel", Vector2(728.0, 496.0), Vector2(430.0, 68.0), 15, Color(0.90, 0.78, 0.68))
 	sample_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sample_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	archive_label = _make_label(root, "ArchiveLabel", Vector2(286.0, 118.0), Vector2(708.0, 238.0), 16, Color(0.74, 0.82, 0.78))
@@ -342,10 +340,10 @@ func _build_ui() -> void:
 	boss_rite_label = _make_label(root, "BossRiteLabel", Vector2(390.0, 164.0), Vector2(500.0, 66.0), 22, Color(1.0, 0.34, 0.28))
 	boss_rite_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	boss_rite_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	dialogue_label = _make_label(root, "DialogueLabel", Vector2(110.0, 606.0), Vector2(1060.0, 70.0), 20, Color(0.86, 0.83, 0.78))
+	dialogue_label = _make_label(root, "DialogueLabel", Vector2(190.0, 636.0), Vector2(900.0, 34.0), 18, Color(0.86, 0.83, 0.78))
 	dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt_label = _make_label(root, "PromptLabel", Vector2(510.0, 548.0), Vector2(260.0, 32.0), 18, Color(0.92, 0.90, 0.74))
+	prompt_label = _make_label(root, "PromptLabel", Vector2(500.0, 572.0), Vector2(280.0, 32.0), 18, Color(0.92, 0.90, 0.74))
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_build_logbook_ui(root)
 
@@ -373,6 +371,7 @@ func _build_logbook_ui(parent: Node) -> void:
 	_make_label(logbook_root, "LogbookHeader", Vector2(150.0, 106.0), Vector2(390.0, 42.0), 30, Color(0.94, 0.86, 0.70)).text = "圣匣日志"
 	_make_label(logbook_root, "LogbookHint", Vector2(732.0, 110.0), Vector2(318.0, 28.0), 18, Color(0.74, 0.80, 0.78)).text = "P 关闭 | A/D 或 ←/→ 切换"
 	logbook_progress_label = _make_label(logbook_root, "LogbookProgress", Vector2(150.0, 150.0), Vector2(770.0, 26.0), 18, Color(0.64, 0.84, 0.84))
+	_make_label(logbook_root, "LogbookExplain", Vector2(150.0, 170.0), Vector2(880.0, 22.0), 14, Color(0.66, 0.68, 0.62)).text = "吞食胃：体内的器官残骸，会把击杀转成生命，并读取敌人的记忆碎片。器官判读：残骸对这段记忆的身体反应。"
 
 	_make_label(logbook_root, "LogbookListTitle", Vector2(176.0, 218.0), Vector2(244.0, 26.0), 21, Color(0.90, 0.78, 0.62)).text = "碎片列表"
 	logbook_list_labels.clear()
@@ -436,12 +435,12 @@ func _make_panel(parent: Node, pos: Vector2, size: Vector2) -> Panel:
 	panel.size = size
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.045, 0.035, 0.038, 0.92)
-	style.border_color = Color(0.50, 0.47, 0.42, 0.82)
-	style.set_border_width_all(3)
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
-	style.shadow_size = 4
-	style.shadow_offset = Vector2(4.0, 4.0)
+	style.bg_color = Color(0.030, 0.026, 0.024, 0.76)
+	style.border_color = Color(0.62, 0.56, 0.44, 0.58)
+	style.set_border_width_all(1)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.48)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2(2.0, 3.0)
 	style.anti_aliasing = false
 	panel.add_theme_stylebox_override("panel", style)
 	parent.add_child(panel)
@@ -450,8 +449,8 @@ func _make_panel(parent: Node, pos: Vector2, size: Vector2) -> Panel:
 
 func _make_panel_marks(parent: Node, pos: Vector2, size: Vector2, color: Color) -> void:
 	var inset := 6.0
-	var short_edge := 18.0
-	var thick := 3.0
+	var short_edge := 14.0
+	var thick := 2.0
 	_make_accent(parent, pos + Vector2(inset, inset), Vector2(short_edge, thick), color)
 	_make_accent(parent, pos + Vector2(inset, inset), Vector2(thick, short_edge), color)
 	_make_accent(parent, pos + Vector2(size.x - inset - short_edge, size.y - inset - thick), Vector2(short_edge, thick), color)
@@ -597,7 +596,7 @@ func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
 
 
 func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> void:
-	_emit_text_effect(player_runtime.position + Vector2(0.0, -34.0), "胃囊回响", Color(0.70, 0.92, 0.84))
+	_emit_text_effect(player_runtime.position + Vector2(0.0, -34.0), "器官回响", Color(0.70, 0.92, 0.84))
 	var reward: Dictionary = god_stomach.apply_kill_reward(kind, player_runtime.hp, PLAYER_MAX_HP)
 	player_runtime.apply_heal(int(reward["hp"]), PLAYER_MAX_HP)
 	var room_id := _current_room_id()
@@ -617,7 +616,7 @@ func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> vo
 		var progress: Dictionary = log_archive.call("story_progress")
 		dialogue_label.text = "记忆：" + ("第一故事已拼合。" if bool(progress["unlocked"]) else "谷仓王的胃还缺几份证词。")
 	else:
-		dialogue_label.text = "采样记录：" + enemy_name + " 倒下后，" + ("一份记忆被圣匣接收。" if not archived_fragment.is_empty() else "土地短暂安静。")
+		dialogue_label.text = enemy_name + " 倒下后，" + ("一份记忆被圣匣接收。" if not archived_fragment.is_empty() else "土地短暂安静。")
 
 
 func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: bool, overflow: bool, final_damage: int, archived_fragment: Dictionary) -> void:
@@ -635,7 +634,7 @@ func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: 
 	if not archived_fragment.is_empty():
 		var progress: Dictionary = log_archive.call("story_progress")
 		progress_line = "\n谷仓王故事 " + str(progress["collected"]) + "/" + str(progress["required"])
-	sample_record_text = "采样记录 | " + enemy_name + "\n" + shard_note + progress_line
+	sample_record_text = shard_note + progress_line
 	sample_record_timer = 2.4 if not archived_fragment.is_empty() else 1.8
 
 
