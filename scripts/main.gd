@@ -49,6 +49,11 @@ var dossier_text: String = ""
 var dossier_timer: float = 0.0
 var boss_rite_timer: float = 0.0
 var player_hit_anim_timer: float = 0.0
+var hit_stop_timer: float = 0.0
+var screen_shake_timer: float = 0.0
+var screen_shake_strength: float = 0.0
+var damage_flash_timer: float = 0.0
+var log_fragment_pulse_timer: float = 0.0
 var logbook_open: bool = false
 var logbook_index: int = 0
 
@@ -86,7 +91,9 @@ var logbook_meta_label: Label
 var logbook_text_label: Label
 var logbook_organ_label: Label
 var logbook_progress_label: Label
+var logbook_story_label: Label
 var logbook_empty_label: Label
+var logbook_item_bars: Array[ColorRect] = []
 
 
 func _ready() -> void:
@@ -126,6 +133,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_timers(delta)
+	if hit_stop_timer > 0.0 and mode == RunMode.FIELD:
+		attack_buffered = false
+		interact_buffered = false
+		_update_ui()
+		queue_redraw()
+		return
 	if logbook_open:
 		attack_buffered = false
 		interact_buffered = false
@@ -160,6 +173,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
+	var shake_offset := _screen_shake_offset()
+	draw_set_transform(shake_offset, 0.0, Vector2.ONE)
 	match mode:
 		RunMode.SANCTUM:
 			_draw_sanctum()
@@ -167,6 +182,10 @@ func _draw() -> void:
 			_draw_field_room()
 		RunMode.COMPLETE:
 			_draw_complete()
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if damage_flash_timer > 0.0:
+		var flash_alpha := 0.22 * clampf(damage_flash_timer / 0.22, 0.0, 1.0)
+		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.86, 0.05, 0.04, flash_alpha))
 
 
 func _setup_input() -> void:
@@ -371,11 +390,20 @@ func _build_logbook_ui(parent: Node) -> void:
 	_make_label(logbook_root, "LogbookHeader", Vector2(150.0, 106.0), Vector2(390.0, 42.0), 30, Color(0.94, 0.86, 0.70)).text = "圣匣日志"
 	_make_label(logbook_root, "LogbookHint", Vector2(732.0, 110.0), Vector2(318.0, 28.0), 18, Color(0.74, 0.80, 0.78)).text = "P 关闭 | A/D 或 ←/→ 切换"
 	logbook_progress_label = _make_label(logbook_root, "LogbookProgress", Vector2(150.0, 150.0), Vector2(770.0, 26.0), 18, Color(0.64, 0.84, 0.84))
-	_make_label(logbook_root, "LogbookExplain", Vector2(150.0, 170.0), Vector2(880.0, 22.0), 14, Color(0.66, 0.68, 0.62)).text = "吞食胃：体内的器官残骸，会把击杀转成生命，并读取敌人的记忆碎片。器官判读：残骸对这段记忆的身体反应。"
+	_make_label(logbook_root, "LogbookExplain", Vector2(150.0, 170.0), Vector2(880.0, 22.0), 14, Color(0.66, 0.68, 0.62)).text = "吞食胃：击杀回血，读取记忆。判读：器官对碎片的反应。"
 
 	_make_label(logbook_root, "LogbookListTitle", Vector2(176.0, 218.0), Vector2(244.0, 26.0), 21, Color(0.90, 0.78, 0.62)).text = "碎片列表"
 	logbook_list_labels.clear()
+	logbook_item_bars.clear()
 	for i in 8:
+		var item_bar := ColorRect.new()
+		item_bar.name = "LogbookItemBar" + str(i)
+		item_bar.position = Vector2(164.0, 255.0 + float(i) * 32.0)
+		item_bar.size = Vector2(276.0, 28.0)
+		item_bar.color = Color(0.0, 0.0, 0.0, 0.0)
+		item_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		logbook_root.add_child(item_bar)
+		logbook_item_bars.append(item_bar)
 		var item_label := _make_label(logbook_root, "LogbookItem" + str(i), Vector2(176.0, 260.0 + float(i) * 32.0), Vector2(254.0, 28.0), 18, Color(0.70, 0.75, 0.72))
 		logbook_list_labels.append(item_label)
 
@@ -385,8 +413,10 @@ func _build_logbook_ui(parent: Node) -> void:
 	logbook_text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	logbook_organ_label = _make_label(logbook_root, "LogbookOrgan", Vector2(536.0, 424.0), Vector2(446.0, 58.0), 18, Color(0.82, 0.62, 0.58))
 	logbook_organ_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	logbook_empty_label = _make_label(logbook_root, "LogbookEmpty", Vector2(176.0, 276.0), Vector2(780.0, 92.0), 20, Color(0.84, 0.78, 0.68))
+	logbook_story_label = _make_label(logbook_root, "LogbookStory", Vector2(536.0, 492.0), Vector2(446.0, 28.0), 18, Color(0.64, 0.84, 0.84))
+	logbook_empty_label = _make_label(logbook_root, "LogbookEmpty", Vector2(536.0, 292.0), Vector2(446.0, 92.0), 22, Color(0.84, 0.78, 0.68))
 	logbook_empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	logbook_empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _make_label(parent: Node, node_name: String, pos: Vector2, size: Vector2, font_size: int, color: Color) -> Label:
@@ -533,13 +563,18 @@ func _update_timers(delta: float) -> void:
 	dossier_timer = maxf(0.0, dossier_timer - delta)
 	boss_rite_timer = maxf(0.0, boss_rite_timer - delta)
 	player_hit_anim_timer = maxf(0.0, player_hit_anim_timer - delta)
+	hit_stop_timer = maxf(0.0, hit_stop_timer - delta)
+	screen_shake_timer = maxf(0.0, screen_shake_timer - delta)
+	damage_flash_timer = maxf(0.0, damage_flash_timer - delta)
+	log_fragment_pulse_timer = maxf(0.0, log_fragment_pulse_timer - delta)
 	if mode == RunMode.FIELD and room_index == rooms.size() - 1:
 		boss_expose_timer -= delta
 		if boss_expose_timer <= 0.0:
 			boss_weak_exposed = not boss_weak_exposed
-			boss_expose_timer = 1.25 if boss_weak_exposed else 3.0
+			boss_expose_timer = 1.9 if boss_weak_exposed else 2.8
 			if boss_weak_exposed:
-				boss_rite_timer = 1.25
+				boss_rite_timer = 1.9
+				_emit_text_effect(Vector2(640.0, 148.0), "胃囊暴露", Color(0.98, 0.26, 0.20))
 
 
 func _update_player_movement(delta: float, bounds: Rect2) -> void:
@@ -572,7 +607,7 @@ func _try_player_attack() -> void:
 			continue
 		var final_damage := int(attack["damage"])
 		if String(enemy["kind"]) == "barn_king" and boss_weak_exposed:
-			final_damage += 16
+			final_damage += 24
 			_emit_text_effect(enemy_pos + Vector2(0.0, -58.0), "胃囊暴露", Color(0.95, 0.42, 0.36))
 		_damage_enemy(i, final_damage, (attack["dir"] as Vector2) * float(attack["knockback"]))
 
@@ -583,8 +618,10 @@ func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
 	var enemy: Dictionary = enemies[index]
 	enemy["hp"] = float(enemy["hp"]) - float(amount)
 	enemy["pos"] = (enemy["pos"] as Vector2) + knockback
-	enemy["hit_flash"] = 0.12
+	enemy["hit_flash"] = 0.20
 	_emit_text_effect(enemy["pos"] as Vector2, str(amount), Color(0.96, 0.76, 0.58))
+	var impactful_hit := float(enemy["hp"]) <= 0.0 or attack_runtime.combo_step == 3
+	_trigger_hit_feedback(impactful_hit)
 
 	if float(enemy["hp"]) > 0.0:
 		return
@@ -601,8 +638,10 @@ func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> vo
 	player_runtime.apply_heal(int(reward["hp"]), PLAYER_MAX_HP)
 	var room_id := _current_room_id()
 	var archived_fragment: Dictionary = log_archive.call("try_collect_from_kill", kind, room_id)
-	if not archived_fragment.is_empty():
+	var fragment_collected := bool(archived_fragment.get("collected", false))
+	if fragment_collected:
 		_emit_text_effect(player_runtime.position + Vector2(0.0, -78.0), "样本归档", Color(0.58, 0.84, 0.92))
+		log_fragment_pulse_timer = 3.1
 	_show_sample_record(kind, enemy_name, int(reward["healed"]), bool(reward["locked"]), bool(reward["overflow"]), final_damage, archived_fragment)
 	if bool(reward["locked"]):
 		_emit_text_effect(player_runtime.position + Vector2(0.0, -58.0), "饥饿惩罚", Color(0.65, 0.55, 0.48))
@@ -616,7 +655,7 @@ func _on_enemy_killed(kind: String, enemy_name: String, final_damage: int) -> vo
 		var progress: Dictionary = log_archive.call("story_progress")
 		dialogue_label.text = "记忆：" + ("第一故事已拼合。" if bool(progress["unlocked"]) else "谷仓王的胃还缺几份证词。")
 	else:
-		dialogue_label.text = enemy_name + " 倒下后，" + ("一份记忆被圣匣接收。" if not archived_fragment.is_empty() else "土地短暂安静。")
+		dialogue_label.text = enemy_name + " 倒下后，" + ("一份记忆被圣匣接收。" if fragment_collected else "土地短暂安静。")
 
 
 func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: bool, overflow: bool, final_damage: int, archived_fragment: Dictionary) -> void:
@@ -626,16 +665,19 @@ func _show_sample_record(kind: String, enemy_name: String, healed: int, locked: 
 	elif overflow:
 		reaction = "血量溢出，转写为刃"
 
+	var fragment_collected := bool(archived_fragment.get("collected", false))
 	var shard_note := _compact_sample_text(archived_fragment, "日志碎片：未归档")
-	if not archived_fragment.is_empty():
+	if bool(archived_fragment.get("missed", false)):
+		shard_note = "日志碎片：未检出"
+	if fragment_collected:
 		reaction = String(archived_fragment.get("stomach_reaction", reaction))
 
 	var progress_line := ""
-	if not archived_fragment.is_empty():
+	if fragment_collected:
 		var progress: Dictionary = log_archive.call("story_progress")
-		progress_line = "\n谷仓王故事 " + str(progress["collected"]) + "/" + str(progress["required"])
+		progress_line = "\n谷仓王故事 " + str(progress["collected"]) + "/" + str(progress["required"]) + " | P 查看"
 	sample_record_text = shard_note + progress_line
-	sample_record_timer = 2.4 if not archived_fragment.is_empty() else 1.8
+	sample_record_timer = 3.1 if fragment_collected else 0.9
 
 
 func _update_enemies(delta: float) -> void:
@@ -673,7 +715,7 @@ func _update_barn_king(enemy: Dictionary, delta: float) -> void:
 			phase_text = "开仓。开腹。开一切还能装下东西的地方。"
 		dialogue_label.text = phase_text
 		_emit_text_effect(pos + Vector2(0.0, -70.0), "阶段 " + str(boss_phase), Color(1.0, 0.62, 0.42))
-		boss_rite_timer = 1.35
+		boss_rite_timer = 1.9
 
 	_handle_enemy_event(enemy_runtime.update_barn_king(enemy, delta, player_runtime.position, boss_phase))
 
@@ -761,7 +803,10 @@ func _player_inside_hazard() -> bool:
 
 func _take_player_damage(amount: int, source: String) -> void:
 	player_runtime.apply_damage(amount)
-	player_hit_anim_timer = 0.18
+	player_hit_anim_timer = 0.30
+	damage_flash_timer = 0.22
+	screen_shake_timer = maxf(screen_shake_timer, 0.18)
+	screen_shake_strength = maxf(screen_shake_strength, 5.5)
 	god_stomach.close_from_damage()
 	_emit_text_effect(player_runtime.position + Vector2(0.0, -42.0), "-" + str(amount), Color(1.0, 0.34, 0.30))
 	dialogue_label.text = "受击：" + source + " 让吞食胃短暂闭合，击杀回血暂停。"
@@ -793,6 +838,19 @@ func _update_effects(delta: float) -> void:
 
 func _emit_text_effect(pos: Vector2, text: String, color: Color) -> void:
 	effects.append({"pos": pos, "text": text, "color": color, "timer": 0.8})
+
+
+func _trigger_hit_feedback(impactful: bool) -> void:
+	hit_stop_timer = maxf(hit_stop_timer, 0.09 if impactful else 0.05)
+	screen_shake_timer = maxf(screen_shake_timer, 0.16 if impactful else 0.10)
+	screen_shake_strength = maxf(screen_shake_strength, 7.0 if impactful else 4.0)
+
+
+func _screen_shake_offset() -> Vector2:
+	if screen_shake_timer <= 0.0:
+		return Vector2.ZERO
+	var strength := screen_shake_strength * clampf(screen_shake_timer / 0.16, 0.0, 1.0)
+	return Vector2(randf_range(-strength, strength), randf_range(-strength, strength))
 
 
 func _check_room_progress() -> void:
@@ -862,7 +920,7 @@ func _update_ui() -> void:
 	match mode:
 		RunMode.SANCTUM:
 			room_label.text = "无声圣匣"
-			objective_label.text = "目标：按 E 进入低语田野"
+			objective_label.text = "E 进入田野"
 			prompt_label.text = "E 进入 | P 日志"
 			dossier_label.text = ""
 			archive_label.text = dossier_text if dossier_timer > 0.0 else _sanctum_archive_text()
@@ -870,16 +928,16 @@ func _update_ui() -> void:
 			var room: Dictionary = rooms[room_index]
 			room_label.text = String(room["title"])
 			if room_cleared:
-				objective_label.text = "房间已清空：按 E 进入下一处" if room_index < rooms.size() - 1 else "Boss 已倒下"
+				objective_label.text = "已清空：E 下一处" if room_index < rooms.size() - 1 else "Boss 已倒下"
 				prompt_label.text = ("E 下一处 | P 日志" if room_index < rooms.size() - 1 else "P 日志")
 			else:
-				objective_label.text = "清除敌人：" + str(enemies.size()) + " 个残响仍在活动"
-				prompt_label.text = "J / Space 近战 | P 日志"
-			dossier_label.text = dossier_text if dossier_timer > 0.0 else _field_dossier_summary(room)
+				objective_label.text = "清敌：" + str(enemies.size())
+				prompt_label.text = "J / Space 近战"
+			dossier_label.text = _field_dossier_summary(room) if dossier_timer > 0.0 or room_cleared else ""
 			archive_label.text = ""
 		RunMode.COMPLETE:
 			room_label.text = "回收完成"
-			objective_label.text = "器官残骸已获得：按 E 回圣匣"
+			objective_label.text = "E 回圣匣"
 			prompt_label.text = "E 回圣匣 | P 日志"
 			dossier_label.text = ""
 			archive_label.text = "残骸归档：吞食胃\n本轮日志：" + str(log_archive.call("run_count")) + " 份\n提示：按 E 回收样本"
@@ -887,7 +945,7 @@ func _update_ui() -> void:
 	hp_label.text = "HP %d/%d" % [player_runtime.hp, PLAYER_MAX_HP]
 	hp_bar.value = player_runtime.hp
 	var story_progress: Dictionary = log_archive.call("story_progress")
-	relic_label.text = "器官残骸：吞食胃" + (" 已归档" if god_stomach.has_relic else " 试用中") + " | 日志 " + str(story_progress["collected"]) + "/" + str(story_progress["required"])
+	relic_label.text = "吞食胃" + (" 已归档" if god_stomach.has_relic else " 试用") + " | 日志 " + str(story_progress["collected"]) + "/" + str(story_progress["required"])
 	organ_label.text = _organ_state_text()
 	stomach_bar.value = god_stomach.hunger_lock if god_stomach.hunger_lock > 0.0 else 2.2
 	var stomach_fill := stomach_bar.get_theme_stylebox("fill") as StyleBoxFlat
@@ -895,26 +953,22 @@ func _update_ui() -> void:
 		stomach_fill.bg_color = Color(0.68, 0.16, 0.14, 0.96) if god_stomach.hunger_lock > 0.0 else Color(0.56, 0.70, 0.66, 0.96)
 	stomach_icon.texture = stomach_closed_texture if god_stomach.hunger_lock > 0.0 else (stomach_overflow_texture if god_stomach.overflow_power > 0.0 else stomach_open_texture)
 	sample_label.text = sample_record_text if sample_record_timer > 0.0 else ""
-	boss_rite_label.text = "弱点暴露\n窗口期：样本伤害 +16" if boss_rite_timer > 0.0 and mode == RunMode.FIELD else ""
+	boss_rite_label.text = "弱点暴露\n窗口期：样本伤害 +24" if boss_rite_timer > 0.0 and mode == RunMode.FIELD else ""
 
 
 func _organ_state_text() -> String:
-	var state := "饥饿"
-	var detail := "击杀回血。满血时转成短暂攻击强化。"
+	var state := "饥饿：击杀回血"
 	if god_stomach.hunger_lock > 0.0:
-		state = "闭合"
-		detail = "受击后拒收样本 %.1fs，击杀不回血。" % god_stomach.hunger_lock
+		state = "闭合 %.1fs" % god_stomach.hunger_lock
 	elif god_stomach.overflow_power > 0.0:
-		state = "溢血"
-		detail = "过量生命转写为刃，攻击强化 %.1fs。" % god_stomach.overflow_power
+		state = "溢血刃 %.1fs" % god_stomach.overflow_power
 	elif god_stomach.has_relic:
-		state = "归档"
-		detail = "圣匣已记录此残骸，可用于后续调谐。"
-	return "吞食胃：" + state + "\n" + detail
+		state = "已归档"
+	return "吞食胃：" + state
 
 
 func _field_dossier_summary(room: Dictionary) -> String:
-	return "任务档案在线 | " + String(room["title"]) + "\n异常样本：" + str(enemies.size()) + " | 地表伤口：" + str(hazards.size())
+	return "样本 " + str(enemies.size()) + " / 伤口 " + str(hazards.size())
 
 
 func _sanctum_archive_text() -> String:
@@ -953,14 +1007,20 @@ func _update_logbook_ui() -> void:
 	for label: Label in logbook_list_labels:
 		label.text = ""
 		label.add_theme_color_override("font_color", Color(0.70, 0.75, 0.72))
+	for item_bar: ColorRect in logbook_item_bars:
+		item_bar.color = Color(0.0, 0.0, 0.0, 0.0)
 
 	if count <= 0:
 		logbook_empty_label.visible = true
-		logbook_empty_label.text = "空槽：尚未采回日志碎片。\n击杀敌人后，圣匣会自动归档样本。这里会显示来源、记忆文本和器官判读。"
-		logbook_title_label.text = ""
+		logbook_empty_label.text = "圣匣空槽\n击杀敌人后自动归档第一份样本"
+		if not logbook_list_labels.is_empty():
+			logbook_list_labels[0].text = "暂无样本"
+			logbook_list_labels[0].add_theme_color_override("font_color", Color(0.58, 0.60, 0.58))
+		logbook_title_label.text = "等待样本"
 		logbook_meta_label.text = ""
 		logbook_text_label.text = ""
 		logbook_organ_label.text = ""
+		logbook_story_label.text = "主线进度：" + str(progress["collected"]) + "/" + str(progress["required"])
 		return
 
 	logbook_empty_label.visible = false
@@ -971,14 +1031,17 @@ func _update_logbook_ui() -> void:
 		var fragment: Dictionary = log_archive.call("fragment_at", index)
 		var selected := index == logbook_index
 		var label := logbook_list_labels[offset]
-		label.text = ("> " if selected else "  ") + String(fragment.get("title", "未命名样本"))
+		if offset < logbook_item_bars.size():
+			logbook_item_bars[offset].color = Color(0.45, 0.09, 0.08, 0.72) if selected else Color(0.08, 0.07, 0.06, 0.36)
+		label.text = ("▶ " if selected else "  ") + String(fragment.get("title", "未命名样本"))
 		label.add_theme_color_override("font_color", Color(0.96, 0.88, 0.76) if selected else Color(0.70, 0.75, 0.72))
 
 	var current: Dictionary = log_archive.call("fragment_at", logbook_index)
 	logbook_title_label.text = String(current.get("title", "未命名样本"))
-	logbook_meta_label.text = "来源：" + _enemy_log_label(String(current.get("source_enemy", ""))) + "  |  类型：" + _rarity_label(String(current.get("rarity", "common")))
+	logbook_meta_label.text = _enemy_log_label(String(current.get("source_enemy", ""))) + "  |  " + _rarity_label(String(current.get("rarity", "common")))
 	logbook_text_label.text = String(current.get("text", ""))
-	logbook_organ_label.text = "器官判读：" + String(current.get("stomach_reaction", ""))
+	logbook_organ_label.text = "判读：" + String(current.get("stomach_reaction", ""))
+	logbook_story_label.text = "主线进度：" + str(progress["collected"]) + "/" + str(progress["required"]) + (" 已拼合" if bool(progress["unlocked"]) else " 待补证")
 
 
 func _compact_sample_text(fragment: Dictionary, fallback_note: String) -> String:
@@ -1086,7 +1149,7 @@ func _draw_field_room() -> void:
 		draw_rect(ARENA, Color(0.18, 0.12, 0.08))
 		_draw_field_marks()
 	if boss_weak_exposed and room_index == rooms.size() - 1:
-		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.42, 0.02, 0.02, 0.18))
+		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.50, 0.02, 0.02, 0.26))
 	for hazard: Dictionary in hazards:
 		var arm_time := float(hazard.get("arm_time", 0.0))
 		var hazard_color: Color = hazard["color"]
@@ -1134,7 +1197,7 @@ func _draw_player() -> void:
 
 
 func _draw_active_log_fragment() -> void:
-	if sample_record_timer <= 0.0:
+	if log_fragment_pulse_timer <= 0.0:
 		return
 	var shard_texture := art_assets.log_fragment_frame(_anim_frame_index(10.0))
 	var pos := player_runtime.position + Vector2(42.0, -46.0)
@@ -1183,7 +1246,8 @@ func _draw_enemy(enemy: Dictionary) -> void:
 		elif kind == "barn_king":
 			draw_circle(pos, radius * 0.56, Color(0.28, 0.03, 0.03))
 	if kind == "barn_king" and boss_weak_exposed:
-		draw_circle(pos + Vector2(0.0, 8.0), radius * 0.34, Color(0.96, 0.20, 0.15, 0.88))
+		draw_circle(pos + Vector2(0.0, 8.0), radius * 0.42, Color(1.0, 0.12, 0.08, 0.90))
+		draw_arc(pos + Vector2(0.0, 8.0), radius * 0.50, 0.0, TAU, 36, Color(1.0, 0.70, 0.34, 0.92), 3.0)
 	draw_rect(Rect2(pos + Vector2(-radius, -radius - 12.0), Vector2(radius * 2.0 * hp_ratio, 4.0)), Color(0.78, 0.10, 0.08))
 
 
@@ -1214,9 +1278,12 @@ func _anim_frame_index(fps: float) -> int:
 func _draw_slash(slash: Dictionary) -> void:
 	var pos: Vector2 = slash["pos"]
 	var dir: Vector2 = slash["dir"]
-	var width := float(slash.get("width", 5.0 + float(int(slash["combo"])) * 1.5))
+	var combo := int(slash.get("combo", 1))
+	var width := float(slash.get("width", 5.0 + float(combo) * 1.5))
 	var arc_radius := float(slash.get("arc_radius", 42.0))
-	draw_arc(pos, arc_radius, dir.angle() - 0.9, dir.angle() + 0.9, 24, Color(0.90, 0.88, 0.76, 0.88), width)
+	var slash_alpha := 0.82 + 0.06 * float(combo)
+	var slash_width := width + (2.0 if combo >= 3 else 0.0)
+	draw_arc(pos, arc_radius, dir.angle() - 0.9, dir.angle() + 0.9, 24, Color(0.94, 0.90, 0.74, clampf(slash_alpha, 0.0, 1.0)), slash_width)
 
 
 func _draw_text_effect(effect: Dictionary) -> void:

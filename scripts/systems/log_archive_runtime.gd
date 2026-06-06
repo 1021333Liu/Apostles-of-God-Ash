@@ -22,16 +22,19 @@ func try_collect_from_kill(enemy_kind: String, room_id: String = "") -> Dictiona
 	total_kill_samples += 1
 	if database == null:
 		return {}
+	if randf() > _drop_chance(enemy_kind):
+		return {"missed": true, "enemy_kind": enemy_kind}
 
 	var fragment: Dictionary = database.call("roll_fragment", enemy_kind, collected_ids, room_id)
 	if fragment.is_empty():
-		return {}
+		return {"missed": true, "enemy_kind": enemy_kind}
 
 	var id := String(fragment.get("id", ""))
 	if id.is_empty() or collected_ids.has(id):
-		return {}
+		return {"missed": true, "enemy_kind": enemy_kind}
 
 	collected_ids[id] = true
+	fragment["collected"] = true
 	collected_fragments.append(fragment)
 	run_fragments.append(fragment)
 	return fragment.duplicate(true)
@@ -132,3 +135,17 @@ func _enemy_label(kind: String) -> String:
 			return "谷仓王"
 		_:
 			return kind
+
+
+func _drop_chance(enemy_kind: String) -> float:
+	match enemy_kind:
+		"empty":
+			return 0.50
+		"farmer":
+			return 0.62
+		"scarecrow":
+			return 0.86
+		"barn_king":
+			return 1.0
+		_:
+			return 0.50
