@@ -176,11 +176,19 @@ const ENEMY_TEXTURE_PATHS: Dictionary = {
 }
 
 const ROOM_BACKGROUND_PATHS: Dictionary = {
-	"field_gate": "res://assets/backgrounds/rooms/bg_field_gate_base.png",
-	"blood_wheat": "res://assets/backgrounds/rooms/bg_blood_wheat_base.png",
-	"gut_canal": "res://assets/backgrounds/rooms/bg_gut_canal_base.png",
-	"hungry_barn": "res://assets/backgrounds/rooms/bg_hungry_barn_base.png",
+	"field_gate": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_wheat_room_20260610.png",
+	"blood_wheat": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_wheat_room_20260610.png",
+	"gut_canal": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_wheat_room_20260610.png",
+	"hungry_barn": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_wheat_room_20260610.png",
 	"barn_king": "res://assets/backgrounds/rooms/bg_barn_king_base.png"
+}
+
+const CONCEPT_TEXTURE_PATHS: Dictionary = {
+	"player_echo": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_player_echo_20260610.png",
+	"enemies": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_enemies_20260610.png",
+	"boss_barn_king": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_barn_king_20260610.png",
+	"log_fragments": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_log_fragments_20260610.png",
+	"sacred_casket_ui": "res://assets/concepts/art_clean_color_round_20260610/art_clean_color_sacred_casket_ui_simple_20260610.png"
 }
 
 var player_idle: Texture2D
@@ -189,6 +197,7 @@ var player_frames: Dictionary = {}
 var enemy_textures: Dictionary = {}
 var enemy_frames: Dictionary = {}
 var room_backgrounds: Dictionary = {}
+var concept_textures: Dictionary = {}
 var log_fragment_frames: Array[Texture2D] = []
 
 
@@ -207,6 +216,9 @@ func load_all() -> void:
 	room_backgrounds.clear()
 	for room_id: String in ROOM_BACKGROUND_PATHS.keys():
 		room_backgrounds[room_id] = _try_load_texture(String(ROOM_BACKGROUND_PATHS[room_id]))
+	concept_textures.clear()
+	for concept_id: String in CONCEPT_TEXTURE_PATHS.keys():
+		concept_textures[concept_id] = _try_load_texture(String(CONCEPT_TEXTURE_PATHS[concept_id]))
 	log_fragment_frames = _load_frame_list(LOG_FRAGMENT_FRAME_PATHS)
 
 
@@ -229,6 +241,10 @@ func enemy_frame(kind: String, state: String, frame_index: int) -> Texture2D:
 
 func room_background(room_id: String) -> Texture2D:
 	return room_backgrounds.get(room_id, null) as Texture2D
+
+
+func concept_texture(concept_id: String) -> Texture2D:
+	return concept_textures.get(concept_id, null) as Texture2D
 
 
 func log_fragment_texture() -> Texture2D:

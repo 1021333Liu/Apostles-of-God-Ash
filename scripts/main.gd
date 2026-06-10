@@ -94,6 +94,8 @@ var logbook_progress_label: Label
 var logbook_story_label: Label
 var logbook_empty_label: Label
 var logbook_item_bars: Array[ColorRect] = []
+var logbook_art_backdrop: TextureRect
+var logbook_art_preview: TextureRect
 
 
 func _ready() -> void:
@@ -382,10 +384,13 @@ func _build_logbook_ui(parent: Node) -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	logbook_root.add_child(dim)
 
+	logbook_art_backdrop = _make_texture_preview(logbook_root, art_assets.concept_texture("sacred_casket_ui"), Vector2(108.0, 70.0), Vector2(1064.0, 548.0), 0.32)
+
 	_make_panel(logbook_root, Vector2(108.0, 70.0), Vector2(1064.0, 548.0))
 	_make_panel_marks(logbook_root, Vector2(108.0, 70.0), Vector2(1064.0, 548.0), Color(0.68, 0.13, 0.12))
 	_make_panel(logbook_root, Vector2(148.0, 186.0), Vector2(314.0, 350.0))
 	_make_panel(logbook_root, Vector2(496.0, 186.0), Vector2(526.0, 350.0))
+	logbook_art_preview = _make_texture_preview(logbook_root, art_assets.concept_texture("log_fragments"), Vector2(1038.0, 210.0), Vector2(96.0, 96.0), 0.92)
 
 	_make_label(logbook_root, "LogbookHeader", Vector2(150.0, 106.0), Vector2(390.0, 42.0), 30, Color(0.94, 0.86, 0.70)).text = "圣匣日志"
 	_make_label(logbook_root, "LogbookHint", Vector2(732.0, 110.0), Vector2(318.0, 28.0), 18, Color(0.74, 0.80, 0.78)).text = "P 关闭 | A/D 或 ←/→ 切换"
@@ -508,6 +513,19 @@ func _make_icon(parent: Node, texture: Texture2D, pos: Vector2, size: Vector2) -
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(icon)
 	return icon
+
+
+func _make_texture_preview(parent: Node, texture: Texture2D, pos: Vector2, size: Vector2, alpha: float = 1.0) -> TextureRect:
+	var preview := TextureRect.new()
+	preview.texture = texture
+	preview.position = pos
+	preview.size = size
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	preview.modulate = Color(1.0, 1.0, 1.0, alpha)
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(preview)
+	return preview
 
 
 func _make_hp_bar(parent: Node, pos: Vector2, size: Vector2) -> ProgressBar:
@@ -1013,6 +1031,8 @@ func _update_logbook_ui() -> void:
 	if count <= 0:
 		logbook_empty_label.visible = true
 		logbook_empty_label.text = "圣匣空槽\n击杀敌人后自动归档第一份样本"
+		if logbook_art_preview:
+			logbook_art_preview.texture = art_assets.concept_texture("log_fragments")
 		if not logbook_list_labels.is_empty():
 			logbook_list_labels[0].text = "暂无样本"
 			logbook_list_labels[0].add_theme_color_override("font_color", Color(0.58, 0.60, 0.58))
@@ -1037,11 +1057,21 @@ func _update_logbook_ui() -> void:
 		label.add_theme_color_override("font_color", Color(0.96, 0.88, 0.76) if selected else Color(0.70, 0.75, 0.72))
 
 	var current: Dictionary = log_archive.call("fragment_at", logbook_index)
+	if logbook_art_preview:
+		logbook_art_preview.texture = _logbook_preview_texture(String(current.get("source_enemy", "")))
 	logbook_title_label.text = String(current.get("title", "未命名样本"))
 	logbook_meta_label.text = _enemy_log_label(String(current.get("source_enemy", ""))) + "  |  " + _rarity_label(String(current.get("rarity", "common")))
 	logbook_text_label.text = String(current.get("text", ""))
 	logbook_organ_label.text = "判读：" + String(current.get("stomach_reaction", ""))
 	logbook_story_label.text = "主线进度：" + str(progress["collected"]) + "/" + str(progress["required"]) + (" 已拼合" if bool(progress["unlocked"]) else " 待补证")
+
+
+func _logbook_preview_texture(source_enemy: String) -> Texture2D:
+	if source_enemy == "barn_king":
+		return art_assets.concept_texture("boss_barn_king")
+	if source_enemy == "empty" or source_enemy == "farmer" or source_enemy == "scarecrow":
+		return art_assets.concept_texture("enemies")
+	return art_assets.concept_texture("log_fragments")
 
 
 func _compact_sample_text(fragment: Dictionary, fallback_note: String) -> String:
@@ -1128,6 +1158,15 @@ func _death_recovery_line(source: String) -> String:
 
 func _draw_sanctum() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.045, 0.050, 0.058))
+	var casket_texture := art_assets.concept_texture("sacred_casket_ui")
+	if casket_texture:
+		draw_texture_rect(casket_texture, Rect2(Vector2(84.0, 56.0), Vector2(1112.0, 626.0)), false, Color(1.0, 1.0, 1.0, 0.16))
+	var player_concept := art_assets.concept_texture("player_echo")
+	if player_concept:
+		draw_texture_rect(player_concept, Rect2(Vector2(878.0, 132.0), Vector2(300.0, 168.0)), false, Color(1.0, 1.0, 1.0, 0.52))
+	var fragment_concept := art_assets.concept_texture("log_fragments")
+	if fragment_concept:
+		draw_texture_rect(fragment_concept, Rect2(Vector2(126.0, 146.0), Vector2(210.0, 118.0)), false, Color(1.0, 1.0, 1.0, 0.54))
 	draw_circle(Vector2(640.0, 350.0), 190.0, Color(0.11, 0.13, 0.15))
 	draw_circle(Vector2(640.0, 350.0), 122.0, Color(0.17, 0.19, 0.20))
 	draw_arc(Vector2(640.0, 350.0), 210.0, 0.0, TAU, 96, Color(0.62, 0.67, 0.64, 0.45), 3.0)
@@ -1143,6 +1182,7 @@ func _draw_field_room() -> void:
 	var background := art_assets.room_background(String(room["id"]))
 	if background:
 		draw_texture_rect(background, Rect2(Vector2.ZERO, VIEWPORT_SIZE), false)
+		_draw_room_readability_overlay(String(room["id"]))
 	else:
 		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), room["palette"])
 		draw_rect(ARENA.grow(18.0), Color(0.055, 0.045, 0.040))
@@ -1291,6 +1331,16 @@ func _draw_text_effect(effect: Dictionary) -> void:
 	var color: Color = effect["color"]
 	color.a = alpha
 	draw_string(ThemeDB.fallback_font, effect["pos"] as Vector2, String(effect["text"]), HORIZONTAL_ALIGNMENT_CENTER, 120.0, 18, color)
+
+
+func _draw_room_readability_overlay(room_id: String) -> void:
+	if room_id == "barn_king":
+		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.02, 0.01, 0.01, 0.12))
+	else:
+		draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.12, 0.08, 0.04, 0.18))
+		draw_rect(ARENA, Color(0.92, 0.78, 0.48, 0.055))
+	draw_rect(ARENA.grow(6.0), Color(0.05, 0.035, 0.025, 0.30), false, 3.0)
+	draw_rect(ARENA, Color(0.86, 0.70, 0.38, 0.26), false, 2.0)
 
 
 func _draw_centered_texture(texture: Texture2D, center: Vector2, size: Vector2, flip_h: bool = false) -> void:
