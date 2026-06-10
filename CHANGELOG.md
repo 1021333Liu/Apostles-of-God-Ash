@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 2026-06-10
+
+### Art iteration: add P0 readability concept round
+
+- Owner: Codex
+- Changes:
+  - Added `assets/concepts/art_iteration_round_20260610/` with six P0 readability concept sheets.
+  - Added `docs/planning/ART_ROUND_20260610.md` to record files, addressed issues, concept-vs-runtime scope, and follow-up cleanup work.
+- Reason:
+  - `feature/art-iteration` needs a focused visual pass for silhouettes, attack anticipation, Boss phase contrast, and log-fragment pickup identity before runtime replacement.
+- Impact:
+  - Art concept references, future transparent PNG frame cleanup, and log-fragment visual direction.
+- Verification:
+  - This round only adds concept images and documentation; no Godot runtime code or asset registry changes were made.
+- Follow-up:
+  - Select usable poses from the sheets, clean them into transparent PNG frames, then replace current runtime assets after 1280x720 readability checks.
 这个文件记录项目每次有意义的更新。  
 原则：代码可以告诉我们“哪里变了”，但这里要告诉我们“为什么变了”。
 
