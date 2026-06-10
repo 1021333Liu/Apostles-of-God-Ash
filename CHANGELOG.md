@@ -2,6 +2,22 @@
 
 ## 2026-06-10
 
+### Art iteration: add clean colorful linework direction
+
+- Owner: Codex
+- Changes:
+  - Added `assets/concepts/art_clean_color_round_20260610/` with six cleaner, more colorful concept images.
+  - Added `docs/planning/ART_ROUND_CLEAN_COLOR_20260610.md` to record the corrected direction.
+- Reason:
+  - Previous concepts were too heavy, ornate, and close to Diablo-like dark fantasy. The new direction keeps richer color while using simpler linework, lighter oil-and-ink texture, and more negative space.
+- Impact:
+  - Art direction baseline for future image2 prompts, player/enemy/Boss readability, Low Whispering Field map identity, log fragment pickup identity, and Sacred Casket UI direction.
+- Verification:
+  - This round only adds concept images and documentation; no Godot runtime code or asset registry changes were made.
+- Follow-up:
+  - Use the wheat room and simple UI as the strongest current references. Reduce Boss and character ornament further during runtime PNG cleanup.
+## 2026-06-10
+
 ### Art iteration: add P0 readability concept round
 
 - Owner: Codex
