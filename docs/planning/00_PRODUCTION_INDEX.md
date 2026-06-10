@@ -34,6 +34,7 @@
 | `20_LOG_FRAGMENT_SYSTEM_PLAN.md` | 文案、程序、系统策划 | 日志碎片掉落、归档、圣匣 UI 和第一故事拼接的 MVP 计划 |
 | `21_WORLDVIEW_FOUR_LAYER_MODEL.md` | 文案、美术、关卡、系统策划 | 按物理法则、历史势力、文化信仰、日常质感拆解底层世界观 |
 | `22_ARTIST_DRAWING_BRIEF.md` | 真人画师、美术负责人 | 第一批可进 Godot 的角色动画、Boss、日志碎片、背景和 UI 绘制需求 |
+| `23_ART_DETAIL_REQUIREMENTS.md` | 美术负责人、画师、程序接入 | 角色比例、朝向、武器、VFX、背景、UI 和验收截图的细节标准 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 
