@@ -33,6 +33,7 @@
 | `19_ART_ITERATION_BRANCH_PLAN.md` | 美术、程序、协作负责人 | 美术轮次分支、修改边界、可读性问题和验收标准 |
 | `20_LOG_FRAGMENT_SYSTEM_PLAN.md` | 文案、程序、系统策划 | 日志碎片掉落、归档、圣匣 UI 和第一故事拼接的 MVP 计划 |
 | `21_WORLDVIEW_FOUR_LAYER_MODEL.md` | 文案、美术、关卡、系统策划 | 按物理法则、历史势力、文化信仰、日常质感拆解底层世界观 |
+| `22_ARTIST_DRAWING_BRIEF.md` | 真人画师、美术负责人 | 第一批可进 Godot 的角色动画、Boss、日志碎片、背景和 UI 绘制需求 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 
