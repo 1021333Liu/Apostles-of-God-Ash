@@ -17,6 +17,7 @@ const PLAYER_MAX_HP: int = 100
 const PLAYER_SPEED: float = 270.0
 const PLAYER_RADIUS: float = 17.0
 const BASE_DAMAGE: int = 18
+const UI_SAFE_MARGIN: float = 24.0
 const INTERACT_HINT: String = "E 进入 / 继续"
 const HP_ICON_PATH: String = "res://assets/sprites/ui/ui_hp_heart.svg"
 const STOMACH_OPEN_ICON_PATH: String = "res://assets/sprites/ui/ui_stomach_open.svg"
@@ -62,6 +63,7 @@ var enemies: Array[Dictionary] = []
 var hazards: Array[Dictionary] = []
 var slashes: Array[Dictionary] = []
 var effects: Array[Dictionary] = []
+var hit_bursts: Array[Dictionary] = []
 
 var room_label: Label
 var hp_label: Label
@@ -161,6 +163,7 @@ func _physics_process(delta: float) -> void:
 			_update_hazards(delta)
 			_update_enemies(delta)
 			_update_slashes(delta)
+			_update_hit_bursts(delta)
 			_update_effects(delta)
 			_check_room_progress()
 		RunMode.COMPLETE:
@@ -389,8 +392,9 @@ func _build_logbook_ui(parent: Node) -> void:
 	_make_panel(logbook_root, Vector2(108.0, 70.0), Vector2(1064.0, 548.0))
 	_make_panel_marks(logbook_root, Vector2(108.0, 70.0), Vector2(1064.0, 548.0), Color(0.68, 0.13, 0.12))
 	_make_panel(logbook_root, Vector2(148.0, 186.0), Vector2(314.0, 350.0))
-	_make_panel(logbook_root, Vector2(496.0, 186.0), Vector2(526.0, 350.0))
-	logbook_art_preview = _make_texture_preview(logbook_root, art_assets.concept_texture("log_fragments"), Vector2(1038.0, 210.0), Vector2(96.0, 96.0), 0.92)
+	_make_panel(logbook_root, Vector2(496.0, 186.0), Vector2(430.0, 350.0))
+	_make_panel(logbook_root, Vector2(948.0, 186.0), Vector2(188.0, 170.0))
+	logbook_art_preview = _make_texture_preview(logbook_root, art_assets.concept_texture("log_fragments"), Vector2(954.0, 206.0), Vector2(176.0, 132.0), 0.86)
 
 	_make_label(logbook_root, "LogbookHeader", Vector2(150.0, 106.0), Vector2(390.0, 42.0), 30, Color(0.94, 0.86, 0.70)).text = "圣匣日志"
 	_make_label(logbook_root, "LogbookHint", Vector2(732.0, 110.0), Vector2(318.0, 28.0), 18, Color(0.74, 0.80, 0.78)).text = "P 关闭 | A/D 或 ←/→ 切换"
@@ -412,14 +416,14 @@ func _build_logbook_ui(parent: Node) -> void:
 		var item_label := _make_label(logbook_root, "LogbookItem" + str(i), Vector2(176.0, 260.0 + float(i) * 32.0), Vector2(254.0, 28.0), 18, Color(0.70, 0.75, 0.72))
 		logbook_list_labels.append(item_label)
 
-	logbook_title_label = _make_label(logbook_root, "LogbookTitle", Vector2(536.0, 218.0), Vector2(446.0, 38.0), 27, Color(0.95, 0.84, 0.66))
-	logbook_meta_label = _make_label(logbook_root, "LogbookMeta", Vector2(536.0, 260.0), Vector2(446.0, 28.0), 18, Color(0.62, 0.84, 0.84))
-	logbook_text_label = _make_label(logbook_root, "LogbookText", Vector2(536.0, 316.0), Vector2(446.0, 78.0), 19, Color(0.88, 0.85, 0.78))
+	logbook_title_label = _make_label(logbook_root, "LogbookTitle", Vector2(526.0, 218.0), Vector2(372.0, 38.0), 27, Color(0.95, 0.84, 0.66))
+	logbook_meta_label = _make_label(logbook_root, "LogbookMeta", Vector2(526.0, 260.0), Vector2(372.0, 28.0), 18, Color(0.62, 0.84, 0.84))
+	logbook_text_label = _make_label(logbook_root, "LogbookText", Vector2(526.0, 316.0), Vector2(372.0, 78.0), 19, Color(0.88, 0.85, 0.78))
 	logbook_text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	logbook_organ_label = _make_label(logbook_root, "LogbookOrgan", Vector2(536.0, 424.0), Vector2(446.0, 58.0), 18, Color(0.82, 0.62, 0.58))
+	logbook_organ_label = _make_label(logbook_root, "LogbookOrgan", Vector2(526.0, 424.0), Vector2(372.0, 58.0), 18, Color(0.82, 0.62, 0.58))
 	logbook_organ_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	logbook_story_label = _make_label(logbook_root, "LogbookStory", Vector2(536.0, 492.0), Vector2(446.0, 28.0), 18, Color(0.64, 0.84, 0.84))
-	logbook_empty_label = _make_label(logbook_root, "LogbookEmpty", Vector2(536.0, 292.0), Vector2(446.0, 92.0), 22, Color(0.84, 0.78, 0.68))
+	logbook_story_label = _make_label(logbook_root, "LogbookStory", Vector2(526.0, 492.0), Vector2(372.0, 28.0), 18, Color(0.64, 0.84, 0.84))
+	logbook_empty_label = _make_label(logbook_root, "LogbookEmpty", Vector2(526.0, 292.0), Vector2(372.0, 92.0), 22, Color(0.84, 0.78, 0.68))
 	logbook_empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	logbook_empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
@@ -516,16 +520,30 @@ func _make_icon(parent: Node, texture: Texture2D, pos: Vector2, size: Vector2) -
 
 
 func _make_texture_preview(parent: Node, texture: Texture2D, pos: Vector2, size: Vector2, alpha: float = 1.0) -> TextureRect:
+	var safe_rect := _safe_ui_rect(pos, size)
 	var preview := TextureRect.new()
 	preview.texture = texture
-	preview.position = pos
-	preview.size = size
+	preview.position = safe_rect.position
+	preview.size = safe_rect.size
+	preview.clip_contents = true
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	preview.modulate = Color(1.0, 1.0, 1.0, alpha)
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(preview)
 	return preview
+
+
+func _safe_ui_rect(pos: Vector2, size: Vector2) -> Rect2:
+	var safe_size := Vector2(
+		minf(size.x, VIEWPORT_SIZE.x - UI_SAFE_MARGIN * 2.0),
+		minf(size.y, VIEWPORT_SIZE.y - UI_SAFE_MARGIN * 2.0)
+	)
+	var safe_pos := Vector2(
+		clampf(pos.x, UI_SAFE_MARGIN, VIEWPORT_SIZE.x - UI_SAFE_MARGIN - safe_size.x),
+		clampf(pos.y, UI_SAFE_MARGIN, VIEWPORT_SIZE.y - UI_SAFE_MARGIN - safe_size.y)
+	)
+	return Rect2(safe_pos, safe_size)
 
 
 func _make_hp_bar(parent: Node, pos: Vector2, size: Vector2) -> ProgressBar:
@@ -613,6 +631,8 @@ func _try_player_attack() -> void:
 
 	player_runtime.apply_impulse(attack["lunge"])
 	slashes.append(attack["slash"])
+	var slash_index := slashes.size() - 1
+	var hit_count := 0
 
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy: Dictionary = enemies[i]
@@ -628,6 +648,11 @@ func _try_player_attack() -> void:
 			final_damage += 24
 			_emit_text_effect(enemy_pos + Vector2(0.0, -58.0), "胃囊暴露", Color(0.95, 0.42, 0.36))
 		_damage_enemy(i, final_damage, (attack["dir"] as Vector2) * float(attack["knockback"]))
+		hit_count += 1
+	if slash_index >= 0 and slash_index < slashes.size():
+		slashes[slash_index]["hit"] = hit_count > 0
+	if hit_count <= 0:
+		_trigger_miss_feedback(attack)
 
 
 func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
@@ -638,6 +663,7 @@ func _damage_enemy(index: int, amount: int, knockback: Vector2) -> void:
 	enemy["pos"] = (enemy["pos"] as Vector2) + knockback
 	enemy["hit_flash"] = 0.20
 	_emit_text_effect(enemy["pos"] as Vector2, str(amount), Color(0.96, 0.76, 0.58))
+	_spawn_hit_burst(enemy["pos"] as Vector2, attack_runtime.combo_step, amount)
 	var impactful_hit := float(enemy["hp"]) <= 0.0 or attack_runtime.combo_step == 3
 	_trigger_hit_feedback(impactful_hit)
 
@@ -845,6 +871,15 @@ func _update_slashes(delta: float) -> void:
 			slashes.remove_at(i)
 
 
+func _update_hit_bursts(delta: float) -> void:
+	for i in range(hit_bursts.size() - 1, -1, -1):
+		var burst: Dictionary = hit_bursts[i]
+		burst["timer"] = float(burst["timer"]) - delta
+		burst["radius"] = float(burst["radius"]) + 115.0 * delta
+		if float(burst["timer"]) <= 0.0:
+			hit_bursts.remove_at(i)
+
+
 func _update_effects(delta: float) -> void:
 	for i in range(effects.size() - 1, -1, -1):
 		var effect: Dictionary = effects[i]
@@ -862,6 +897,23 @@ func _trigger_hit_feedback(impactful: bool) -> void:
 	hit_stop_timer = maxf(hit_stop_timer, 0.09 if impactful else 0.05)
 	screen_shake_timer = maxf(screen_shake_timer, 0.16 if impactful else 0.10)
 	screen_shake_strength = maxf(screen_shake_strength, 7.0 if impactful else 4.0)
+
+
+func _trigger_miss_feedback(attack: Dictionary) -> void:
+	var pos := (attack["origin"] as Vector2) + (attack["dir"] as Vector2) * 56.0
+	_emit_text_effect(pos + Vector2(0.0, -18.0), "掠空", Color(0.72, 0.70, 0.62))
+	screen_shake_timer = maxf(screen_shake_timer, 0.045)
+	screen_shake_strength = maxf(screen_shake_strength, 1.4)
+
+
+func _spawn_hit_burst(pos: Vector2, combo: int, amount: int) -> void:
+	hit_bursts.append({
+		"pos": pos,
+		"timer": 0.22 if combo >= 3 else 0.16,
+		"radius": 18.0 + float(combo) * 4.0,
+		"combo": combo,
+		"amount": amount
+	})
 
 
 func _screen_shake_offset() -> Vector2:
@@ -908,6 +960,7 @@ func _load_room(index: int) -> void:
 	hazards.clear()
 	slashes.clear()
 	effects.clear()
+	hit_bursts.clear()
 
 	var room: Dictionary = rooms[room_index]
 	for enemy: Dictionary in room["enemies"]:
@@ -927,6 +980,7 @@ func _return_to_sanctum(text: String) -> void:
 	hazards.clear()
 	slashes.clear()
 	effects.clear()
+	hit_bursts.clear()
 	attack_runtime.reset()
 	player_runtime.reset_for_sanctum(Vector2(640.0, 410.0), PLAYER_MAX_HP)
 	god_stomach.reset_for_sanctum()
@@ -1160,13 +1214,13 @@ func _draw_sanctum() -> void:
 	draw_rect(Rect2(Vector2.ZERO, VIEWPORT_SIZE), Color(0.045, 0.050, 0.058))
 	var casket_texture := art_assets.concept_texture("sacred_casket_ui")
 	if casket_texture:
-		draw_texture_rect(casket_texture, Rect2(Vector2(84.0, 56.0), Vector2(1112.0, 626.0)), false, Color(1.0, 1.0, 1.0, 0.16))
+		_draw_safe_texture_rect(casket_texture, Vector2(84.0, 56.0), Vector2(1112.0, 626.0), Color(1.0, 1.0, 1.0, 0.16))
 	var player_concept := art_assets.concept_texture("player_echo")
 	if player_concept:
-		draw_texture_rect(player_concept, Rect2(Vector2(878.0, 132.0), Vector2(300.0, 168.0)), false, Color(1.0, 1.0, 1.0, 0.52))
+		_draw_safe_texture_rect(player_concept, Vector2(878.0, 132.0), Vector2(300.0, 168.0), Color(1.0, 1.0, 1.0, 0.52))
 	var fragment_concept := art_assets.concept_texture("log_fragments")
 	if fragment_concept:
-		draw_texture_rect(fragment_concept, Rect2(Vector2(126.0, 146.0), Vector2(210.0, 118.0)), false, Color(1.0, 1.0, 1.0, 0.54))
+		_draw_safe_texture_rect(fragment_concept, Vector2(126.0, 146.0), Vector2(210.0, 118.0), Color(1.0, 1.0, 1.0, 0.54))
 	draw_circle(Vector2(640.0, 350.0), 190.0, Color(0.11, 0.13, 0.15))
 	draw_circle(Vector2(640.0, 350.0), 122.0, Color(0.17, 0.19, 0.20))
 	draw_arc(Vector2(640.0, 350.0), 210.0, 0.0, TAU, 96, Color(0.62, 0.67, 0.64, 0.45), 3.0)
@@ -1201,6 +1255,8 @@ func _draw_field_room() -> void:
 		draw_arc(hazard["pos"] as Vector2, float(hazard["radius"]) + 3.0, 0.0, TAU, 32, outline_color, outline_width)
 	for enemy: Dictionary in enemies:
 		_draw_enemy(enemy)
+	for burst: Dictionary in hit_bursts:
+		_draw_hit_burst(burst)
 	for slash: Dictionary in slashes:
 		_draw_slash(slash)
 	_draw_player()
@@ -1221,9 +1277,19 @@ func _draw_complete() -> void:
 
 
 func _draw_player() -> void:
+	var attack_ratio := clampf(attack_runtime.cooldown / 0.34, 0.0, 1.0)
+	draw_circle(player_runtime.position + Vector2(0.0, 18.0), 26.0, Color(0.02, 0.018, 0.014, 0.34))
+	draw_arc(player_runtime.position, 37.0, 0.0, TAU, 36, Color(0.12, 0.32, 0.38, 0.34), 2.0)
+	if attack_ratio > 0.0:
+		var start_angle := player_runtime.facing.angle() - 0.82
+		var end_angle := player_runtime.facing.angle() + 0.82
+		draw_arc(player_runtime.position, 43.0 + 8.0 * attack_ratio, start_angle, end_angle, 24, Color(0.93, 0.78, 0.38, 0.26 + 0.30 * attack_ratio), 5.0)
 	var player_texture := art_assets.player_frame(_player_anim_state(), _anim_frame_index(8.0))
 	if player_texture:
-		_draw_centered_texture(player_texture, player_runtime.position, Vector2(82.0, 82.0), player_runtime.facing.x < -0.05)
+		var draw_size := Vector2(94.0, 94.0)
+		_draw_centered_texture_modulated(player_texture, player_runtime.position + Vector2(-2.0, 1.0), draw_size + Vector2(8.0, 8.0), Color(0.10, 0.34, 0.40, 0.40), player_runtime.facing.x < -0.05)
+		_draw_centered_texture_modulated(player_texture, player_runtime.position + Vector2(2.0, -1.0), draw_size + Vector2(5.0, 5.0), Color(0.86, 0.70, 0.36, 0.28), player_runtime.facing.x < -0.05)
+		_draw_centered_texture(player_texture, player_runtime.position, draw_size, player_runtime.facing.x < -0.05)
 	else:
 		var body_color := Color(0.82, 0.86, 0.82)
 		var stomach_color := Color(0.64, 0.08, 0.08) if god_stomach.has_relic or mode == RunMode.FIELD else Color(0.28, 0.30, 0.32)
@@ -1234,6 +1300,8 @@ func _draw_player() -> void:
 		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 10.0, 0.0, TAU, 24, Color(0.18, 0.18, 0.18, 0.92), 2.0)
 	elif god_stomach.overflow_power > 0.0:
 		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 12.0, -0.4, TAU - 0.4, 32, Color(1.0, 0.26, 0.20, 0.86), 3.0)
+	else:
+		draw_arc(player_runtime.position + Vector2(0.0, 5.0), 11.0, -0.6, TAU - 0.6, 28, Color(0.74, 0.52, 0.30, 0.62), 2.0)
 
 
 func _draw_active_log_fragment() -> void:
@@ -1276,6 +1344,10 @@ func _draw_enemy(enemy: Dictionary) -> void:
 		color = Color(0.96, 0.78, 0.62)
 	var enemy_texture := art_assets.enemy_frame(kind, _enemy_anim_state(enemy), _anim_frame_index(7.0))
 	if enemy_texture:
+		var flash_alpha := clampf(float(enemy["hit_flash"]) / 0.20, 0.0, 1.0)
+		if flash_alpha > 0.0:
+			draw_circle(pos, radius + 18.0, Color(1.0, 0.78, 0.36, 0.22 * flash_alpha))
+			draw_arc(pos, radius + 23.0, -0.25, TAU - 0.25, 36, Color(1.0, 0.52, 0.28, 0.58 * flash_alpha), 3.0)
 		_draw_centered_texture(enemy_texture, pos, art_assets.enemy_draw_size(kind), _enemy_should_flip(enemy))
 	else:
 		draw_circle(pos, radius, color)
@@ -1286,9 +1358,25 @@ func _draw_enemy(enemy: Dictionary) -> void:
 		elif kind == "barn_king":
 			draw_circle(pos, radius * 0.56, Color(0.28, 0.03, 0.03))
 	if kind == "barn_king" and boss_weak_exposed:
-		draw_circle(pos + Vector2(0.0, 8.0), radius * 0.42, Color(1.0, 0.12, 0.08, 0.90))
-		draw_arc(pos + Vector2(0.0, 8.0), radius * 0.50, 0.0, TAU, 36, Color(1.0, 0.70, 0.34, 0.92), 3.0)
+		_draw_boss_weakpoint_reticle(pos + Vector2(0.0, 8.0), radius)
 	draw_rect(Rect2(pos + Vector2(-radius, -radius - 12.0), Vector2(radius * 2.0 * hp_ratio, 4.0)), Color(0.78, 0.10, 0.08))
+
+
+func _draw_boss_weakpoint_reticle(center: Vector2, radius: float) -> void:
+	var pulse := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) * 0.014)
+	var timer_ratio := clampf(boss_expose_timer / 1.9, 0.0, 1.0)
+	var target_radius := radius * (0.46 + 0.08 * pulse)
+	var outer_radius := radius * (0.66 - 0.08 * timer_ratio)
+	draw_circle(center, radius * 0.34, Color(1.0, 0.05, 0.04, 0.48 + 0.24 * pulse))
+	draw_arc(center, target_radius, 0.0, TAU, 42, Color(1.0, 0.70, 0.34, 0.92), 4.0)
+	draw_arc(center, outer_radius, -0.55, TAU - 0.55, 46, Color(1.0, 0.20, 0.12, 0.44 + 0.26 * pulse), 3.0)
+	var arm := radius * 0.78
+	var gap := radius * 0.30
+	var line_color := Color(1.0, 0.86, 0.50, 0.78)
+	draw_line(center + Vector2(-arm, 0.0), center + Vector2(-gap, 0.0), line_color, 3.0)
+	draw_line(center + Vector2(gap, 0.0), center + Vector2(arm, 0.0), line_color, 3.0)
+	draw_line(center + Vector2(0.0, -arm), center + Vector2(0.0, -gap), line_color, 3.0)
+	draw_line(center + Vector2(0.0, gap), center + Vector2(0.0, arm), line_color, 3.0)
 
 
 func _enemy_anim_state(enemy: Dictionary) -> String:
@@ -1321,9 +1409,30 @@ func _draw_slash(slash: Dictionary) -> void:
 	var combo := int(slash.get("combo", 1))
 	var width := float(slash.get("width", 5.0 + float(combo) * 1.5))
 	var arc_radius := float(slash.get("arc_radius", 42.0))
-	var slash_alpha := 0.82 + 0.06 * float(combo)
+	var did_hit := bool(slash.get("hit", false))
+	var slash_alpha := (0.62 if not did_hit else 0.82) + 0.06 * float(combo)
 	var slash_width := width + (2.0 if combo >= 3 else 0.0)
-	draw_arc(pos, arc_radius, dir.angle() - 0.9, dir.angle() + 0.9, 24, Color(0.94, 0.90, 0.74, clampf(slash_alpha, 0.0, 1.0)), slash_width)
+	var slash_color := Color(0.94, 0.90, 0.74, clampf(slash_alpha, 0.0, 1.0))
+	if combo >= 3:
+		slash_color = Color(1.0, 0.54, 0.34, clampf(slash_alpha, 0.0, 1.0))
+	draw_arc(pos, arc_radius + 8.0, dir.angle() - 1.02, dir.angle() + 1.02, 28, Color(0.08, 0.20, 0.24, 0.24), slash_width + 4.0)
+	draw_arc(pos, arc_radius, dir.angle() - 0.9, dir.angle() + 0.9, 28, slash_color, slash_width)
+	draw_arc(pos, arc_radius - 10.0, dir.angle() - 0.58, dir.angle() + 0.58, 18, Color(1.0, 1.0, 0.88, 0.36 if did_hit else 0.18), maxf(2.0, slash_width * 0.38))
+
+
+func _draw_hit_burst(burst: Dictionary) -> void:
+	var timer := float(burst["timer"])
+	var alpha := clampf(timer / 0.22, 0.0, 1.0)
+	var pos: Vector2 = burst["pos"]
+	var radius := float(burst["radius"])
+	var combo := int(burst.get("combo", 1))
+	var core_color := Color(1.0, 0.78, 0.42, 0.70 * alpha)
+	if combo >= 3:
+		core_color = Color(1.0, 0.30, 0.18, 0.78 * alpha)
+	draw_circle(pos, radius * 0.42, Color(1.0, 0.95, 0.76, 0.18 * alpha))
+	draw_arc(pos, radius, 0.0, TAU, 32, core_color, 3.0 + float(combo))
+	draw_line(pos + Vector2(-radius * 0.55, 0.0), pos + Vector2(radius * 0.55, 0.0), Color(1.0, 0.86, 0.52, 0.48 * alpha), 2.0 + float(combo))
+	draw_line(pos + Vector2(0.0, -radius * 0.45), pos + Vector2(0.0, radius * 0.45), Color(1.0, 0.86, 0.52, 0.38 * alpha), 2.0)
 
 
 func _draw_text_effect(effect: Dictionary) -> void:
@@ -1344,12 +1453,37 @@ func _draw_room_readability_overlay(room_id: String) -> void:
 
 
 func _draw_centered_texture(texture: Texture2D, center: Vector2, size: Vector2, flip_h: bool = false) -> void:
+	var fitted_rect := _fit_texture_rect(texture, Rect2(center - size * 0.5, size))
 	if not flip_h:
-		draw_texture_rect(texture, Rect2(center - size * 0.5, size), false)
+		draw_texture_rect(texture, fitted_rect, false)
 		return
 	draw_set_transform(center, 0.0, Vector2(-1.0, 1.0))
-	draw_texture_rect(texture, Rect2(-size * 0.5, size), false)
+	draw_texture_rect(texture, Rect2(fitted_rect.position - center, fitted_rect.size), false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_centered_texture_modulated(texture: Texture2D, center: Vector2, size: Vector2, modulate: Color, flip_h: bool = false) -> void:
+	var fitted_rect := _fit_texture_rect(texture, Rect2(center - size * 0.5, size))
+	if not flip_h:
+		draw_texture_rect(texture, fitted_rect, false, modulate)
+		return
+	draw_set_transform(center, 0.0, Vector2(-1.0, 1.0))
+	draw_texture_rect(texture, Rect2(fitted_rect.position - center, fitted_rect.size), false, modulate)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_safe_texture_rect(texture: Texture2D, pos: Vector2, size: Vector2, modulate: Color) -> void:
+	var rect := _safe_ui_rect(pos, size)
+	draw_texture_rect(texture, _fit_texture_rect(texture, rect), false, modulate)
+
+
+func _fit_texture_rect(texture: Texture2D, bounds: Rect2) -> Rect2:
+	var texture_size := Vector2(float(texture.get_width()), float(texture.get_height()))
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return bounds
+	var scale := minf(bounds.size.x / texture_size.x, bounds.size.y / texture_size.y)
+	var fitted_size := texture_size * scale
+	return Rect2(bounds.position + (bounds.size - fitted_size) * 0.5, fitted_size)
 
 
 func _draw_field_marks() -> void:
