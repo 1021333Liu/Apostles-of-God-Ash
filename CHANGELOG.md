@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 2026-06-15
+
+### Art iteration: add rural quiet masterset concept round
+
+- Owner: Codex
+- Changes:
+  - Added `assets/concepts/wyeth_rural_masterset_20260615/` with ten rural quiet master visual concept images.
+  - Added `docs/planning/ART_ROUND_WYETH_RURAL_20260615.md` with self-review and follow-up notes.
+- Reason:
+  - New art direction from `25_WYETH_RURAL_ART_DIRECTION.md` and `26_KEY_VISUAL_MASTERSET_PLAN.md` shifts Low Whispering Field toward dry, quiet, rural desolation while preserving Godot combat readability.
+- Impact:
+  - Concept references for key visual, player, enemies, Boss, room, UI, log fragments, and story key art.
+- Verification:
+  - Self-reviewed all ten generated images against rural dryness, low saturation, negative space, no direct artwork copying, and gameplay readability.
+- Follow-up:
+  - Use the stronger references for cleanup; Boss/UI/log fragments need another simplification or transparency pass before runtime use.
 ## 2026-06-10
 
 ### Art iteration: add clean colorful linework direction
