@@ -1,0 +1,474 @@
+{
+  "schema": "godash.sprite_atlas.v1",
+  "source": "tools/build_sprite_atlases.py",
+  "texture": "res://assets/sprites/atlases/enemy_empty_atlas.png",
+  "cell_size": [
+    128,
+    128
+  ],
+  "draw_size": [
+    76.0,
+    76.0
+  ],
+  "anchor": {
+    "mode": "feet",
+    "x": 64,
+    "y": 104
+  },
+  "groups": {
+    "idle": [
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_idle_0.png",
+        "region": [
+          0,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_idle_1.png",
+        "region": [
+          128,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_idle_2.png",
+        "region": [
+          256,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_idle_3.png",
+        "region": [
+          384,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ],
+    "walk": [
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_walk_0.png",
+        "region": [
+          0,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_walk_1.png",
+        "region": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_walk_2.png",
+        "region": [
+          256,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_walk_3.png",
+        "region": [
+          384,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ],
+    "attack": [
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_attack_0.png",
+        "region": [
+          0,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_attack_1.png",
+        "region": [
+          128,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_attack_2.png",
+        "region": [
+          256,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_attack_3.png",
+        "region": [
+          384,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ],
+    "hit": [
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_hit_0.png",
+        "region": [
+          0,
+          384,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_hit_1.png",
+        "region": [
+          128,
+          384,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/enemies/enemy_empty_hit_2.png",
+        "region": [
+          256,
+          384,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ]
+  },
+  "qc": {
+    "frames": [
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_idle_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          24,
+          5,
+          104,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_idle_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          23,
+          3,
+          105,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_idle_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          24,
+          7,
+          104,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_idle_3.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          23,
+          4,
+          104,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_walk_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          7,
+          3,
+          115,
+          123
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_walk_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          24,
+          6,
+          104,
+          123
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_walk_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          13,
+          1,
+          118,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_walk_3.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          24,
+          6,
+          104,
+          123
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_attack_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          0,
+          19,
+          127,
+          102
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_attack_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          7,
+          17,
+          128,
+          115
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_attack_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          4,
+          19,
+          128,
+          111
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_attack_3.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          24,
+          5,
+          104,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_hit_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          0,
+          6,
+          121,
+          125
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_hit_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          16,
+          2,
+          111,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/enemies/enemy_empty_hit_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          24,
+          5,
+          104,
+          122
+        ],
+        "touches_edge": false
+      }
+    ],
+    "edge_touch_frames": [
+      "assets/sprites/characters/enemies/enemy_empty_attack_0.png",
+      "assets/sprites/characters/enemies/enemy_empty_attack_1.png",
+      "assets/sprites/characters/enemies/enemy_empty_attack_2.png",
+      "assets/sprites/characters/enemies/enemy_empty_hit_0.png"
+    ],
+    "missing_or_bad_frames": []
+  }
+}

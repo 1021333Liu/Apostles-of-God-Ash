@@ -1,0 +1,834 @@
+{
+  "schema": "godash.sprite_atlas.v1",
+  "source": "tools/build_sprite_atlases.py",
+  "texture": "res://assets/sprites/atlases/boss_barn_king_atlas.png",
+  "cell_size": [
+    384,
+    384
+  ],
+  "draw_size": [
+    260.0,
+    260.0
+  ],
+  "anchor": {
+    "mode": "feet",
+    "x": 192,
+    "y": 315
+  },
+  "groups": {
+    "phase1": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_0.png",
+        "region": [
+          0,
+          0,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_1.png",
+        "region": [
+          384,
+          0,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_2.png",
+        "region": [
+          768,
+          0,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_3.png",
+        "region": [
+          0,
+          384,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase2": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_0.png",
+        "region": [
+          384,
+          384,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_1.png",
+        "region": [
+          768,
+          384,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_2.png",
+        "region": [
+          0,
+          768,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_3.png",
+        "region": [
+          384,
+          768,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase3": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_0.png",
+        "region": [
+          768,
+          768,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_1.png",
+        "region": [
+          0,
+          1152,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_2.png",
+        "region": [
+          384,
+          1152,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_3.png",
+        "region": [
+          768,
+          1152,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase1_attack": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_0.png",
+        "region": [
+          0,
+          1536,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_1.png",
+        "region": [
+          384,
+          1536,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_2.png",
+        "region": [
+          768,
+          1536,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase2_attack": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_0.png",
+        "region": [
+          0,
+          1920,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_1.png",
+        "region": [
+          384,
+          1920,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_2.png",
+        "region": [
+          768,
+          1920,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase3_attack": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_0.png",
+        "region": [
+          0,
+          2304,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_1.png",
+        "region": [
+          384,
+          2304,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_2.png",
+        "region": [
+          768,
+          2304,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase1_hit": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_hit_0.png",
+        "region": [
+          0,
+          2688,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase1_hit_1.png",
+        "region": [
+          384,
+          2688,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase2_hit": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_hit_0.png",
+        "region": [
+          768,
+          2688,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase2_hit_1.png",
+        "region": [
+          0,
+          3072,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ],
+    "phase3_hit": [
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_hit_0.png",
+        "region": [
+          384,
+          3072,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      },
+      {
+        "source": "assets/sprites/characters/bosses/boss_barn_king_phase3_hit_1.png",
+        "region": [
+          768,
+          3072,
+          384,
+          384
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 192,
+          "y": 315
+        }
+      }
+    ]
+  },
+  "qc": {
+    "frames": [
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          74,
+          11,
+          309,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          71,
+          6,
+          311,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_2.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          74,
+          14,
+          309,
+          378
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_idle_3.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          72,
+          8,
+          310,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          52,
+          13,
+          331,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          49,
+          8,
+          333,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_2.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          52,
+          15,
+          331,
+          377
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_idle_3.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          50,
+          10,
+          332,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          69,
+          11,
+          316,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          67,
+          6,
+          318,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_2.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          70,
+          14,
+          316,
+          377
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_idle_3.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          67,
+          8,
+          317,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          60,
+          5,
+          308,
+          384
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          68,
+          0,
+          329,
+          384
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_2.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          70,
+          6,
+          312,
+          382
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          36,
+          5,
+          328,
+          384
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          47,
+          0,
+          350,
+          384
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_2.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          47,
+          8,
+          335,
+          382
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          57,
+          3,
+          315,
+          384
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          65,
+          0,
+          336,
+          384
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_2.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          65,
+          6,
+          320,
+          382
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_hit_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          62,
+          7,
+          306,
+          382
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase1_hit_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          78,
+          15,
+          317,
+          376
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_hit_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          37,
+          6,
+          326,
+          382
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase2_hit_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          58,
+          15,
+          337,
+          375
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_hit_0.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          58,
+          6,
+          313,
+          382
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/bosses/boss_barn_king_phase3_hit_1.png",
+        "ok": true,
+        "size": [
+          384,
+          384
+        ],
+        "alpha_bbox": [
+          75,
+          15,
+          324,
+          375
+        ],
+        "touches_edge": false
+      }
+    ],
+    "edge_touch_frames": [
+      "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_0.png",
+      "assets/sprites/characters/bosses/boss_barn_king_phase1_attack_1.png",
+      "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_0.png",
+      "assets/sprites/characters/bosses/boss_barn_king_phase2_attack_1.png",
+      "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_0.png",
+      "assets/sprites/characters/bosses/boss_barn_king_phase3_attack_1.png"
+    ],
+    "missing_or_bad_frames": []
+  }
+}

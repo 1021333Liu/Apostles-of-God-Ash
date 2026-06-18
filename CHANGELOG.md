@@ -2,6 +2,25 @@
 
 ## 2026-06-18
 
+### Art automation: add sprite atlas manifests
+
+- Owner: Codex
+- Changes:
+  - Added `tools/build_sprite_atlases.py` to pack current runtime sprite frames into atlas PNGs and manifest JSON.
+  - Added `assets/sprites/atlases/` with player, enemy, Boss, and log-fragment atlases and manifests.
+  - Updated `scripts/systems/art_asset_registry.gd` so atlas manifests are loaded first, with existing loose PNG frame paths as fallback.
+  - Added `docs/planning/ART_ATLAS_AUTOMATION_HANDOFF_20260618.md` for main-thread handoff and automation checks.
+- Reason:
+  - The current sprite set was loaded as many loose PNGs with no explicit frame metadata. Atlas + manifest gives program-side automation a stable interface for action groups, frame rects, anchors, draw sizes, and QC.
+- Impact:
+  - Runtime drawing APIs remain unchanged, but frame loading can now use `AtlasTexture` slices when manifests are present.
+- Verification:
+  - Ran `python tools/build_sprite_atlases.py`.
+  - Parsed manifest JSON.
+  - Ran Godot 4.6.3 headless on `res://scenes/main.tscn`; startup passed.
+- Follow-up:
+  - Player attack body frames touch cell edges and should be split into body-only attack plus separate slash FX. Future art should add real 4-direction frames instead of relying on horizontal flip.
+
 ### Art planning: add scene key art plan
 
 - Owner: Codex

@@ -1,0 +1,473 @@
+{
+  "schema": "godash.sprite_atlas.v1",
+  "source": "tools/build_sprite_atlases.py",
+  "texture": "res://assets/sprites/atlases/player_echo_atlas.png",
+  "cell_size": [
+    128,
+    128
+  ],
+  "draw_size": [
+    82.0,
+    82.0
+  ],
+  "anchor": {
+    "mode": "feet",
+    "x": 64,
+    "y": 104
+  },
+  "groups": {
+    "idle": [
+      {
+        "source": "assets/sprites/characters/player/player_echo_idle_0.png",
+        "region": [
+          0,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_idle_1.png",
+        "region": [
+          128,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_idle_2.png",
+        "region": [
+          256,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_idle_3.png",
+        "region": [
+          384,
+          0,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ],
+    "walk": [
+      {
+        "source": "assets/sprites/characters/player/player_echo_walk_0.png",
+        "region": [
+          0,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_walk_1.png",
+        "region": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_walk_2.png",
+        "region": [
+          256,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_walk_3.png",
+        "region": [
+          384,
+          128,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ],
+    "attack": [
+      {
+        "source": "assets/sprites/characters/player/player_echo_attack_0.png",
+        "region": [
+          0,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_attack_1.png",
+        "region": [
+          128,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_attack_2.png",
+        "region": [
+          256,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_attack_3.png",
+        "region": [
+          384,
+          256,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ],
+    "hit": [
+      {
+        "source": "assets/sprites/characters/player/player_echo_hit_0.png",
+        "region": [
+          0,
+          384,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_hit_1.png",
+        "region": [
+          128,
+          384,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      },
+      {
+        "source": "assets/sprites/characters/player/player_echo_hit_2.png",
+        "region": [
+          256,
+          384,
+          128,
+          128
+        ],
+        "anchor": {
+          "mode": "feet",
+          "x": 64,
+          "y": 104
+        }
+      }
+    ]
+  },
+  "qc": {
+    "frames": [
+      {
+        "path": "assets/sprites/characters/player/player_echo_idle_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          35,
+          6,
+          93,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_idle_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          34,
+          4,
+          94,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_idle_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          35,
+          8,
+          93,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_idle_3.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          34,
+          5,
+          93,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_walk_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          7,
+          3,
+          114,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_walk_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          35,
+          7,
+          93,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_walk_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          11,
+          5,
+          121,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_walk_3.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          35,
+          7,
+          93,
+          122
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_attack_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          0,
+          12,
+          125,
+          112
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_attack_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          4,
+          16,
+          128,
+          112
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_attack_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          4,
+          16,
+          128,
+          112
+        ],
+        "touches_edge": true
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_attack_3.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          35,
+          6,
+          93,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_hit_0.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          7,
+          3,
+          113,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_hit_1.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          20,
+          6,
+          112,
+          121
+        ],
+        "touches_edge": false
+      },
+      {
+        "path": "assets/sprites/characters/player/player_echo_hit_2.png",
+        "ok": true,
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          35,
+          6,
+          93,
+          121
+        ],
+        "touches_edge": false
+      }
+    ],
+    "edge_touch_frames": [
+      "assets/sprites/characters/player/player_echo_attack_0.png",
+      "assets/sprites/characters/player/player_echo_attack_1.png",
+      "assets/sprites/characters/player/player_echo_attack_2.png"
+    ],
+    "missing_or_bad_frames": []
+  }
+}

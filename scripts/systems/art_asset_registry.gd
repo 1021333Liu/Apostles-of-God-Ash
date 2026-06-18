@@ -3,6 +3,16 @@ extends RefCounted
 const PLAYER_ECHO_IDLE_PATH: String = "res://assets/sprites/characters/player/player_echo_idle.png"
 const LOG_FRAGMENT_PATH: String = "res://assets/sprites/pickups/log_fragment.png"
 
+const PLAYER_ATLAS_MANIFEST_PATH: String = "res://assets/sprites/atlases/player_echo_atlas.json"
+const LOG_FRAGMENT_ATLAS_MANIFEST_PATH: String = "res://assets/sprites/atlases/log_fragment_atlas.json"
+
+const ENEMY_ATLAS_MANIFEST_PATHS: Dictionary = {
+	"empty": "res://assets/sprites/atlases/enemy_empty_atlas.json",
+	"farmer": "res://assets/sprites/atlases/enemy_farmer_atlas.json",
+	"scarecrow": "res://assets/sprites/atlases/enemy_scarecrow_atlas.json",
+	"barn_king": "res://assets/sprites/atlases/boss_barn_king_atlas.json"
+}
+
 const PLAYER_FRAME_PATHS: Dictionary = {
 	"idle": [
 		"res://assets/sprites/characters/player/player_echo_idle_0.png",
@@ -190,24 +200,30 @@ var enemy_textures: Dictionary = {}
 var enemy_frames: Dictionary = {}
 var room_backgrounds: Dictionary = {}
 var log_fragment_frames: Array[Texture2D] = []
+var atlas_manifests: Dictionary = {}
 
 
 func load_all() -> void:
 	player_idle = _try_load_texture(PLAYER_ECHO_IDLE_PATH)
 	log_fragment = _try_load_texture(LOG_FRAGMENT_PATH)
-	player_frames = _load_frame_groups(PLAYER_FRAME_PATHS)
+	atlas_manifests.clear()
+	player_frames = _load_atlas_frame_groups(PLAYER_ATLAS_MANIFEST_PATH)
+	if player_frames.is_empty():
+		player_frames = _load_frame_groups(PLAYER_FRAME_PATHS)
 
 	enemy_textures.clear()
 	for kind: String in ENEMY_TEXTURE_PATHS.keys():
 		enemy_textures[kind] = _try_load_texture(String(ENEMY_TEXTURE_PATHS[kind]))
 	enemy_frames.clear()
 	for kind: String in ENEMY_FRAME_PATHS.keys():
-		enemy_frames[kind] = _load_frame_groups(ENEMY_FRAME_PATHS[kind])
+		var atlas_groups := _load_atlas_frame_groups(String(ENEMY_ATLAS_MANIFEST_PATHS.get(kind, "")))
+		enemy_frames[kind] = atlas_groups if not atlas_groups.is_empty() else _load_frame_groups(ENEMY_FRAME_PATHS[kind])
 
 	room_backgrounds.clear()
 	for room_id: String in ROOM_BACKGROUND_PATHS.keys():
 		room_backgrounds[room_id] = _try_load_texture(String(ROOM_BACKGROUND_PATHS[room_id]))
-	log_fragment_frames = _load_frame_list(LOG_FRAGMENT_FRAME_PATHS)
+	var log_fragment_groups := _load_atlas_frame_groups(LOG_FRAGMENT_ATLAS_MANIFEST_PATH)
+	log_fragment_frames = log_fragment_groups.get("pulse", []) as Array[Texture2D] if not log_fragment_groups.is_empty() else _load_frame_list(LOG_FRAGMENT_FRAME_PATHS)
 
 
 func player_texture() -> Texture2D:
@@ -254,12 +270,61 @@ func enemy_draw_size(kind: String) -> Vector2:
 
 
 func _try_load_texture(path: String) -> Texture2D:
-	if not ResourceLoader.exists(path):
-		return null
-	var resource := load(path)
-	if resource is Texture2D:
-		return resource as Texture2D
+	if ResourceLoader.exists(path):
+		var resource := load(path)
+		if resource is Texture2D:
+			return resource as Texture2D
+	if path.get_extension().to_lower() == "png" and FileAccess.file_exists(path):
+		var image := Image.new()
+		if image.load(path) == OK:
+			return ImageTexture.create_from_image(image)
 	return null
+
+
+func _load_atlas_frame_groups(manifest_path: String) -> Dictionary:
+	if manifest_path.is_empty() or not FileAccess.file_exists(manifest_path):
+		return {}
+	var manifest := _read_atlas_manifest(manifest_path)
+	if manifest.is_empty():
+		return {}
+	var texture := _try_load_texture(String(manifest.get("texture", "")))
+	if not texture:
+		return {}
+	var groups_data := manifest.get("groups", {}) as Dictionary
+	var loaded: Dictionary = {}
+	for state: String in groups_data.keys():
+		var frames: Array[Texture2D] = []
+		for frame_data in groups_data[state]:
+			if frame_data is Dictionary:
+				var region_values := (frame_data as Dictionary).get("region", []) as Array
+				if region_values.size() == 4:
+					frames.append(_make_atlas_texture(texture, region_values))
+		if not frames.is_empty():
+			loaded[state] = frames
+	return loaded
+
+
+func _read_atlas_manifest(path: String) -> Dictionary:
+	if atlas_manifests.has(path):
+		return atlas_manifests[path] as Dictionary
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return {}
+	var parsed = JSON.parse_string(file.get_as_text())
+	if parsed is Dictionary:
+		atlas_manifests[path] = parsed
+		return parsed as Dictionary
+	return {}
+
+
+func _make_atlas_texture(texture: Texture2D, region_values: Array) -> AtlasTexture:
+	var atlas_texture := AtlasTexture.new()
+	atlas_texture.atlas = texture
+	atlas_texture.region = Rect2(
+		Vector2(float(region_values[0]), float(region_values[1])),
+		Vector2(float(region_values[2]), float(region_values[3]))
+	)
+	return atlas_texture
 
 
 func _load_frame_groups(groups: Dictionary) -> Dictionary:

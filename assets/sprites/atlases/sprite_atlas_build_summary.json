@@ -1,0 +1,32 @@
+[
+  {
+    "atlas": "assets/sprites/atlases/player_echo_atlas.png",
+    "manifest": "assets/sprites/atlases/player_echo_atlas.json",
+    "frames": 15
+  },
+  {
+    "atlas": "assets/sprites/atlases/enemy_empty_atlas.png",
+    "manifest": "assets/sprites/atlases/enemy_empty_atlas.json",
+    "frames": 15
+  },
+  {
+    "atlas": "assets/sprites/atlases/enemy_farmer_atlas.png",
+    "manifest": "assets/sprites/atlases/enemy_farmer_atlas.json",
+    "frames": 15
+  },
+  {
+    "atlas": "assets/sprites/atlases/enemy_scarecrow_atlas.png",
+    "manifest": "assets/sprites/atlases/enemy_scarecrow_atlas.json",
+    "frames": 15
+  },
+  {
+    "atlas": "assets/sprites/atlases/boss_barn_king_atlas.png",
+    "manifest": "assets/sprites/atlases/boss_barn_king_atlas.json",
+    "frames": 27
+  },
+  {
+    "atlas": "assets/sprites/atlases/log_fragment_atlas.png",
+    "manifest": "assets/sprites/atlases/log_fragment_atlas.json",
+    "frames": 10
+  }
+]
