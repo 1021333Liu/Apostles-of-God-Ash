@@ -35,6 +35,7 @@
 | `21_WORLDVIEW_FOUR_LAYER_MODEL.md` | 文案、美术、关卡、系统策划 | 按物理法则、历史势力、文化信仰、日常质感拆解底层世界观 |
 | `22_ARTIST_DRAWING_BRIEF.md` | 真人画师、美术负责人 | 第一批可进 Godot 的角色动画、Boss、日志碎片、背景和 UI 绘制需求 |
 | `23_ART_DETAIL_REQUIREMENTS.md` | 美术负责人、画师、程序接入 | 角色比例、朝向、武器、VFX、背景、UI 和验收截图的细节标准 |
+| `27_SCENE_KEY_ART_PLAN.md` | 美术负责人、场景画师、image2 操作者 | 按游戏流程和叙事节点拆解的 10 张低语田野场景图需求 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 

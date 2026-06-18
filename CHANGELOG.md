@@ -1,5 +1,22 @@
 # 更新日志 / Changelog
 
+## 2026-06-18
+
+### Art planning: add scene key art plan
+
+- Owner: Codex
+- Changes:
+  - Added `docs/planning/27_SCENE_KEY_ART_PLAN.md` with ten scene key-art requirements based on the Low Whispering Field room flow and story progression.
+  - Updated `docs/planning/00_PRODUCTION_INDEX.md` with the new scene key-art planning entry.
+- Reason:
+  - The art branch needed environment and story-scene requirements in addition to character, Boss, UI, and log-fragment asset briefs.
+- Impact:
+  - Gives artists and image2 operators concrete prompts for Silent Sacred Casket, field entrance, blood wheat, gut canal, hungry barn, Barn King chamber, archive truth screen, and related narrative scenes.
+- Verification:
+  - Cross-checked against `02_LEVEL_DESIGN.md`, `03_NARRATIVE_COPY.md`, `20_LOG_FRAGMENT_SYSTEM_PLAN.md`, and the existing art detail requirements.
+- Follow-up:
+  - Generate or commission the ten scene images, then split P0 rooms into Godot-ready background layers.
+
 ## 2026-06-15
 
 ### Art iteration: add rural quiet masterset concept round
