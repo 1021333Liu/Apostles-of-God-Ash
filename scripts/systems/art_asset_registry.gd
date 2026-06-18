@@ -5,6 +5,7 @@ const LOG_FRAGMENT_PATH: String = "res://assets/sprites/pickups/log_fragment.png
 
 const PLAYER_ATLAS_MANIFEST_PATH: String = "res://assets/sprites/atlases/player_echo_atlas.json"
 const LOG_FRAGMENT_ATLAS_MANIFEST_PATH: String = "res://assets/sprites/atlases/log_fragment_atlas.json"
+const SLASH_FX_ATLAS_MANIFEST_PATH: String = "res://assets/sprites/atlases/vfx_slash_atlas.json"
 
 const ENEMY_ATLAS_MANIFEST_PATHS: Dictionary = {
 	"empty": "res://assets/sprites/atlases/enemy_empty_atlas.json",
@@ -200,6 +201,7 @@ var enemy_textures: Dictionary = {}
 var enemy_frames: Dictionary = {}
 var room_backgrounds: Dictionary = {}
 var log_fragment_frames: Array[Texture2D] = []
+var slash_fx_frames: Dictionary = {}
 var atlas_manifests: Dictionary = {}
 
 
@@ -224,10 +226,15 @@ func load_all() -> void:
 		room_backgrounds[room_id] = _try_load_texture(String(ROOM_BACKGROUND_PATHS[room_id]))
 	var log_fragment_groups := _load_atlas_frame_groups(LOG_FRAGMENT_ATLAS_MANIFEST_PATH)
 	log_fragment_frames = log_fragment_groups.get("pulse", []) as Array[Texture2D] if not log_fragment_groups.is_empty() else _load_frame_list(LOG_FRAGMENT_FRAME_PATHS)
+	slash_fx_frames = _load_atlas_frame_groups(SLASH_FX_ATLAS_MANIFEST_PATH)
 
 
 func player_texture() -> Texture2D:
 	return player_idle
+
+
+func player_draw_size() -> Vector2:
+	return _manifest_draw_size(PLAYER_ATLAS_MANIFEST_PATH, Vector2(82.0, 82.0))
 
 
 func player_frame(state: String, frame_index: int) -> Texture2D:
@@ -257,16 +264,34 @@ func log_fragment_frame(frame_index: int) -> Texture2D:
 	return log_fragment_frames[frame_index % log_fragment_frames.size()]
 
 
+func log_fragment_draw_size() -> Vector2:
+	return _manifest_draw_size(LOG_FRAGMENT_ATLAS_MANIFEST_PATH, Vector2(42.0, 42.0))
+
+
+func slash_fx_frame(kind: String, frame_index: int) -> Texture2D:
+	var frames := slash_fx_frames.get(kind, []) as Array
+	if frames.is_empty():
+		frames = slash_fx_frames.get("hit", []) as Array
+	if frames.is_empty():
+		return null
+	return frames[frame_index % frames.size()] as Texture2D
+
+
+func slash_fx_draw_size() -> Vector2:
+	return _manifest_draw_size(SLASH_FX_ATLAS_MANIFEST_PATH, Vector2(132.0, 82.0))
+
+
 func enemy_draw_size(kind: String) -> Vector2:
+	var manifest_path := String(ENEMY_ATLAS_MANIFEST_PATHS.get(kind, ""))
 	match kind:
 		"barn_king":
-			return Vector2(260.0, 260.0)
+			return _manifest_draw_size(manifest_path, Vector2(260.0, 260.0))
 		"scarecrow":
-			return Vector2(104.0, 104.0)
+			return _manifest_draw_size(manifest_path, Vector2(104.0, 104.0))
 		"farmer":
-			return Vector2(86.0, 86.0)
+			return _manifest_draw_size(manifest_path, Vector2(86.0, 86.0))
 		_:
-			return Vector2(76.0, 76.0)
+			return _manifest_draw_size(manifest_path, Vector2(76.0, 76.0))
 
 
 func _try_load_texture(path: String) -> Texture2D:
@@ -325,6 +350,19 @@ func _make_atlas_texture(texture: Texture2D, region_values: Array) -> AtlasTextu
 		Vector2(float(region_values[2]), float(region_values[3]))
 	)
 	return atlas_texture
+
+
+func _manifest_draw_size(manifest_path: String, fallback: Vector2) -> Vector2:
+	if manifest_path.is_empty() or not FileAccess.file_exists(manifest_path):
+		return fallback
+	var manifest := _read_atlas_manifest(manifest_path)
+	var values := manifest.get("draw_size", []) as Array
+	if values.size() != 2:
+		return fallback
+	var size := Vector2(float(values[0]), float(values[1]))
+	if size.x <= 0.0 or size.y <= 0.0:
+		return fallback
+	return size
 
 
 func _load_frame_groups(groups: Dictionary) -> Dictionary:
