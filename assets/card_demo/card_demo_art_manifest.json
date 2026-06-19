@@ -1,0 +1,457 @@
+{
+  "schema": "godash.card_demo_art.v1",
+  "source": "tools/build_card_demo_art_round02.py",
+  "style_contract": "P0 proxy assets adapted from current project sprites; Wyeth-like low-saturation rural mood remains the final redraw target.",
+  "coordinate_contract": {
+    "character_frame_size": [
+      768,
+      768
+    ],
+    "anchor": {
+      "mode": "feet",
+      "x": 384,
+      "y": 720
+    },
+    "direction_policy": "Author frames face right/right-front. Runtime should mirror around the feet anchor for left-facing states instead of swapping differently centered art."
+  },
+  "actions": [
+    {
+      "actor": "player_echo",
+      "action": "field_idle",
+      "frame_count": 6,
+      "fps": 6,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "田野探索待机；呼吸、布条和身体轻晃，右向基准。",
+      "paths": [
+        "assets/card_demo/actors/player_echo/field_idle_0.png",
+        "assets/card_demo/actors/player_echo/field_idle_1.png",
+        "assets/card_demo/actors/player_echo/field_idle_2.png",
+        "assets/card_demo/actors/player_echo/field_idle_3.png",
+        "assets/card_demo/actors/player_echo/field_idle_4.png",
+        "assets/card_demo/actors/player_echo/field_idle_5.png"
+      ],
+      "status": "p0_proxy"
+    },
+    {
+      "actor": "player_echo",
+      "action": "field_walk",
+      "frame_count": 8,
+      "fps": 10,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "田野探索行走循环；脚底锚点稳定在 y=720，程序侧平移角色。",
+      "paths": [
+        "assets/card_demo/actors/player_echo/field_walk_0.png",
+        "assets/card_demo/actors/player_echo/field_walk_1.png",
+        "assets/card_demo/actors/player_echo/field_walk_2.png",
+        "assets/card_demo/actors/player_echo/field_walk_3.png",
+        "assets/card_demo/actors/player_echo/field_walk_4.png",
+        "assets/card_demo/actors/player_echo/field_walk_5.png",
+        "assets/card_demo/actors/player_echo/field_walk_6.png",
+        "assets/card_demo/actors/player_echo/field_walk_7.png"
+      ],
+      "status": "p0_proxy"
+    },
+    {
+      "actor": "player_echo",
+      "action": "card_attack",
+      "frame_count": 8,
+      "fps": 12,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "卡牌战斗出牌攻击；复用旧攻击帧，武器过宽问题标记为后续重画。",
+      "paths": [
+        "assets/card_demo/actors/player_echo/card_attack_0.png",
+        "assets/card_demo/actors/player_echo/card_attack_1.png",
+        "assets/card_demo/actors/player_echo/card_attack_2.png",
+        "assets/card_demo/actors/player_echo/card_attack_3.png",
+        "assets/card_demo/actors/player_echo/card_attack_4.png",
+        "assets/card_demo/actors/player_echo/card_attack_5.png",
+        "assets/card_demo/actors/player_echo/card_attack_6.png",
+        "assets/card_demo/actors/player_echo/card_attack_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "actor_player_echo_attack_*"
+    },
+    {
+      "actor": "player_echo",
+      "action": "card_defend",
+      "frame_count": 8,
+      "fps": 8,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "卡牌防御；首版用待机压低节奏替代，后续需画举刃/护胃动作。",
+      "paths": [
+        "assets/card_demo/actors/player_echo/card_defend_0.png",
+        "assets/card_demo/actors/player_echo/card_defend_1.png",
+        "assets/card_demo/actors/player_echo/card_defend_2.png",
+        "assets/card_demo/actors/player_echo/card_defend_3.png",
+        "assets/card_demo/actors/player_echo/card_defend_4.png",
+        "assets/card_demo/actors/player_echo/card_defend_5.png",
+        "assets/card_demo/actors/player_echo/card_defend_6.png",
+        "assets/card_demo/actors/player_echo/card_defend_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "player_echo_idle_*"
+    },
+    {
+      "actor": "player_echo",
+      "action": "card_hurt",
+      "frame_count": 6,
+      "fps": 10,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "受击后仰；复用旧 hit 帧扩展到 6 帧。",
+      "paths": [
+        "assets/card_demo/actors/player_echo/card_hurt_0.png",
+        "assets/card_demo/actors/player_echo/card_hurt_1.png",
+        "assets/card_demo/actors/player_echo/card_hurt_2.png",
+        "assets/card_demo/actors/player_echo/card_hurt_3.png",
+        "assets/card_demo/actors/player_echo/card_hurt_4.png",
+        "assets/card_demo/actors/player_echo/card_hurt_5.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "player_echo_hit_*"
+    },
+    {
+      "actor": "player_echo",
+      "action": "card_win",
+      "frame_count": 8,
+      "fps": 8,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "胜利收刀；首版用待机回稳替代，后续需画胸口暗红圣痕收束。",
+      "paths": [
+        "assets/card_demo/actors/player_echo/card_win_0.png",
+        "assets/card_demo/actors/player_echo/card_win_1.png",
+        "assets/card_demo/actors/player_echo/card_win_2.png",
+        "assets/card_demo/actors/player_echo/card_win_3.png",
+        "assets/card_demo/actors/player_echo/card_win_4.png",
+        "assets/card_demo/actors/player_echo/card_win_5.png",
+        "assets/card_demo/actors/player_echo/card_win_6.png",
+        "assets/card_demo/actors/player_echo/card_win_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "player_echo_idle_*"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "field_idle",
+      "frame_count": 6,
+      "fps": 6,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫田路待机；佝偻颤动，面向主角。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/field_idle_0.png",
+        "assets/card_demo/actors/enemy_farmer/field_idle_1.png",
+        "assets/card_demo/actors/enemy_farmer/field_idle_2.png",
+        "assets/card_demo/actors/enemy_farmer/field_idle_3.png",
+        "assets/card_demo/actors/enemy_farmer/field_idle_4.png",
+        "assets/card_demo/actors/enemy_farmer/field_idle_5.png"
+      ],
+      "status": "p0_proxy"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "field_mutter",
+      "frame_count": 8,
+      "fps": 8,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫喃喃自语；用行走/待机节奏临时表现身体前后晃动。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/field_mutter_0.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_1.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_2.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_3.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_4.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_5.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_6.png",
+        "assets/card_demo/actors/enemy_farmer/field_mutter_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "enemy_farmer_walk_*"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "card_attack",
+      "frame_count": 8,
+      "fps": 12,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫出牌攻击；复用旧农具攻击帧扩展到 8 帧。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/card_attack_0.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_1.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_2.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_3.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_4.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_5.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_6.png",
+        "assets/card_demo/actors/enemy_farmer/card_attack_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "actor_enemy_farmer_attack_*"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "card_defend",
+      "frame_count": 8,
+      "fps": 8,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫防御；首版用待机收缩替代，后续需画抱碗/护身动作。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/card_defend_0.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_1.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_2.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_3.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_4.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_5.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_6.png",
+        "assets/card_demo/actors/enemy_farmer/card_defend_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "enemy_farmer_idle_*"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "card_hurt",
+      "frame_count": 6,
+      "fps": 10,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫受击踉跄；复用旧 hit 帧扩展到 6 帧。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/card_hurt_0.png",
+        "assets/card_demo/actors/enemy_farmer/card_hurt_1.png",
+        "assets/card_demo/actors/enemy_farmer/card_hurt_2.png",
+        "assets/card_demo/actors/enemy_farmer/card_hurt_3.png",
+        "assets/card_demo/actors/enemy_farmer/card_hurt_4.png",
+        "assets/card_demo/actors/enemy_farmer/card_hurt_5.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "enemy_farmer_hit_*"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "card_mutter",
+      "frame_count": 8,
+      "fps": 8,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫战斗喃喃；用于回合等待和骰子判定前。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/card_mutter_0.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_1.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_2.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_3.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_4.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_5.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_6.png",
+        "assets/card_demo/actors/enemy_farmer/card_mutter_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "enemy_farmer_idle_*"
+    },
+    {
+      "actor": "enemy_farmer",
+      "action": "card_confess",
+      "frame_count": 8,
+      "fps": 7,
+      "anchor": {
+        "mode": "feet",
+        "x": 384,
+        "y": 720
+      },
+      "draw_size": [
+        256,
+        256
+      ],
+      "flip_policy": "mirror_x_by_direction",
+      "description": "农夫坦白/崩溃；首版用受击回到待机替代，后续需画跪低和松手。",
+      "paths": [
+        "assets/card_demo/actors/enemy_farmer/card_confess_0.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_1.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_2.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_3.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_4.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_5.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_6.png",
+        "assets/card_demo/actors/enemy_farmer/card_confess_7.png"
+      ],
+      "status": "p0_proxy",
+      "reuse_from": "enemy_farmer_hit_*"
+    }
+  ],
+  "ui": [
+    {
+      "id": "intent_attack",
+      "path": "assets/card_demo/ui/intent/bubble_attack.png",
+      "size": [
+        320,
+        168
+      ],
+      "anchor": {
+        "mode": "bottom_center",
+        "x": 160,
+        "y": 150
+      },
+      "description": "攻击意图气泡；透明 PNG，左侧留文字区，右侧有短刃符号。",
+      "status": "p0_proxy"
+    },
+    {
+      "id": "intent_defend",
+      "path": "assets/card_demo/ui/intent/bubble_defend.png",
+      "size": [
+        320,
+        168
+      ],
+      "anchor": {
+        "mode": "bottom_center",
+        "x": 160,
+        "y": 150
+      },
+      "description": "防御意图气泡；透明 PNG，左侧留文字区，右侧有盾形符号。",
+      "status": "p0_proxy"
+    },
+    {
+      "id": "dice_roll_stage",
+      "path": "assets/card_demo/ui/dice/dice_roll_stage.png",
+      "size": [
+        512,
+        256
+      ],
+      "anchor": {
+        "mode": "center",
+        "x": 256,
+        "y": 128
+      },
+      "description": "骰子滚动底座；用于屏幕中央承载 D20 / D3 结果。",
+      "status": "p0_proxy"
+    }
+  ],
+  "reusable_existing_icons": [
+    {
+      "id": "memory_shard",
+      "path": "assets/sprites/ui/ui_memory_shard.svg",
+      "use": "可临时作为战斗胜利后的记忆样本奖励图标，不建议直接当暴击/大失败图标。"
+    },
+    {
+      "id": "stomach_open_closed_overflow",
+      "paths": [
+        "assets/sprites/ui/ui_stomach_open.svg",
+        "assets/sprites/ui/ui_stomach_closed.svg",
+        "assets/sprites/ui/ui_stomach_overflow.svg"
+      ],
+      "use": "可复用到回合结果或胃囊系统提示；反弹、完美防御、暴击、大失败仍需独立重画。"
+    }
+  ],
+  "qc": {
+    "frames_checked": 96,
+    "required_character_size": [
+      768,
+      768
+    ],
+    "required_anchor_y": 720,
+    "note": "All generated character files are RGBA 768x768 with stable paste anchor. Several attack/hurt frames reuse old edge-touch source art and should be repainted before final."
+  }
+}
