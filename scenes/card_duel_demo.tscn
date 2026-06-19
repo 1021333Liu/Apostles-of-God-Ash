@@ -26,16 +26,16 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 28.0
-offset_top = 22.0
-offset_right = -28.0
-offset_bottom = -22.0
+offset_left = 36.0
+offset_top = 26.0
+offset_right = -36.0
+offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="MainVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="TopBar" type="HBoxContainer" parent="RootMargin/MainVBox"]
 layout_mode = 2
@@ -79,11 +79,11 @@ horizontal_alignment = 2
 [node name="BattleRow" type="HBoxContainer" parent="RootMargin/MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_override_constants/separation = 20
 
 [node name="PlayerActor" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(250, 260)
+custom_minimum_size = Vector2(280, 330)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -104,13 +104,14 @@ autowrap_mode = 3
 
 [node name="CenterStack" type="VBoxContainer" parent="RootMargin/MainVBox/BattleRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(460, 0)
 size_flags_horizontal = 4
 size_flags_vertical = 3
 theme_override_constants/separation = 12
 
 [node name="DicePanel" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(430, 220)
+custom_minimum_size = Vector2(460, 230)
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -131,7 +132,7 @@ text = "骰子结果"
 
 [node name="DialoguePanel" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(430, 170)
+custom_minimum_size = Vector2(460, 178)
 layout_mode = 2
 
 [node name="DialogueMargin" type="MarginContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack/DialoguePanel"]
@@ -151,7 +152,7 @@ text = "对话"
 
 [node name="FarmerActor" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(250, 260)
+custom_minimum_size = Vector2(280, 330)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -176,7 +177,7 @@ theme_override_constants/separation = 12
 
 [node name="AttackButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 78)
+custom_minimum_size = Vector2(180, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "攻击
@@ -184,7 +185,7 @@ text = "攻击
 
 [node name="DefendButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 78)
+custom_minimum_size = Vector2(180, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "防御
@@ -192,7 +193,7 @@ text = "防御
 
 [node name="ContinueButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 78)
+custom_minimum_size = Vector2(180, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "开始决斗"

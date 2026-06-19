@@ -169,6 +169,7 @@ var log_fragment: Dictionary = {
 
 
 func _ready() -> void:
+	_ensure_gameplay_input_actions()
 	rng.randomize()
 	_connect_signals()
 	_build_theme()
@@ -194,26 +195,85 @@ func _connect_signals() -> void:
 
 func _build_theme() -> void:
 	var root_style := StyleBoxFlat.new()
-	root_style.bg_color = Color(0.09, 0.075, 0.055, 0.95)
-	root_style.border_color = Color(0.55, 0.48, 0.36, 0.9)
+	root_style.bg_color = Color(0.055, 0.047, 0.036, 0.94)
+	root_style.border_color = Color(0.60, 0.52, 0.38, 0.95)
 	root_style.set_border_width_all(2)
-	root_style.set_corner_radius_all(4)
+	root_style.set_corner_radius_all(3)
 
-	for panel: PanelContainer in [dialogue_panel, dice_panel, reward_panel, archive_panel, player_actor, farmer_actor]:
+	var actor_style := StyleBoxFlat.new()
+	actor_style.bg_color = Color(0.035, 0.032, 0.028, 0.72)
+	actor_style.border_color = Color(0.50, 0.43, 0.32, 0.88)
+	actor_style.set_border_width_all(1)
+	actor_style.set_corner_radius_all(2)
+
+	for panel: PanelContainer in [dialogue_panel, dice_panel, reward_panel, archive_panel]:
 		panel.add_theme_stylebox_override("panel", root_style)
+	for panel: PanelContainer in [player_actor, farmer_actor]:
+		panel.add_theme_stylebox_override("panel", actor_style)
 
 	var button_style := StyleBoxFlat.new()
-	button_style.bg_color = Color(0.19, 0.145, 0.095, 1.0)
-	button_style.border_color = Color(0.72, 0.62, 0.42, 1.0)
+	button_style.bg_color = Color(0.17, 0.125, 0.080, 1.0)
+	button_style.border_color = Color(0.74, 0.62, 0.38, 1.0)
 	button_style.set_border_width_all(2)
-	button_style.set_corner_radius_all(4)
+	button_style.set_corner_radius_all(3)
+
+	var button_hover_style := button_style.duplicate() as StyleBoxFlat
+	button_hover_style.bg_color = Color(0.24, 0.18, 0.105, 1.0)
+	button_hover_style.border_color = Color(0.92, 0.76, 0.45, 1.0)
+
+	var button_pressed_style := button_style.duplicate() as StyleBoxFlat
+	button_pressed_style.bg_color = Color(0.10, 0.075, 0.055, 1.0)
+	button_pressed_style.border_color = Color(0.92, 0.43, 0.28, 1.0)
 
 	for button: Button in [attack_button, defend_button, continue_button, reward_sickle_button, reward_hat_button, reward_wheat_button]:
 		button.add_theme_stylebox_override("normal", button_style)
+		button.add_theme_stylebox_override("hover", button_hover_style)
+		button.add_theme_stylebox_override("pressed", button_pressed_style)
 		button.add_theme_color_override("font_color", Color(0.93, 0.86, 0.72, 1.0))
+		button.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.70, 1.0))
+		button.add_theme_font_size_override("font_size", 17)
 		button.focus_mode = Control.FOCUS_ALL
 
+	for label: Label in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor_label, farmer_actor_label]:
+		label.add_theme_color_override("font_color", Color(0.92, 0.86, 0.73, 1.0))
+		label.add_theme_color_override("font_shadow_color", Color(0.02, 0.015, 0.012, 0.90))
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
+	title_label.add_theme_font_size_override("font_size", 22)
+	state_label.add_theme_font_size_override("font_size", 15)
+	intent_label.add_theme_font_size_override("font_size", 15)
+
+	for rich_label: RichTextLabel in [dialogue_label, dice_label, archive_label]:
+		rich_label.add_theme_color_override("default_color", Color(0.91, 0.84, 0.70, 1.0))
+		rich_label.add_theme_font_size_override("normal_font_size", 17)
+
 	background.color = Color(0.13, 0.115, 0.075, 1.0)
+
+
+func _ensure_gameplay_input_actions() -> void:
+	_ensure_key_action("move_left", [KEY_A, KEY_LEFT])
+	_ensure_key_action("move_right", [KEY_D, KEY_RIGHT])
+	_ensure_key_action("move_up", [KEY_W, KEY_UP])
+	_ensure_key_action("move_down", [KEY_S, KEY_DOWN])
+
+
+func _ensure_key_action(action_name: String, physical_keycodes: Array[int]) -> void:
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name)
+	for keycode: int in physical_keycodes:
+		if _action_has_physical_key(action_name, keycode):
+			continue
+		var event := InputEventKey.new()
+		event.physical_keycode = keycode
+		InputMap.action_add_event(action_name, event)
+
+
+func _action_has_physical_key(action_name: String, physical_keycode: int) -> bool:
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		var key_event := event as InputEventKey
+		if key_event != null and key_event.physical_keycode == physical_keycode:
+			return true
+	return false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -565,6 +625,7 @@ func _enter_field_exploration() -> void:
 	state = DuelState.FIELD_EXPLORATION
 	field_player_position = FIELD_PLAYER_START
 	field_dialogue_index = 0
+	get_viewport().gui_release_focus()
 	_set_duel_ui_visible(false)
 	if field_layer != null:
 		field_layer.visible = true
@@ -579,7 +640,7 @@ func _enter_field_exploration() -> void:
 
 
 func _update_field_exploration(delta: float) -> void:
-	var input_dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_dir != Vector2.ZERO:
 		field_player_position += input_dir * FIELD_PLAYER_SPEED * delta
 		field_player_position.x = clampf(field_player_position.x, 150.0, 1130.0)
@@ -661,6 +722,8 @@ func _enter_player_choice() -> void:
 	dice_label.text = "[center]选择本回合行动。[/center]"
 	_update_actor_pose("idle", "idle")
 	_update_ui()
+	attack_button.text = "攻击\nD20 命中 + D3"
+	defend_button.text = "防御\nD20 抵挡"
 	attack_button.grab_focus()
 
 
@@ -957,10 +1020,19 @@ func _current_enemy_action() -> int:
 func _update_ui() -> void:
 	player_hp_label.text = "无韵回响 HP %d / %d" % [player_hp, player_max_hp]
 	farmer_hp_label.text = "饥民农夫 HP %d / %d" % [farmer_hp, FARMER_MAX_HP]
-	if state == DuelState.SANCTUM_INTRO:
-		intent_label.text = "开场：收藏家记录样本 | 按 空格 / 回车 或继续"
-	else:
-		intent_label.text = "农夫下一步：%s  |  序列：防御 -> 攻击 -> 防御 -> 攻击" % _action_name(_current_enemy_action())
+	match state:
+		DuelState.SANCTUM_INTRO:
+			intent_label.text = "无声圣匣 | 收藏家记录样本"
+			farmer_hp_label.text = "收藏家：待接入全身像"
+		DuelState.FIELD_EXPLORATION:
+			intent_label.text = "WASD / 方向键移动 | Space / Enter 对话"
+			farmer_hp_label.text = "目标：田路中央的农夫"
+		DuelState.FIELD_DIALOGUE, DuelState.PRE_DIALOGUE:
+			intent_label.text = "对话失败将进入卡牌骰子决斗"
+		DuelState.PLAYER_CHOICE, DuelState.RESOLVING:
+			intent_label.text = "农夫意图：%s | 序列 防御 - 攻击 - 防御 - 攻击" % _action_name(_current_enemy_action())
+		_:
+			intent_label.text = "样本归档 | 圣匣记录中"
 	state_label.text = _state_name()
 	title_label.text = "神烬使徒：低语田野卡牌骰子 Demo"
 

@@ -2,6 +2,25 @@
 
 ## 2026-06-19
 
+### Playtest polish: fix field movement and refine card UI
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added gameplay-specific `move_left`, `move_right`, `move_up`, and `move_down` actions at runtime with WASD and arrow-key bindings.
+  - Field exploration now polls gameplay movement actions instead of Godot `ui_*` navigation actions.
+  - Releasing UI focus when entering field exploration prevents arrow keys from steering bottom-right UI buttons.
+  - Refined card demo panel colors, button states, status text, actor panel sizing, and central battle layout.
+- Reason:
+  - Movement should feel like direct scene control. UI navigation was stealing the intended WASD/arrow movement behavior and making the field segment feel broken.
+- Impact:
+  - WASD and arrow keys both move the player in the field scene.
+  - The UI still needs final art, but the layout is less form-like and better aligned with the Silent Casket / card duel tone.
+- Verification:
+  - Ran Godot 4.6.3 headless on `res://scenes/card_duel_demo.tscn`.
+  - Ran `res://tools/check_card_duel_rules.gd`; smoke check passed.
+
+## 2026-06-19
+
 ### Narrative flow: add Collector intro before the field
 
 - Owner: 刘秉昂 / Codex
