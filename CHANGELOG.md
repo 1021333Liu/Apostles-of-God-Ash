@@ -2,6 +2,26 @@
 
 ## 2026-06-19
 
+### Prototype: staged dice roll combat presentation
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added a staged combat presentation pass to `scripts/card/card_duel_controller.gd`.
+  - Player and Farmer actions now pop as intent bubbles above the actors before dice resolution.
+  - Dice results now roll through a center-stage panel with D20/D3 icon context instead of resolving instantly.
+  - Result motion now switches actor poses to attack, defend, or hit, then adds a short nudge animation for impact.
+  - Reduced roll presentation to the relevant action dice plus effect/reward dice, avoiding a full dump of every internal value.
+- Reason:
+  - The card duel must feel like an observed exchange, not a spreadsheet result. Players need to see who attacks, who defends, which die is being rolled, and when the impact lands.
+- Impact:
+  - Combat pacing is slower and more readable, while the underlying dice rules remain unchanged.
+  - Final artist-made action frames and bubble assets can replace the current temporary runtime presentation without changing the rules layer.
+- Verification:
+  - Ran Godot 4.6.3 headless on `res://scenes/card_duel_demo.tscn`.
+  - Ran `res://tools/check_card_duel_rules.gd`; smoke check passed.
+
+## 2026-06-19
+
 ### Prototype: first card dice duel demo
 
 - Owner: 刘秉昂 / Codex

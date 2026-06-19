@@ -18,6 +18,15 @@ const REWARD_ICON_PATHS: Dictionary = {
 	"hat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_hat.png",
 	"wheat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_wheat.png"
 }
+const INTENT_ICON_PATHS: Dictionary = {
+	"attack": CARD_ART_ROOT + "/ui/intent/ui_intent_enemy_attack.png",
+	"defend": CARD_ART_ROOT + "/ui/intent/ui_intent_enemy_defend.png"
+}
+const DICE_ICON_PATHS: Dictionary = {
+	"hit": CARD_ART_ROOT + "/ui/dice/ui_die_hit_d20.png",
+	"defense": CARD_ART_ROOT + "/ui/dice/ui_die_defense_d20.png",
+	"effect": CARD_ART_ROOT + "/ui/dice/ui_die_effect_d3.png"
+}
 const PLAYER_POSES: Array[String] = ["idle", "attack", "defend", "hit", "victory"]
 const FARMER_POSES: Array[String] = ["idle", "mutter", "attack", "defend", "hit", "confess"]
 const FIELD_PLAYER_START: Vector2 = Vector2(300.0, 540.0)
@@ -70,6 +79,11 @@ var field_farmer_sprite: TextureRect
 var field_prompt_label: Label
 var field_dialogue_panel: PanelContainer
 var field_dialogue_label: RichTextLabel
+var dice_roll_stage: PanelContainer
+var dice_roll_icon: TextureRect
+var dice_roll_label: Label
+var player_bubble: PanelContainer
+var farmer_bubble: PanelContainer
 var field_player_position: Vector2 = FIELD_PLAYER_START
 var field_dialogue_index: int = 0
 var field_dialogue_lines: Array[String] = [
@@ -194,6 +208,103 @@ func _setup_art_assets() -> void:
 	_setup_actor_sprite("farmer", farmer_actor, farmer_actor_label)
 	_setup_reward_icons()
 	_setup_field_layer()
+	_setup_combat_presentation_layer()
+
+
+func _setup_combat_presentation_layer() -> void:
+	dice_roll_stage = PanelContainer.new()
+	dice_roll_stage.name = "DiceRollStage"
+	dice_roll_stage.visible = false
+	dice_roll_stage.custom_minimum_size = Vector2(320.0, 150.0)
+	dice_roll_stage.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	dice_roll_stage.offset_left = -160.0
+	dice_roll_stage.offset_top = -76.0
+	dice_roll_stage.offset_right = 160.0
+	dice_roll_stage.offset_bottom = 74.0
+	var stage_style := StyleBoxFlat.new()
+	stage_style.bg_color = Color(0.07, 0.055, 0.04, 0.94)
+	stage_style.border_color = Color(0.78, 0.68, 0.43, 1.0)
+	stage_style.set_border_width_all(3)
+	stage_style.set_corner_radius_all(5)
+	dice_roll_stage.add_theme_stylebox_override("panel", stage_style)
+	add_child(dice_roll_stage)
+
+	var dice_margin := MarginContainer.new()
+	dice_margin.add_theme_constant_override("margin_left", 18)
+	dice_margin.add_theme_constant_override("margin_top", 14)
+	dice_margin.add_theme_constant_override("margin_right", 18)
+	dice_margin.add_theme_constant_override("margin_bottom", 14)
+	dice_roll_stage.add_child(dice_margin)
+
+	var dice_box := VBoxContainer.new()
+	dice_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	dice_box.add_theme_constant_override("separation", 8)
+	dice_margin.add_child(dice_box)
+
+	dice_roll_icon = TextureRect.new()
+	dice_roll_icon.custom_minimum_size = Vector2(50.0, 50.0)
+	dice_roll_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dice_roll_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dice_box.add_child(dice_roll_icon)
+
+	dice_roll_label = Label.new()
+	dice_roll_label.text = "D20"
+	dice_roll_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dice_roll_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	dice_roll_label.add_theme_font_size_override("font_size", 28)
+	dice_roll_label.add_theme_color_override("font_color", Color(0.96, 0.87, 0.62, 1.0))
+	dice_box.add_child(dice_roll_label)
+
+	player_bubble = _make_action_bubble("PlayerActionBubble", Vector2(136.0, 214.0))
+	farmer_bubble = _make_action_bubble("FarmerActionBubble", Vector2(-136.0, 214.0))
+	add_child(player_bubble)
+	add_child(farmer_bubble)
+
+
+func _make_action_bubble(bubble_name: String, center_offset: Vector2) -> PanelContainer:
+	var bubble := PanelContainer.new()
+	bubble.name = bubble_name
+	bubble.visible = false
+	bubble.custom_minimum_size = Vector2(162.0, 70.0)
+	bubble.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	bubble.offset_left = center_offset.x - 81.0
+	bubble.offset_top = -center_offset.y - 35.0
+	bubble.offset_right = center_offset.x + 81.0
+	bubble.offset_bottom = -center_offset.y + 35.0
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.93, 0.83, 0.60, 0.96)
+	style.border_color = Color(0.42, 0.28, 0.16, 1.0)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(18)
+	bubble.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 7)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 7)
+	bubble.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 7)
+	margin.add_child(row)
+
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(42.0, 42.0)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var label := Label.new()
+	label.name = "Label"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_color_override("font_color", Color(0.10, 0.065, 0.04, 1.0))
+	row.add_child(label)
+	return bubble
 
 
 func _setup_background_art() -> void:
@@ -468,6 +579,11 @@ func _choose_action(player_action: int) -> void:
 	_set_action_buttons_enabled(false)
 	var enemy_action: int = _current_enemy_action()
 	var result: Dictionary = Dice.resolve_exchange(player_action, enemy_action, rng, bonuses)
+	await _play_combat_presentation(result)
+	_finish_resolved_action(result)
+
+
+func _finish_resolved_action(result: Dictionary) -> void:
 	_apply_result(result)
 	_show_result(result)
 	turn_index += 1
@@ -480,6 +596,138 @@ func _choose_action(player_action: int) -> void:
 		state = DuelState.PLAYER_CHOICE
 		_set_action_buttons_enabled(true)
 		_update_ui()
+
+
+func _play_combat_presentation(result: Dictionary) -> void:
+	var player_action: int = result["player_action"]
+	var enemy_action: int = result["enemy_action"]
+	dialogue_label.text = "[center]双方亮出行动。[/center]"
+	dice_label.text = "[center]骰子正在落下。[/center]"
+	_show_action_bubbles(player_action, enemy_action)
+	_update_actor_pose("idle", "mutter")
+	await get_tree().create_timer(0.55).timeout
+	await _roll_relevant_dice(result)
+	_hide_action_bubbles()
+	_play_result_motion(result)
+	await get_tree().create_timer(0.65).timeout
+
+
+func _show_action_bubbles(player_action: int, enemy_action: int) -> void:
+	if player_bubble != null:
+		_configure_action_bubble(player_bubble, player_action)
+		player_bubble.visible = true
+		_pop_node(player_bubble)
+	if farmer_bubble != null:
+		_configure_action_bubble(farmer_bubble, enemy_action)
+		farmer_bubble.visible = true
+		_pop_node(farmer_bubble)
+
+
+func _configure_action_bubble(bubble: PanelContainer, action: int) -> void:
+	var action_key := "attack" if action == Dice.Action.ATTACK else "defend"
+	var icon := bubble.find_child("Icon", true, false) as TextureRect
+	if icon != null:
+		icon.texture = _load_texture(INTENT_ICON_PATHS[action_key])
+	var label := bubble.find_child("Label", true, false) as Label
+	if label != null:
+		label.text = "ATTACK" if action == Dice.Action.ATTACK else "GUARD"
+
+
+func _hide_action_bubbles() -> void:
+	if player_bubble != null:
+		player_bubble.visible = false
+	if farmer_bubble != null:
+		farmer_bubble.visible = false
+
+
+func _roll_relevant_dice(result: Dictionary) -> void:
+	var roll_steps: Array[Dictionary] = []
+	var player_action: int = result["player_action"]
+	var enemy_action: int = result["enemy_action"]
+	if player_action == Dice.Action.ATTACK:
+		_add_roll_step(roll_steps, "我方命中 D20", result["player_hit_roll"], "hit", 20)
+	else:
+		_add_roll_step(roll_steps, "我方防御 D20", result["player_defense_roll"], "defense", 20)
+	if enemy_action == Dice.Action.ATTACK:
+		_add_roll_step(roll_steps, "农夫命中 D20", result["enemy_hit_roll"], "hit", 20)
+	else:
+		_add_roll_step(roll_steps, "农夫防御 D20", result["enemy_defense_roll"], "defense", 20)
+	if int(result["player_effect_roll"]) >= 0:
+		_add_roll_step(roll_steps, "我方效果 D3", result["player_effect_roll"], "effect", 3)
+	elif int(result["enemy_effect_roll"]) >= 0:
+		_add_roll_step(roll_steps, "农夫效果 D3", result["enemy_effect_roll"], "effect", 3)
+	if int(result["player_bonus_roll"]) >= 0:
+		_add_roll_step(roll_steps, "奖励 D3", result["player_bonus_roll"], "effect", 3)
+	for step: Dictionary in roll_steps:
+		await _roll_single_die(step["label"], int(step["value"]), step["kind"], int(step["sides"]))
+
+
+func _add_roll_step(roll_steps: Array[Dictionary], label: String, value: int, kind: String, sides: int) -> void:
+	if value >= 0:
+		roll_steps.append({"label": label, "value": value, "kind": kind, "sides": sides})
+
+
+func _roll_single_die(label: String, final_value: int, kind: String, sides: int) -> void:
+	if dice_roll_stage == null or dice_roll_label == null:
+		return
+	if dice_roll_icon != null:
+		dice_roll_icon.texture = _load_texture(DICE_ICON_PATHS.get(kind, DICE_ICON_PATHS["hit"]))
+	dice_roll_stage.visible = true
+	dice_roll_stage.scale = Vector2(0.88, 0.88)
+	_pop_node(dice_roll_stage)
+	for i: int in range(8):
+		var face := randi_range(0, sides)
+		dice_roll_label.text = "%s\n%d" % [label, face]
+		await get_tree().create_timer(0.055 + float(i) * 0.012).timeout
+	dice_roll_label.text = "%s\n%d" % [label, final_value]
+	_flash_node(dice_roll_stage)
+	await get_tree().create_timer(0.42).timeout
+	dice_roll_stage.visible = false
+
+
+func _play_result_motion(result: Dictionary) -> void:
+	var player_pose: String = "attack" if result["player_action"] == Dice.Action.ATTACK else "defend"
+	var farmer_pose: String = "attack" if result["enemy_action"] == Dice.Action.ATTACK else "defend"
+	if int(result["enemy_hp_delta"]) < 0:
+		farmer_pose = "hit"
+	if int(result["player_hp_delta"]) < 0:
+		player_pose = "hit"
+	_update_actor_pose(player_pose, farmer_pose)
+	_nudge_actor_panels(player_pose, farmer_pose)
+
+
+func _pop_node(node: Control) -> void:
+	node.pivot_offset = node.size * 0.5
+	node.scale = Vector2(0.82, 0.82)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "scale", Vector2.ONE, 0.18)
+
+
+func _flash_node(node: CanvasItem) -> void:
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "modulate", Color(1.0, 0.82, 0.45, 1.0), 0.08)
+	tween.tween_property(node, "modulate", Color.WHITE, 0.18)
+
+
+func _nudge_actor_panels(player_pose: String, farmer_pose: String) -> void:
+	if player_pose == "attack":
+		_nudge_panel(player_actor, Vector2(26.0, 0.0))
+	elif player_pose == "hit":
+		_nudge_panel(player_actor, Vector2(-18.0, 0.0))
+	if farmer_pose == "attack":
+		_nudge_panel(farmer_actor, Vector2(-26.0, 0.0))
+	elif farmer_pose == "hit":
+		_nudge_panel(farmer_actor, Vector2(18.0, 0.0))
+
+
+func _nudge_panel(panel: Control, offset: Vector2) -> void:
+	var start_position := panel.position
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(panel, "position", start_position + offset, 0.12)
+	tween.tween_property(panel, "position", start_position, 0.18)
 
 
 func _apply_result(result: Dictionary) -> void:
