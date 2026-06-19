@@ -20,8 +20,12 @@ const REWARD_ICON_PATHS: Dictionary = {
 }
 const PLAYER_POSES: Array[String] = ["idle", "attack", "defend", "hit", "victory"]
 const FARMER_POSES: Array[String] = ["idle", "mutter", "attack", "defend", "hit", "confess"]
+const FIELD_PLAYER_START: Vector2 = Vector2(300.0, 540.0)
+const FIELD_FARMER_POS: Vector2 = Vector2(640.0, 360.0)
+const FIELD_INTERACT_DISTANCE: float = 135.0
+const FIELD_PLAYER_SPEED: float = 260.0
 
-enum DuelState { PRE_DIALOGUE, PLAYER_CHOICE, RESOLVING, VICTORY_STORY, REWARD_CHOICE, COMPLETE, DEFEAT }
+enum DuelState { FIELD_EXPLORATION, FIELD_DIALOGUE, PRE_DIALOGUE, PLAYER_CHOICE, RESOLVING, VICTORY_STORY, REWARD_CHOICE, COMPLETE, DEFEAT }
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var state: DuelState = DuelState.PRE_DIALOGUE
@@ -60,6 +64,20 @@ var actor_return_pose: Dictionary = {
 	"player": "idle",
 	"farmer": "idle"
 }
+var field_layer: Control
+var field_player_sprite: TextureRect
+var field_farmer_sprite: TextureRect
+var field_prompt_label: Label
+var field_dialogue_panel: PanelContainer
+var field_dialogue_label: RichTextLabel
+var field_player_position: Vector2 = FIELD_PLAYER_START
+var field_dialogue_index: int = 0
+var field_dialogue_lines: Array[String] = [
+	"咕噜……饿了。",
+	"名单别乱。孩子还在田边等我。",
+	"不是我不讲理，是田先听不懂人话。",
+	"你也饿吗？那就照规矩来。"
+]
 
 var pre_dialogue: Array[String] = [
 	"天亮就下田。",
@@ -115,12 +133,14 @@ func _ready() -> void:
 	_connect_signals()
 	_build_theme()
 	_setup_art_assets()
-	_enter_pre_dialogue()
+	_enter_field_exploration()
 
 
 func _process(delta: float) -> void:
 	_update_actor_animation("player", delta)
 	_update_actor_animation("farmer", delta)
+	if state == DuelState.FIELD_EXPLORATION:
+		_update_field_exploration(delta)
 
 
 func _connect_signals() -> void:
@@ -156,6 +176,16 @@ func _build_theme() -> void:
 	background.color = Color(0.13, 0.115, 0.075, 1.0)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_accept"):
+		if state == DuelState.FIELD_EXPLORATION and _is_near_farmer():
+			_enter_field_dialogue()
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.FIELD_DIALOGUE:
+			_advance_field_dialogue()
+			get_viewport().set_input_as_handled()
+
+
 func _setup_art_assets() -> void:
 	_setup_background_art()
 	_load_actor_frames("player", PLAYER_ART_ROOT, "actor_player_echo", PLAYER_POSES)
@@ -163,6 +193,7 @@ func _setup_art_assets() -> void:
 	_setup_actor_sprite("player", player_actor, player_actor_label)
 	_setup_actor_sprite("farmer", farmer_actor, farmer_actor_label)
 	_setup_reward_icons()
+	_setup_field_layer()
 
 
 func _setup_background_art() -> void:
@@ -180,6 +211,81 @@ func _setup_background_art() -> void:
 	background_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background_art)
 	move_child(background_art, background.get_index() + 1)
+
+
+func _setup_field_layer() -> void:
+	field_layer = Control.new()
+	field_layer.name = "FieldExplorationLayer"
+	field_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	field_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(field_layer)
+	move_child(field_layer, background.get_index() + 2)
+
+	field_farmer_sprite = _make_field_sprite("FieldFarmer", "farmer", "mutter", Vector2(220.0, 220.0))
+	field_farmer_sprite.position = FIELD_FARMER_POS - field_farmer_sprite.custom_minimum_size * 0.5
+	field_layer.add_child(field_farmer_sprite)
+
+	field_player_sprite = _make_field_sprite("FieldPlayer", "player", "idle", Vector2(190.0, 190.0))
+	field_layer.add_child(field_player_sprite)
+
+	field_prompt_label = Label.new()
+	field_prompt_label.name = "FieldPrompt"
+	field_prompt_label.text = "WASD / 方向键移动，靠近农夫后按 空格 / 回车 对话"
+	field_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	field_prompt_label.add_theme_color_override("font_color", Color(0.96, 0.88, 0.68, 1.0))
+	field_prompt_label.add_theme_color_override("font_shadow_color", Color(0.05, 0.03, 0.02, 1.0))
+	field_prompt_label.add_theme_constant_override("shadow_offset_x", 2)
+	field_prompt_label.add_theme_constant_override("shadow_offset_y", 2)
+	field_prompt_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	field_prompt_label.offset_top = 22.0
+	field_prompt_label.offset_bottom = 58.0
+	field_layer.add_child(field_prompt_label)
+
+	field_dialogue_panel = PanelContainer.new()
+	field_dialogue_panel.name = "FieldDialoguePanel"
+	field_dialogue_panel.visible = false
+	field_dialogue_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	field_dialogue_panel.offset_left = 160.0
+	field_dialogue_panel.offset_right = -160.0
+	field_dialogue_panel.offset_top = -178.0
+	field_dialogue_panel.offset_bottom = -32.0
+	var dialogue_style := StyleBoxFlat.new()
+	dialogue_style.bg_color = Color(0.065, 0.052, 0.04, 0.92)
+	dialogue_style.border_color = Color(0.72, 0.61, 0.42, 0.92)
+	dialogue_style.set_border_width_all(2)
+	dialogue_style.set_corner_radius_all(4)
+	field_dialogue_panel.add_theme_stylebox_override("panel", dialogue_style)
+	field_layer.add_child(field_dialogue_panel)
+
+	var dialogue_margin := MarginContainer.new()
+	dialogue_margin.add_theme_constant_override("margin_left", 18)
+	dialogue_margin.add_theme_constant_override("margin_top", 14)
+	dialogue_margin.add_theme_constant_override("margin_right", 18)
+	dialogue_margin.add_theme_constant_override("margin_bottom", 14)
+	field_dialogue_panel.add_child(dialogue_margin)
+
+	field_dialogue_label = RichTextLabel.new()
+	field_dialogue_label.bbcode_enabled = true
+	field_dialogue_label.fit_content = true
+	field_dialogue_label.scroll_active = false
+	field_dialogue_label.text = ""
+	field_dialogue_label.add_theme_color_override("default_color", Color(0.93, 0.86, 0.72, 1.0))
+	dialogue_margin.add_child(field_dialogue_label)
+	_update_field_positions()
+
+
+func _make_field_sprite(sprite_name: String, actor_key: String, pose: String, size: Vector2) -> TextureRect:
+	var sprite := TextureRect.new()
+	sprite.name = sprite_name
+	sprite.custom_minimum_size = size
+	sprite.size = size
+	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frames := _get_actor_frames(actor_key, pose)
+	if not frames.is_empty():
+		sprite.texture = frames[0]
+	return sprite
 
 
 func _load_actor_frames(actor_key: String, root_path: String, file_prefix: String, poses: Array[String]) -> void:
@@ -251,8 +357,86 @@ func _load_texture(path: String) -> Texture2D:
 	return null
 
 
+func _enter_field_exploration() -> void:
+	state = DuelState.FIELD_EXPLORATION
+	field_player_position = FIELD_PLAYER_START
+	field_dialogue_index = 0
+	_set_duel_ui_visible(false)
+	if field_layer != null:
+		field_layer.visible = true
+	if field_dialogue_panel != null:
+		field_dialogue_panel.visible = false
+	_set_action_buttons_enabled(false)
+	reward_panel.visible = false
+	archive_panel.visible = false
+	continue_button.visible = false
+	_update_field_positions()
+	_update_field_prompt()
+
+
+func _update_field_exploration(delta: float) -> void:
+	var input_dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	if input_dir != Vector2.ZERO:
+		field_player_position += input_dir * FIELD_PLAYER_SPEED * delta
+		field_player_position.x = clampf(field_player_position.x, 150.0, 1130.0)
+		field_player_position.y = clampf(field_player_position.y, 250.0, 620.0)
+	_update_field_positions()
+	_update_field_prompt()
+
+
+func _update_field_positions() -> void:
+	if field_player_sprite == null:
+		return
+	field_player_sprite.position = field_player_position - field_player_sprite.custom_minimum_size * 0.5
+
+
+func _update_field_prompt() -> void:
+	if field_prompt_label == null:
+		return
+	if _is_near_farmer():
+		field_prompt_label.text = "按 空格 / 回车 与农夫对话"
+	else:
+		field_prompt_label.text = "WASD / 方向键移动，靠近田路中央的农夫"
+
+
+func _is_near_farmer() -> bool:
+	return field_player_position.distance_to(FIELD_FARMER_POS) <= FIELD_INTERACT_DISTANCE
+
+
+func _enter_field_dialogue() -> void:
+	state = DuelState.FIELD_DIALOGUE
+	field_dialogue_index = 0
+	if field_dialogue_panel != null:
+		field_dialogue_panel.visible = true
+	if field_prompt_label != null:
+		field_prompt_label.text = "空格 / 回车 继续"
+	_show_field_dialogue_line()
+
+
+func _advance_field_dialogue() -> void:
+	field_dialogue_index += 1
+	if field_dialogue_index >= field_dialogue_lines.size():
+		_enter_pre_dialogue()
+		return
+	_show_field_dialogue_line()
+
+
+func _show_field_dialogue_line() -> void:
+	if field_dialogue_label == null:
+		return
+	field_dialogue_label.text = "[b]饥民农夫[/b]\n%s" % field_dialogue_lines[field_dialogue_index]
+
+
+func _set_duel_ui_visible(visible: bool) -> void:
+	for node: Control in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor, farmer_actor, dialogue_panel, dice_panel, attack_button, defend_button, continue_button, reward_panel, archive_panel]:
+		node.visible = visible
+
+
 func _enter_pre_dialogue() -> void:
 	state = DuelState.PRE_DIALOGUE
+	if field_layer != null:
+		field_layer.visible = false
+	_set_duel_ui_visible(true)
 	_set_action_buttons_enabled(false)
 	reward_panel.visible = false
 	archive_panel.visible = false
@@ -417,7 +601,7 @@ func _reset_run() -> void:
 		"hat": false
 	}
 	continue_button.text = "开始决斗"
-	_enter_pre_dialogue()
+	_enter_field_exploration()
 
 
 func _current_enemy_action() -> int:
