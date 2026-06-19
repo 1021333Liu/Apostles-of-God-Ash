@@ -10,7 +10,7 @@ All PNG files below are intended for the Godot demo and are stored at the stable
 | --- | --- | --- |
 | Background | `backgrounds/bg_card_field_entrance.png` | 1920x1080 Image2-generated field entrance. The central road is intentionally quiet for the two actors; the lower band is darker for cards. The untouched 1672x941 source is retained at `source/bg_card_field_entrance_image2_source.png`. |
 | Player actor | `actors/player_echo/actor_player_echo_<action>_<frame>.png` | 768x768 transparent PNGs derived from the Image2 player master. Actions: idle (6), attack (8), defend (6), hit (4), victory (6). Faces right. Original and keyed-alpha masters are in `source/player_echo_image2_source.png` and `source/player_echo_image2_alpha.png`. |
-| Farmer actor | `actors/enemy_farmer/actor_enemy_farmer_<action>_<frame>.png` | 768x768 transparent PNGs. Actions: idle (6), mutter (6), attack (8), defend (6), hit (4), confess (8). Faces left. |
+| Farmer actor | `actors/enemy_farmer/actor_enemy_farmer_<action>_<frame>.png` | 768x768 transparent PNGs derived from the Image2 farmer master. Actions: idle (6), mutter (6), attack (8), defend (6), hit (4), confess (8). Faces left. Original and keyed-alpha masters are in `source/farmer_image2_source.png` and `source/farmer_image2_alpha.png`. |
 | Basic cards | `cards/card_basic_attack_art.png`, `cards/card_basic_defense_art.png` | 512x768. Top, lower, and action-seal zones have no baked text. |
 | Dice and intent | `ui/dice/`, `ui/intent/` | Dice faces and roll markers intentionally contain no result numerals or status text. |
 | Log and archive | `ui/log/` | The archive banner and story page reserve their central parchment regions for program-rendered text. |
