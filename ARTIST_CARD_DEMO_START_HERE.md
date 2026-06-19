@@ -31,6 +31,50 @@ feature/card-demo-art
 
 第一场样板敌人是：**饥民农夫**。
 
+## 旧美术不是废稿
+
+这次玩法转向以后，之前已经画出的概念图和场景图仍然要继承。
+
+它们现在的作用是：
+
+- 统一《神烬使徒》的美术母语。
+- 给新卡牌 Demo 提供角色、场景、UI、日志碎片的视觉参考。
+- 帮助画师避免把新图画成另一个项目。
+
+但要注意：旧图不一定能直接作为新 Demo 最终运行资产。动作版图里有些角色是为了实时战斗、斜俯视房间和跑动攻击服务的；现在需要重新整理成“左右对峙的动画组、卡牌 UI、骰子 UI、胜利归档界面”。
+
+### 优先参考的旧资产
+
+请先看这些：
+
+| 参考文件 | 用途 |
+| --- | --- |
+| `assets/concepts/concept_famine_farmer_sheet.png` | 饥民农夫的身份、服装、劳作感参考 |
+| `assets/concepts/concept_player_placeholder_sheet.jpg` | 玩家“无韵回响”的脏银、胃纹、残片感参考 |
+| `assets/concepts/concept_memory_shard_icons.jpg` | 日志碎片 / 记忆晶片参考 |
+| `assets/concepts/concept_archive_ui.jpg` | 圣匣归档 UI 的旧纸、封蜡、档案感参考 |
+| `assets/concepts/concept_low_whispering_field_mood.jpg` | 低语田野整体氛围参考 |
+| `assets/concepts/concept_low_whispering_field_room.jpg` | 房间背景的枯麦、灰土、战斗留白参考 |
+| `assets/concepts/scene_key_art_round_01/concept_png/scene_02_field_entrance.png` | 第一场背景“低语田野入口”的主要参考 |
+| `assets/concepts/scene_key_art_round_01/concept_png/scene_10_casket_truth_archive.png` | 胜利归档 / 日志界面的主要参考 |
+
+### 可以直接继承的视觉规则
+
+- 低饱和。
+- 乡村荒凉。
+- 干燥、安静、冷白光。
+- 枯麦、灰褐土地、旧纸、脏银、封蜡、旧木。
+- 暗红只作为胃囊、伤害、日志核心、封蜡和骰子大成功的重点色。
+- Andrew Wyeth 式乡村孤独感只作为气质参考，不临摹具体画作和构图。
+
+### 需要重新适配的地方
+
+- 角色要从“动作房间小人”改成“左右对峙动画组”。
+- 攻击 / 防御要有明确短动画，不是站着不动。
+- 场景背景要给下方卡牌 UI 和中部骰子结算区留空间。
+- UI 要从动作 HUD 转成“旧纸卡牌 + 骰子仪式 + 圣匣归档”。
+- 日志碎片要更像核心奖励，而不是普通掉落物。
+
 ## 你需要先读的文件
 
 按顺序看：
@@ -43,6 +87,10 @@ feature/card-demo-art
 
 3. `docs/planning/29_CARD_DEMO_ART_BRIEF.md`
    - 最重要。请直接按这个文件画 P0 资产。
+
+4. 旧概念图参考
+   - 看上面“优先参考的旧资产”表格。
+   - 只继承风格和身份，不要机械复制旧构图。
 
 ## 第一批 P0 美术资产
 
@@ -170,6 +218,13 @@ reward_farmer_wheat.png
 - 暗红只用于胃囊、伤害、日志核心和封蜡。
 
 可以参考 Andrew Wyeth 绘画里的乡村孤独感、干燥材质和大面积留白，但不要临摹具体作品，也不要复刻构图。
+
+同时必须和仓库里的旧概念图统一，尤其是：
+
+- 农夫不能突然变成别的世界观里的怪物。
+- 玩家不能突然变成普通骑士或二次元主角。
+- 日志碎片不能突然变成通用蓝水晶。
+- 圣匣 UI 不能突然变成现代 App 或科幻面板。
 
 ## 不要做
 
