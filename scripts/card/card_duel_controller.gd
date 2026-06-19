@@ -9,6 +9,17 @@ const FARMER_PATTERN: Array[int] = [
 	Dice.Action.DEFEND,
 	Dice.Action.ATTACK
 ]
+const CARD_ART_ROOT: String = "res://assets/card_demo"
+const BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_card_field_entrance.png"
+const PLAYER_ART_ROOT: String = CARD_ART_ROOT + "/actors/player_echo"
+const FARMER_ART_ROOT: String = CARD_ART_ROOT + "/actors/enemy_farmer"
+const REWARD_ICON_PATHS: Dictionary = {
+	"sickle": CARD_ART_ROOT + "/ui/rewards/reward_farmer_sickle.png",
+	"hat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_hat.png",
+	"wheat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_wheat.png"
+}
+const PLAYER_POSES: Array[String] = ["idle", "attack", "defend", "hit", "victory"]
+const FARMER_POSES: Array[String] = ["idle", "mutter", "attack", "defend", "hit", "confess"]
 
 enum DuelState { PRE_DIALOGUE, PLAYER_CHOICE, RESOLVING, VICTORY_STORY, REWARD_CHOICE, COMPLETE, DEFEAT }
 
@@ -23,6 +34,31 @@ var archived_log: bool = false
 var bonuses: Dictionary = {
 	"sickle": false,
 	"hat": false
+}
+var actor_frames: Dictionary = {
+	"player": {},
+	"farmer": {}
+}
+var actor_sprites: Dictionary = {}
+var actor_pose: Dictionary = {
+	"player": "idle",
+	"farmer": "idle"
+}
+var actor_frame_index: Dictionary = {
+	"player": 0,
+	"farmer": 0
+}
+var actor_frame_time: Dictionary = {
+	"player": 0.0,
+	"farmer": 0.0
+}
+var actor_one_shot_time: Dictionary = {
+	"player": 0.0,
+	"farmer": 0.0
+}
+var actor_return_pose: Dictionary = {
+	"player": "idle",
+	"farmer": "idle"
 }
 
 var pre_dialogue: Array[String] = [
@@ -78,7 +114,13 @@ func _ready() -> void:
 	rng.randomize()
 	_connect_signals()
 	_build_theme()
+	_setup_art_assets()
 	_enter_pre_dialogue()
+
+
+func _process(delta: float) -> void:
+	_update_actor_animation("player", delta)
+	_update_actor_animation("farmer", delta)
 
 
 func _connect_signals() -> void:
@@ -112,6 +154,93 @@ func _build_theme() -> void:
 		button.focus_mode = Control.FOCUS_ALL
 
 	background.color = Color(0.13, 0.115, 0.075, 1.0)
+
+
+func _setup_art_assets() -> void:
+	_setup_background_art()
+	_load_actor_frames("player", PLAYER_ART_ROOT, "actor_player_echo", PLAYER_POSES)
+	_load_actor_frames("farmer", FARMER_ART_ROOT, "actor_enemy_farmer", FARMER_POSES)
+	_setup_actor_sprite("player", player_actor, player_actor_label)
+	_setup_actor_sprite("farmer", farmer_actor, farmer_actor_label)
+	_setup_reward_icons()
+
+
+func _setup_background_art() -> void:
+	var texture := _load_texture(BACKGROUND_ART_PATH)
+	if texture == null:
+		return
+
+	var background_art := TextureRect.new()
+	background_art.name = "BackgroundArt"
+	background_art.texture = texture
+	background_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	background_art.modulate = Color(0.78, 0.72, 0.64, 1.0)
+	background_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(background_art)
+	move_child(background_art, background.get_index() + 1)
+
+
+func _load_actor_frames(actor_key: String, root_path: String, file_prefix: String, poses: Array[String]) -> void:
+	for pose: String in poses:
+		var frames: Array[Texture2D] = []
+		for frame_index: int in range(16):
+			var path := "%s/%s_%s_%d.png" % [root_path, file_prefix, pose, frame_index]
+			var texture := _load_texture(path)
+			if texture == null:
+				if frame_index == 0:
+					var single_path := "%s/%s_%s.png" % [root_path, file_prefix, pose]
+					texture = _load_texture(single_path)
+				if texture == null:
+					break
+			frames.append(texture)
+		if not frames.is_empty():
+			actor_frames[actor_key][pose] = frames
+
+
+func _setup_actor_sprite(actor_key: String, actor_panel: PanelContainer, fallback_label: Label) -> void:
+	var frames: Array = _get_actor_frames(actor_key, "idle")
+	if frames.is_empty():
+		return
+
+	var sprite := TextureRect.new()
+	sprite.name = "%sArt" % actor_key.capitalize()
+	sprite.texture = frames[0]
+	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sprite.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	sprite.offset_top = -10.0
+	sprite.offset_bottom = 10.0
+	actor_panel.add_child(sprite)
+	actor_panel.move_child(sprite, 0)
+	actor_sprites[actor_key] = sprite
+	fallback_label.visible = false
+
+
+func _setup_reward_icons() -> void:
+	_apply_button_icon(reward_sickle_button, REWARD_ICON_PATHS["sickle"])
+	_apply_button_icon(reward_hat_button, REWARD_ICON_PATHS["hat"])
+	_apply_button_icon(reward_wheat_button, REWARD_ICON_PATHS["wheat"])
+
+
+func _apply_button_icon(button: Button, path: String) -> void:
+	var texture := _load_texture(path)
+	if texture == null:
+		return
+	button.icon = texture
+	button.expand_icon = true
+	button.add_theme_constant_override("icon_max_width", 46)
+
+
+func _load_texture(path: String) -> Texture2D:
+	if not ResourceLoader.exists(path):
+		return null
+	var resource := load(path)
+	if resource is Texture2D:
+		return resource
+	return null
 
 
 func _enter_pre_dialogue() -> void:
@@ -301,8 +430,83 @@ func _set_action_buttons_enabled(enabled: bool) -> void:
 
 
 func _update_actor_pose(player_pose: String, farmer_pose: String) -> void:
+	_set_actor_pose("player", player_pose, player_pose in ["attack", "defend", "hit"])
+	_set_actor_pose("farmer", farmer_pose, farmer_pose in ["attack", "defend", "hit"])
 	player_actor_label.text = "无韵回响\n[%s]\n\n脏银残片 / 胃纹微亮" % player_pose
 	farmer_actor_label.text = "饥民农夫\n[%s]\n\n旧帽 / 种袋 / 名单" % farmer_pose
+
+
+func _set_actor_pose(actor_key: String, pose: String, one_shot: bool) -> void:
+	if _get_actor_frames(actor_key, pose).is_empty():
+		pose = "idle"
+	actor_pose[actor_key] = pose
+	actor_frame_index[actor_key] = 0
+	actor_frame_time[actor_key] = 0.0
+	actor_one_shot_time[actor_key] = _pose_duration(actor_key, pose) if one_shot else 0.0
+	actor_return_pose[actor_key] = "idle"
+	_apply_actor_frame(actor_key)
+
+
+func _update_actor_animation(actor_key: String, delta: float) -> void:
+	var pose: String = actor_pose.get(actor_key, "idle")
+	var frames: Array = _get_actor_frames(actor_key, pose)
+	if frames.is_empty():
+		return
+
+	if float(actor_one_shot_time.get(actor_key, 0.0)) > 0.0:
+		actor_one_shot_time[actor_key] = float(actor_one_shot_time[actor_key]) - delta
+		if float(actor_one_shot_time[actor_key]) <= 0.0:
+			_set_actor_pose(actor_key, String(actor_return_pose.get(actor_key, "idle")), false)
+			return
+
+	var frame_interval := 1.0 / _pose_fps(pose)
+	actor_frame_time[actor_key] = float(actor_frame_time[actor_key]) + delta
+	if float(actor_frame_time[actor_key]) < frame_interval:
+		return
+
+	actor_frame_time[actor_key] = 0.0
+	actor_frame_index[actor_key] = (int(actor_frame_index[actor_key]) + 1) % frames.size()
+	_apply_actor_frame(actor_key)
+
+
+func _apply_actor_frame(actor_key: String) -> void:
+	if not actor_sprites.has(actor_key):
+		return
+	var sprite: TextureRect = actor_sprites[actor_key]
+	var pose: String = actor_pose.get(actor_key, "idle")
+	var frames: Array = _get_actor_frames(actor_key, pose)
+	if frames.is_empty():
+		return
+	var index: int = clampi(int(actor_frame_index.get(actor_key, 0)), 0, frames.size() - 1)
+	sprite.texture = frames[index]
+
+
+func _get_actor_frames(actor_key: String, pose: String) -> Array:
+	if not actor_frames.has(actor_key):
+		return []
+	var pose_map: Dictionary = actor_frames[actor_key]
+	if not pose_map.has(pose):
+		return []
+	return pose_map[pose]
+
+
+func _pose_duration(actor_key: String, pose: String) -> float:
+	var frames: Array = _get_actor_frames(actor_key, pose)
+	if frames.is_empty():
+		return 0.0
+	return float(frames.size()) / _pose_fps(pose)
+
+
+func _pose_fps(pose: String) -> float:
+	match pose:
+		"attack", "hit":
+			return 12.0
+		"defend":
+			return 9.0
+		"victory", "confess":
+			return 7.0
+		_:
+			return 6.0
 
 
 func _format_lines(lines: Array[String], speaker: String) -> String:
