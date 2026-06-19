@@ -1,0 +1,258 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_duel_controller.gd" id="1_card_duel"]
+
+[node name="CardDuelDemo" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_card_duel")
+
+[node name="Background" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.13, 0.115, 0.075, 1)
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 22.0
+offset_right = -28.0
+offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TopBar" type="HBoxContainer" parent="RootMargin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="RootMargin/MainVBox/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "神烬使徒：低语田野卡牌骰子 Demo"
+
+[node name="StateLabel" type="Label" parent="RootMargin/MainVBox/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "战前对话"
+
+[node name="StatusBar" type="HBoxContainer" parent="RootMargin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PlayerHpLabel" type="Label" parent="RootMargin/MainVBox/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "无韵回响 HP 12 / 12"
+
+[node name="IntentLabel" type="Label" parent="RootMargin/MainVBox/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "农夫下一步：防御"
+horizontal_alignment = 1
+
+[node name="FarmerHpLabel" type="Label" parent="RootMargin/MainVBox/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "饥民农夫 HP 9 / 9"
+horizontal_alignment = 2
+
+[node name="BattleRow" type="HBoxContainer" parent="RootMargin/MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="PlayerActor" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 260)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerActorMargin" type="MarginContainer" parent="RootMargin/MainVBox/BattleRow/PlayerActor"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="PlayerActorLabel" type="Label" parent="RootMargin/MainVBox/BattleRow/PlayerActor/PlayerActorMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "无韵回响"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="CenterStack" type="VBoxContainer" parent="RootMargin/MainVBox/BattleRow"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="DicePanel" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(430, 220)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DiceMargin" type="MarginContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack/DicePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="DiceLabel" type="RichTextLabel" parent="RootMargin/MainVBox/BattleRow/CenterStack/DicePanel/DiceMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "骰子结果"
+
+[node name="DialoguePanel" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(430, 170)
+layout_mode = 2
+
+[node name="DialogueMargin" type="MarginContainer" parent="RootMargin/MainVBox/BattleRow/CenterStack/DialoguePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="DialogueLabel" type="RichTextLabel" parent="RootMargin/MainVBox/BattleRow/CenterStack/DialoguePanel/DialogueMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "对话"
+
+[node name="FarmerActor" type="PanelContainer" parent="RootMargin/MainVBox/BattleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 260)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FarmerActorMargin" type="MarginContainer" parent="RootMargin/MainVBox/BattleRow/FarmerActor"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="FarmerActorLabel" type="Label" parent="RootMargin/MainVBox/BattleRow/FarmerActor/FarmerActorMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "饥民农夫"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="BottomRow" type="HBoxContainer" parent="RootMargin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AttackButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 78)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "攻击
+掷 0-20 / 0-3"
+
+[node name="DefendButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 78)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "防御
+掷 0-20"
+
+[node name="ContinueButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 78)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "开始决斗"
+
+[node name="RewardPanel" type="PanelContainer" parent="RootMargin/MainVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="RewardMargin" type="MarginContainer" parent="RootMargin/MainVBox/RewardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="RewardRow" type="HBoxContainer" parent="RootMargin/MainVBox/RewardPanel/RewardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RewardSickleButton" type="Button" parent="RootMargin/MainVBox/RewardPanel/RewardMargin/RewardRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 82)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "农夫的镰刀
+攻击追加 0-3"
+
+[node name="RewardHatButton" type="Button" parent="RootMargin/MainVBox/RewardPanel/RewardMargin/RewardRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 82)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "农夫的帽子
+防御追加 0-3"
+
+[node name="RewardWheatButton" type="Button" parent="RootMargin/MainVBox/RewardPanel/RewardMargin/RewardRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 82)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "农夫种的麦子
+最大 HP + 1-3"
+
+[node name="ArchivePanel" type="PanelContainer" parent="RootMargin/MainVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ArchiveMargin" type="MarginContainer" parent="RootMargin/MainVBox/ArchivePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="ArchiveLabel" type="RichTextLabel" parent="RootMargin/MainVBox/ArchivePanel/ArchiveMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "日志"

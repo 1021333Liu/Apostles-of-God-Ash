@@ -2,6 +2,27 @@
 
 ## 2026-06-19
 
+### Prototype: first card dice duel demo
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added `scenes/card_duel_demo.tscn` as the first playable card/dice duel prototype.
+  - Added `scripts/card/dice_resolver.gd` for attack, defense, critical success, critical fail, perfect defense, reflect, and effect-die resolution.
+  - Added `scripts/card/card_duel_controller.gd` for the first Farmer encounter, pre-combat mutters, fixed enemy intent sequence, victory story, log archive feedback, and three reward choices.
+  - Pointed `project.godot` at `res://scenes/card_duel_demo.tscn` on this prototype branch.
+  - Added `tools/check_card_duel_rules.gd` as a lightweight Godot smoke check for card-duel rules and scene loading.
+- Reason:
+  - We should not wait for final art before testing the new direction. The first priority is proving the attack/defense dice loop, Farmer intent, story reward, and three-choice reward flow.
+- Impact:
+  - The old action prototype remains available in `scenes/main.tscn` and `scripts/main.gd`, but this branch now boots directly into the card/dice demo.
+- Verification:
+  - Ran Godot 4.6.3 headless on `res://scenes/card_duel_demo.tscn`.
+  - Ran `res://tools/check_card_duel_rules.gd`; smoke check passed.
+- Follow-up:
+  - Replace placeholder panels with incoming `feature/card-demo-art` assets and add the next enemy once the Farmer loop feels readable.
+
+## 2026-06-19
+
 ### Art planning: card demo asset brief
 
 - Owner: 刘秉昂 / Codex
