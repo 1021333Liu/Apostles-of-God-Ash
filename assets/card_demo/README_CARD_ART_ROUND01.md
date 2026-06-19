@@ -9,7 +9,7 @@ All PNG files below are intended for the Godot demo and are stored at the stable
 | Area | Files | Notes |
 | --- | --- | --- |
 | Background | `backgrounds/bg_card_field_entrance.png` | 1920x1080 Image2-generated field entrance. The central road is intentionally quiet for the two actors; the lower band is darker for cards. The untouched 1672x941 source is retained at `source/bg_card_field_entrance_image2_source.png`. |
-| Player actor | `actors/player_echo/actor_player_echo_<action>_<frame>.png` | 768x768 transparent PNGs. Actions: idle (6), attack (8), defend (6), hit (4), victory (6). Faces right. |
+| Player actor | `actors/player_echo/actor_player_echo_<action>_<frame>.png` | 768x768 transparent PNGs derived from the Image2 player master. Actions: idle (6), attack (8), defend (6), hit (4), victory (6). Faces right. Original and keyed-alpha masters are in `source/player_echo_image2_source.png` and `source/player_echo_image2_alpha.png`. |
 | Farmer actor | `actors/enemy_farmer/actor_enemy_farmer_<action>_<frame>.png` | 768x768 transparent PNGs. Actions: idle (6), mutter (6), attack (8), defend (6), hit (4), confess (8). Faces left. |
 | Basic cards | `cards/card_basic_attack_art.png`, `cards/card_basic_defense_art.png` | 512x768. Top, lower, and action-seal zones have no baked text. |
 | Dice and intent | `ui/dice/`, `ui/intent/` | Dice faces and roll markers intentionally contain no result numerals or status text. |
@@ -30,6 +30,6 @@ Use the bottom center of each 768x768 actor frame as the sprite anchor. The actu
 
 ## Source and scope
 
-No large editable source files are included. The actor silhouettes were rebuilt from the repository's existing approved concept sheets to keep the demo visually continuous with the old action prototype. The battle background was generated through the user's authenticated ChatGPT Image2 session and its original export is retained in `source/`.
+No large editable source files are included. The farmer silhouette was rebuilt from the repository's existing approved concept sheet to keep the demo visually continuous with the old action prototype. The battle background and player master were generated through the user's authenticated ChatGPT Image2 session and their original exports are retained in `source/`.
 
 The included previews are a readability pass for this art package. The next iteration should replace the concept-derived actor silhouettes with final hand-painted action poses once the combat scene and exact sprite placement are locked.
