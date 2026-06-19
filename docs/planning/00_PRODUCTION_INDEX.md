@@ -61,6 +61,7 @@
 | `27_SCENE_KEY_ART_PLAN.md` | 美术负责人、场景画师、image2 操作者 | 按游戏流程和叙事节点拆解的 10 张低语田野场景图需求 |
 | `28_CARD_DICE_PIVOT_DESIGN.md` | 策划、程序、UI、文案 | 从实时动作战斗转向卡牌骰子决斗的核心规则、首关数值、奖励和 Godot MVP 方案 |
 | `29_CARD_DEMO_ART_BRIEF.md` | 画师、美术负责人、程序接入 | 卡牌骰子 Demo 的 P0/P1 美术资产清单、格式、交付目录和画师任务单 |
+| `30_COLLECTOR_INTRO_ART_BRIEF.md` | 画师、美术负责人、程序接入 | 收藏家开场、无声圣匣背景、收藏家对话 UI 的 P0 美术需求 |
 | `ART_ATLAS_AUTOMATION_HANDOFF_20260618.md` | 程序、美术技术、主线程 | 现有角色帧打包为 Godot atlas/manifest 的结构、接入规则和巡检条件 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。

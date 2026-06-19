@@ -2,6 +2,22 @@
 
 ## 2026-06-19
 
+### Art planning: collector intro assets
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added `docs/planning/30_COLLECTOR_INTRO_ART_BRIEF.md`.
+  - Defined P0 assets for the opening Collector scene: Collector bust idle/speak frames, Silent Casket intro background, and Collector dialogue UI plates.
+  - Updated `docs/planning/00_PRODUCTION_INDEX.md` with the new Collector intro art brief.
+- Reason:
+  - The card demo should not start directly in the field. The story order needs the player waking in the Silent Casket and hearing the Collector before entering Low Whispering Field.
+- Impact:
+  - Artists now have a concrete branch-ready asset spec for the missing Collector opening instead of a vague reminder.
+- Verification:
+  - Documentation-only change. Cross-checked against `03_NARRATIVE_COPY.md` and `01_ART_DIRECTION.md`.
+
+## 2026-06-19
+
 ### Art planning: card demo asset brief
 
 - Owner: 刘秉昂 / Codex
