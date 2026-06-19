@@ -181,7 +181,7 @@ custom_minimum_size = Vector2(180, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "攻击
-掷 0-20 / 0-3"
+D20 + D3"
 
 [node name="DefendButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
 unique_name_in_owner = true
@@ -189,7 +189,7 @@ custom_minimum_size = Vector2(180, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "防御
-掷 0-20"
+D20 抵挡"
 
 [node name="ContinueButton" type="Button" parent="RootMargin/MainVBox/BottomRow"]
 unique_name_in_owner = true
@@ -241,6 +241,7 @@ text = "农夫种的麦子
 [node name="ArchivePanel" type="PanelContainer" parent="RootMargin/MainVBox"]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
 [node name="ArchiveMargin" type="MarginContainer" parent="RootMargin/MainVBox/ArchivePanel"]

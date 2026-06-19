@@ -2,6 +2,26 @@
 
 ## 2026-06-19
 
+### Playtest systems: keyboard card selection and archive feedback
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added A/D and left/right keyboard selection for attack/defense cards.
+  - Enter / Space now confirms the currently selected combat card, so combat no longer requires mouse clicks.
+  - Reward selection now supports A/D or left/right switching plus Enter / Space confirmation.
+  - Added visible selected-card and selected-reward button states.
+  - Expanded the archive panel into a lightweight log system readout with archived sample count, first-story progress, latest fragment text, and stomach reaction.
+- Reason:
+  - The card duel should be playable from the keyboard like a real game loop. The log fragment should feel like system progress, not only a one-off story paragraph.
+- Impact:
+  - Current flow is more playable: keyboard-only traversal works through intro, field interaction, combat, victory story, reward choice, and restart.
+  - The log system now has a visible MVP structure ready for additional fragments.
+- Verification:
+  - Ran Godot 4.6.3 headless on `res://scenes/card_duel_demo.tscn`.
+  - Ran `res://tools/check_card_duel_rules.gd`; smoke check passed.
+
+## 2026-06-19
+
 ### Playtest polish: fix field movement and refine card UI
 
 - Owner: 刘秉昂 / Codex

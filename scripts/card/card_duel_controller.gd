@@ -61,6 +61,8 @@ var player_hp: int = PLAYER_MAX_HP_START
 var farmer_hp: int = FARMER_MAX_HP
 var turn_index: int = 0
 var selected_reward: String = ""
+var action_selection_index: int = 0
+var reward_selection_index: int = 0
 var archived_log: bool = false
 var bonuses: Dictionary = {
 	"sickle": false,
@@ -142,6 +144,7 @@ var log_fragment: Dictionary = {
 	"text": "他不觉得自己在杀人。他只是害怕哪一天没有人继续照常。",
 	"reaction": "胃囊收缩了一下，像在模仿劳动。"
 }
+var archived_fragments: Array[Dictionary] = []
 
 @onready var background: ColorRect = %Background
 @onready var title_label: Label = %TitleLabel
@@ -229,10 +232,14 @@ func _build_theme() -> void:
 		button.add_theme_stylebox_override("normal", button_style)
 		button.add_theme_stylebox_override("hover", button_hover_style)
 		button.add_theme_stylebox_override("pressed", button_pressed_style)
+		button.add_theme_stylebox_override("focus", button_hover_style)
 		button.add_theme_color_override("font_color", Color(0.93, 0.86, 0.72, 1.0))
 		button.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.70, 1.0))
+		button.add_theme_color_override("font_pressed_color", Color(1.0, 0.88, 0.64, 1.0))
 		button.add_theme_font_size_override("font_size", 17)
 		button.focus_mode = Control.FOCUS_ALL
+	for button: Button in [attack_button, defend_button, reward_sickle_button, reward_hat_button, reward_wheat_button]:
+		button.toggle_mode = true
 
 	for label: Label in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor_label, farmer_actor_label]:
 		label.add_theme_color_override("font_color", Color(0.92, 0.86, 0.73, 1.0))
@@ -255,6 +262,8 @@ func _ensure_gameplay_input_actions() -> void:
 	_ensure_key_action("move_right", [KEY_D, KEY_RIGHT])
 	_ensure_key_action("move_up", [KEY_W, KEY_UP])
 	_ensure_key_action("move_down", [KEY_S, KEY_DOWN])
+	_ensure_key_action("menu_left", [KEY_A, KEY_LEFT])
+	_ensure_key_action("menu_right", [KEY_D, KEY_RIGHT])
 
 
 func _ensure_key_action(action_name: String, physical_keycodes: Array[int]) -> void:
@@ -277,7 +286,21 @@ func _action_has_physical_key(action_name: String, physical_keycode: int) -> boo
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_accept"):
+	if event.is_action_pressed("menu_left"):
+		if state == DuelState.PLAYER_CHOICE:
+			_set_action_selection(action_selection_index - 1)
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.REWARD_CHOICE:
+			_set_reward_selection(reward_selection_index - 1)
+			get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("menu_right"):
+		if state == DuelState.PLAYER_CHOICE:
+			_set_action_selection(action_selection_index + 1)
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.REWARD_CHOICE:
+			_set_reward_selection(reward_selection_index + 1)
+			get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_accept"):
 		if state == DuelState.SANCTUM_INTRO:
 			_advance_sanctum_intro()
 			get_viewport().set_input_as_handled()
@@ -286,6 +309,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif state == DuelState.FIELD_DIALOGUE:
 			_advance_field_dialogue()
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.PLAYER_CHOICE:
+			_confirm_action_selection()
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.REWARD_CHOICE:
+			_confirm_reward_selection()
 			get_viewport().set_input_as_handled()
 
 
@@ -724,7 +753,7 @@ func _enter_player_choice() -> void:
 	_update_ui()
 	attack_button.text = "攻击\nD20 命中 + D3"
 	defend_button.text = "防御\nD20 抵挡"
-	attack_button.grab_focus()
+	_set_action_selection(action_selection_index)
 
 
 func _choose_action(player_action: int) -> void:
@@ -733,10 +762,31 @@ func _choose_action(player_action: int) -> void:
 
 	state = DuelState.RESOLVING
 	_set_action_buttons_enabled(false)
+	attack_button.button_pressed = false
+	defend_button.button_pressed = false
 	var enemy_action: int = _current_enemy_action()
 	var result: Dictionary = Dice.resolve_exchange(player_action, enemy_action, rng, bonuses)
 	await _play_combat_presentation(result)
 	_finish_resolved_action(result)
+
+
+func _set_action_selection(index: int) -> void:
+	action_selection_index = wrapi(index, 0, 2)
+	attack_button.button_pressed = action_selection_index == 0
+	defend_button.button_pressed = action_selection_index == 1
+	if action_selection_index == 0:
+		attack_button.grab_focus()
+		dice_label.text = "[center][b]攻击牌[/b]\nA/D 切换，Enter / Space 打出。\n命中 D20，命中后掷 D3 伤害。[/center]"
+	else:
+		defend_button.grab_focus()
+		dice_label.text = "[center][b]防御牌[/b]\nA/D 切换，Enter / Space 打出。\n防御 D20，完美防御或高出 5 点触发反弹。[/center]"
+
+
+func _confirm_action_selection() -> void:
+	if action_selection_index == 0:
+		_choose_action(Dice.Action.ATTACK)
+	else:
+		_choose_action(Dice.Action.DEFEND)
 
 
 func _finish_resolved_action(result: Dictionary) -> void:
@@ -938,12 +988,14 @@ func _enter_reward_choice() -> void:
 	continue_button.visible = false
 	reward_panel.visible = true
 	archive_panel.visible = true
-	archive_label.text = "[b]样本归档：%s[/b]\n%s\n\n[i]%s[/i]" % [log_fragment["title"], log_fragment["text"], log_fragment["reaction"]]
+	if not archived_log:
+		archived_fragments.append(log_fragment.duplicate())
 	archived_log = true
+	archive_label.text = _archive_panel_text()
 	dice_label.text = "[center]选择一项从农夫身上留下来的东西。[/center]"
-	dialogue_label.text = "[center]日志碎片已进入圣匣索引。[/center]"
+	dialogue_label.text = "[center]日志碎片已进入圣匣索引。A/D 切换奖励，Enter / Space 领取。[/center]"
 	_update_ui()
-	reward_sickle_button.grab_focus()
+	_set_reward_selection(reward_selection_index)
 
 
 func _choose_reward(reward_id: String) -> void:
@@ -965,10 +1017,50 @@ func _choose_reward(reward_id: String) -> void:
 
 	state = DuelState.COMPLETE
 	reward_panel.visible = false
+	for button: Button in [reward_sickle_button, reward_hat_button, reward_wheat_button]:
+		button.button_pressed = false
 	continue_button.visible = true
 	continue_button.text = "重新开始"
-	dialogue_label.text = "[center]第一场样本结束。下一步可以接入更多敌人、卡牌和圣匣日志界面。[/center]"
+	archive_label.text = _archive_panel_text()
+	dialogue_label.text = "[center]第一场样本结束。圣匣已保存本轮日志，下一轮可继续验证更多敌人和卡牌。[/center]"
 	_update_ui()
+
+
+func _set_reward_selection(index: int) -> void:
+	reward_selection_index = wrapi(index, 0, 3)
+	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
+	for i: int in range(buttons.size()):
+		buttons[i].button_pressed = i == reward_selection_index
+	buttons[reward_selection_index].grab_focus()
+	var preview_lines: Array[String] = [
+		"[center][b]农夫的镰刀[/b]\n攻击牌追加一次 D3 伤害。[/center]",
+		"[center][b]农夫的帽子[/b]\n防御牌追加一次 D3 防御修正。[/center]",
+		"[center][b]农夫种的麦子[/b]\n立刻恢复并提高最大 HP 1-3。[/center]"
+	]
+	dice_label.text = preview_lines[reward_selection_index]
+
+
+func _confirm_reward_selection() -> void:
+	var reward_ids: Array[String] = ["sickle", "hat", "wheat"]
+	_choose_reward(reward_ids[reward_selection_index])
+
+
+func _archive_panel_text() -> String:
+	var collected := archived_fragments.size()
+	var story_progress := mini(collected, 3)
+	var lines: Array[String] = [
+		"[b]圣匣日志 / 低语田野[/b]",
+		"已归档样本：%d" % collected,
+		"第一故事拼图：%d / 3" % story_progress,
+		"",
+		"[b]最新样本：%s[/b]" % log_fragment["title"],
+		log_fragment["text"],
+		"[i]胃囊反应：%s[/i]" % log_fragment["reaction"]
+	]
+	if collected >= 3:
+		lines.append("")
+		lines.append("[b]复原片段[/b]：田野不是饿了才吃人，是有人教会它把饥饿当成秩序。")
+	return "\n".join(lines)
 
 
 func _enter_defeat() -> void:
@@ -1004,6 +1096,8 @@ func _reset_run() -> void:
 	farmer_hp = FARMER_MAX_HP
 	turn_index = 0
 	selected_reward = ""
+	action_selection_index = 0
+	reward_selection_index = 0
 	archived_log = false
 	bonuses = {
 		"sickle": false,
