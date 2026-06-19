@@ -1,5 +1,58 @@
 # 更新日志 / Changelog
 
+## 2026-06-19
+
+### Art planning: card demo asset brief
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added `docs/planning/29_CARD_DEMO_ART_BRIEF.md`.
+  - Converted the new card/dice direction into an artist-ready P0/P1 asset list.
+  - Defined required demo assets: first battle background, player and Farmer duel animation groups, attack/defense cards, dice UI, enemy intent icons, log archive UI, and first reward icons.
+  - Updated `docs/planning/00_PRODUCTION_INDEX.md` with the new card demo art brief.
+- Reason:
+  - The card/dice prototype needs different art from the previous action-combat version. The demo can ship faster with duel-state animation groups, card UI, dice feedback, and log/reward screens instead of four-direction movement animation.
+- Impact:
+  - Artists can start drawing the first playable demo package without waiting for the Godot implementation.
+  - Existing action-combat art requirements remain useful as style references but are no longer the first runtime priority.
+- Verification:
+  - Documentation-only change. Cross-checked against the card dice pivot plan and existing art handoff docs.
+- Follow-up:
+  - Implement the card duel prototype with placeholders, then replace assets in the order listed by the brief.
+
+### Project direction: document the pivot problem
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Updated `README.md` with a public-facing explanation of the gameplay pivot.
+  - Added the current project difficulty to `docs/planning/00_PRODUCTION_INDEX.md`.
+  - Expanded `docs/planning/28_CARD_DICE_PIVOT_DESIGN.md` with the design reasons for leaving the real-time action prototype as a legacy reference.
+- Reason:
+  - The team should not hide the pivot behind a clean feature name. The previous action version could run, but it did not bind worldbuilding, logs, stomach imagery, and combat choices tightly enough.
+- Impact:
+  - GitHub now clearly tells collaborators that the old action prototype is retained as reference, while the next demo target is the card/dice duel version.
+- Verification:
+  - Documentation-only change. Confirmed the changelog no longer describes the new actor assets as static portraits.
+- Follow-up:
+  - Build the first Farmer card duel demo and keep README current when it becomes playable.
+
+### Design pivot: card dice duel direction
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added `docs/planning/28_CARD_DICE_PIVOT_DESIGN.md`.
+  - Defined the pivot from real-time action room combat to narrative card/dice duels.
+  - Added the first Farmer encounter model: failed dialogue, fixed enemy intent order, attack/defense cards, d20-style contest dice, damage dice, reflect rules, victory story, log fragment, and three reward choices.
+  - Updated `docs/planning/00_PRODUCTION_INDEX.md` so the new design becomes the current gameplay direction.
+- Reason:
+  - The project needs stronger linkage between worldbuilding, dialogue, logs, and combat. A card/dice duel structure lets every fight become a negotiation with a broken survivor rather than a generic action encounter.
+- Impact:
+  - `05_BALANCE_TABLES.md` and real-time combat planning are now legacy references for the current playable direction.
+  - Future implementation should start with an isolated card duel prototype instead of rewriting the existing `scripts/main.gd` action prototype in place.
+- Verification:
+  - Documentation-only change. Checked the new planning entry and kept existing local Godot/editor changes untouched.
+- Follow-up:
+  - Implement `CardDuelDemo`, `dice_resolver`, card data, Farmer encounter JSON, and the first version of card battle UI.
 这个文件记录项目每次有意义的更新。  
 原则：代码可以告诉我们“哪里变了”，但这里要告诉我们“为什么变了”。
 
