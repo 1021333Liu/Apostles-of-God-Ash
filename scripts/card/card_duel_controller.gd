@@ -19,16 +19,34 @@ const REWARD_ICON_PATHS: Dictionary = {
 	"wheat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_wheat.png"
 }
 const INTENT_ICON_PATHS: Dictionary = {
-	"attack": CARD_ART_ROOT + "/ui/intent/ui_intent_enemy_attack.png",
-	"defend": CARD_ART_ROOT + "/ui/intent/ui_intent_enemy_defend.png"
+	"attack": CARD_ART_ROOT + "/ui/intent/bubble_attack.png",
+	"defend": CARD_ART_ROOT + "/ui/intent/bubble_defend.png"
 }
 const DICE_ICON_PATHS: Dictionary = {
 	"hit": CARD_ART_ROOT + "/ui/dice/ui_die_hit_d20.png",
 	"defense": CARD_ART_ROOT + "/ui/dice/ui_die_defense_d20.png",
 	"effect": CARD_ART_ROOT + "/ui/dice/ui_die_effect_d3.png"
 }
+const DICE_ROLL_STAGE_PATH: String = CARD_ART_ROOT + "/ui/dice/dice_roll_stage.png"
 const PLAYER_POSES: Array[String] = ["idle", "attack", "defend", "hit", "victory"]
 const FARMER_POSES: Array[String] = ["idle", "mutter", "attack", "defend", "hit", "confess"]
+const ACTOR_ACTION_ALIASES: Dictionary = {
+	"player": {
+		"idle": ["field_idle", "idle"],
+		"attack": ["card_attack", "attack"],
+		"defend": ["card_defend", "defend"],
+		"hit": ["card_hurt", "hit"],
+		"victory": ["card_win", "victory"]
+	},
+	"farmer": {
+		"idle": ["field_idle", "idle"],
+		"mutter": ["card_mutter", "field_mutter", "mutter"],
+		"attack": ["card_attack", "attack"],
+		"defend": ["card_defend", "defend"],
+		"hit": ["card_hurt", "hit"],
+		"confess": ["card_confess", "confess"]
+	}
+}
 const FIELD_PLAYER_START: Vector2 = Vector2(300.0, 540.0)
 const FIELD_FARMER_POS: Vector2 = Vector2(640.0, 360.0)
 const FIELD_INTERACT_DISTANCE: float = 135.0
@@ -229,6 +247,14 @@ func _setup_combat_presentation_layer() -> void:
 	dice_roll_stage.add_theme_stylebox_override("panel", stage_style)
 	add_child(dice_roll_stage)
 
+	var stage_art := TextureRect.new()
+	stage_art.texture = _load_texture(DICE_ROLL_STAGE_PATH)
+	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stage_art.stretch_mode = TextureRect.STRETCH_SCALE
+	stage_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dice_roll_stage.add_child(stage_art)
+
 	var dice_margin := MarginContainer.new()
 	dice_margin.add_theme_constant_override("margin_left", 18)
 	dice_margin.add_theme_constant_override("margin_top", 14)
@@ -271,18 +297,19 @@ func _make_action_bubble(bubble_name: String, center_offset: Vector2) -> PanelCo
 	bubble.offset_top = -center_offset.y - 35.0
 	bubble.offset_right = center_offset.x + 81.0
 	bubble.offset_bottom = -center_offset.y + 35.0
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.93, 0.83, 0.60, 0.96)
-	style.border_color = Color(0.42, 0.28, 0.16, 1.0)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(18)
-	bubble.add_theme_stylebox_override("panel", style)
+	var bg := TextureRect.new()
+	bg.name = "BubbleArt"
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bubble.add_child(bg)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_top", 7)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_bottom", 7)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	bubble.add_child(margin)
 
 	var row := HBoxContainer.new()
@@ -402,18 +429,40 @@ func _make_field_sprite(sprite_name: String, actor_key: String, pose: String, si
 func _load_actor_frames(actor_key: String, root_path: String, file_prefix: String, poses: Array[String]) -> void:
 	for pose: String in poses:
 		var frames: Array[Texture2D] = []
-		for frame_index: int in range(16):
-			var path := "%s/%s_%s_%d.png" % [root_path, file_prefix, pose, frame_index]
-			var texture := _load_texture(path)
-			if texture == null:
-				if frame_index == 0:
-					var single_path := "%s/%s_%s.png" % [root_path, file_prefix, pose]
-					texture = _load_texture(single_path)
-				if texture == null:
-					break
-			frames.append(texture)
+		for action_name: String in _actor_action_names(actor_key, pose):
+			frames = _load_actor_frame_sequence(root_path, file_prefix, action_name)
+			if not frames.is_empty():
+				break
 		if not frames.is_empty():
 			actor_frames[actor_key][pose] = frames
+
+
+func _actor_action_names(actor_key: String, pose: String) -> Array[String]:
+	var action_map: Dictionary = ACTOR_ACTION_ALIASES.get(actor_key, {})
+	if action_map.has(pose):
+		var aliases: Array[String] = []
+		for alias: String in action_map[pose]:
+			aliases.append(alias)
+		return aliases
+	return [pose]
+
+
+func _load_actor_frame_sequence(root_path: String, file_prefix: String, action_name: String) -> Array[Texture2D]:
+	var frames: Array[Texture2D] = []
+	for frame_index: int in range(16):
+		var path := "%s/%s_%d.png" % [root_path, action_name, frame_index]
+		var texture := _load_texture(path)
+		if texture == null:
+			path = "%s/%s_%s_%d.png" % [root_path, file_prefix, action_name, frame_index]
+			texture = _load_texture(path)
+		if texture == null:
+			if frame_index == 0:
+				var single_path := "%s/%s_%s.png" % [root_path, file_prefix, action_name]
+				texture = _load_texture(single_path)
+			if texture == null:
+				break
+		frames.append(texture)
+	return frames
 
 
 func _setup_actor_sprite(actor_key: String, actor_panel: PanelContainer, fallback_label: Label) -> void:
@@ -625,9 +674,12 @@ func _show_action_bubbles(player_action: int, enemy_action: int) -> void:
 
 func _configure_action_bubble(bubble: PanelContainer, action: int) -> void:
 	var action_key := "attack" if action == Dice.Action.ATTACK else "defend"
+	var bg := bubble.find_child("BubbleArt", true, false) as TextureRect
+	if bg != null:
+		bg.texture = _load_texture(INTENT_ICON_PATHS[action_key])
 	var icon := bubble.find_child("Icon", true, false) as TextureRect
 	if icon != null:
-		icon.texture = _load_texture(INTENT_ICON_PATHS[action_key])
+		icon.texture = _load_texture(DICE_ICON_PATHS["hit" if action == Dice.Action.ATTACK else "defense"])
 	var label := bubble.find_child("Label", true, false) as Label
 	if label != null:
 		label.text = "ATTACK" if action == Dice.Action.ATTACK else "GUARD"

@@ -2,6 +2,24 @@
 
 ## 2026-06-19
 
+### Art integration: card demo round two runtime frames
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Cherry-picked `cea0267 Add card demo art round two assets` from `feature/art-iteration` into `feature/card-duel-prototype`.
+  - Updated `scripts/card/card_duel_controller.gd` so actor poses prefer the new `field_*` and `card_*` frame sequences before falling back to older `actor_*` files.
+  - Wired the new `bubble_attack.png`, `bubble_defend.png`, and `dice_roll_stage.png` into the staged combat presentation.
+- Reason:
+  - The playable card demo should immediately consume the artist-facing Round 02 runtime package instead of continuing to show only older placeholder names.
+- Impact:
+  - Field exploration, Farmer mutter, attack, defend, hurt, victory, and confession states now have a stable file naming contract for future redraws.
+  - The current files are still P0 proxy assets; final redraw work remains listed in `assets/card_demo/README_CARD_ART_ROUND02.md`.
+- Verification:
+  - Ran Godot 4.6.3 headless on `res://scenes/card_duel_demo.tscn`.
+  - Ran `res://tools/check_card_duel_rules.gd`; smoke check passed.
+
+## 2026-06-19
+
 ### Prototype: staged dice roll combat presentation
 
 - Owner: 刘秉昂 / Codex
