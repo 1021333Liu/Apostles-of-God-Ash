@@ -235,11 +235,19 @@ func _apply_button_icon(button: Button, path: String) -> void:
 
 
 func _load_texture(path: String) -> Texture2D:
-	if not ResourceLoader.exists(path):
+	if not FileAccess.file_exists(path):
 		return null
-	var resource := load(path)
+	if path.begins_with(CARD_ART_ROOT):
+		var direct_image := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if direct_image != null and not direct_image.is_empty():
+			return ImageTexture.create_from_image(direct_image)
+	var resource := ResourceLoader.load(path)
 	if resource is Texture2D:
 		return resource
+	var image := Image.load_from_file(ProjectSettings.globalize_path(path))
+	if image == null or image.is_empty():
+		return null
+	return ImageTexture.create_from_image(image)
 	return null
 
 
