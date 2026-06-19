@@ -2,6 +2,24 @@
 
 ## 2026-06-19
 
+### Narrative flow: add Collector intro before the field
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Added a `SANCTUM_INTRO` opening state to `scripts/card/card_duel_controller.gd`.
+  - The demo now starts in the Silent Casket with five Collector lines before entering field exploration.
+  - Space, Enter, and the continue button can advance the Collector intro.
+  - The current Collector visuals are explicit placeholders until the art branch delivers `collector_bust_*` assets.
+- Reason:
+  - The story setup requires the player to wake under the Collector's supervision before entering Low Whispering Field. Starting directly in the field made the demo feel contextless and less faithful to the worldbuilding.
+- Impact:
+  - Playtest order is now: Collector intro -> field exploration -> Farmer dialogue -> card dice duel -> victory story -> reward.
+- Verification:
+  - Ran Godot 4.6.3 headless on `res://scenes/card_duel_demo.tscn`.
+  - Ran `res://tools/check_card_duel_rules.gd`; smoke check passed.
+
+## 2026-06-19
+
 ### Art integration: card demo round two runtime frames
 
 - Owner: 刘秉昂 / Codex

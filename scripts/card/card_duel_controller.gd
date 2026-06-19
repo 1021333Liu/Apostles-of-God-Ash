@@ -52,10 +52,10 @@ const FIELD_FARMER_POS: Vector2 = Vector2(640.0, 360.0)
 const FIELD_INTERACT_DISTANCE: float = 135.0
 const FIELD_PLAYER_SPEED: float = 260.0
 
-enum DuelState { FIELD_EXPLORATION, FIELD_DIALOGUE, PRE_DIALOGUE, PLAYER_CHOICE, RESOLVING, VICTORY_STORY, REWARD_CHOICE, COMPLETE, DEFEAT }
+enum DuelState { SANCTUM_INTRO, FIELD_EXPLORATION, FIELD_DIALOGUE, PRE_DIALOGUE, PLAYER_CHOICE, RESOLVING, VICTORY_STORY, REWARD_CHOICE, COMPLETE, DEFEAT }
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var state: DuelState = DuelState.PRE_DIALOGUE
+var state: DuelState = DuelState.SANCTUM_INTRO
 var player_max_hp: int = PLAYER_MAX_HP_START
 var player_hp: int = PLAYER_MAX_HP_START
 var farmer_hp: int = FARMER_MAX_HP
@@ -103,6 +103,14 @@ var dice_roll_label: Label
 var player_bubble: PanelContainer
 var farmer_bubble: PanelContainer
 var field_player_position: Vector2 = FIELD_PLAYER_START
+var collector_intro_index: int = 0
+var collector_intro_lines: Array[String] = [
+	"你醒了。很好，这具身体还没有拒绝你。",
+	"无声圣匣会把你带回来。痛会过去，留下来的东西更有用。",
+	"第一站是低语田野。那里以前是粮仓，现在更像一张没合上的嘴。",
+	"先别急着要名字。低语田野会给所有东西登记，名字在那里可能会被吃掉哦。",
+	"记住，饿久了的人不一定盼着公道。他们先盼着下一顿。"
+]
 var field_dialogue_index: int = 0
 var field_dialogue_lines: Array[String] = [
 	"咕噜……饿了。",
@@ -165,7 +173,7 @@ func _ready() -> void:
 	_connect_signals()
 	_build_theme()
 	_setup_art_assets()
-	_enter_field_exploration()
+	_enter_sanctum_intro()
 
 
 func _process(delta: float) -> void:
@@ -210,7 +218,10 @@ func _build_theme() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept"):
-		if state == DuelState.FIELD_EXPLORATION and _is_near_farmer():
+		if state == DuelState.SANCTUM_INTRO:
+			_advance_sanctum_intro()
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.FIELD_EXPLORATION and _is_near_farmer():
 			_enter_field_dialogue()
 			get_viewport().set_input_as_handled()
 		elif state == DuelState.FIELD_DIALOGUE:
@@ -515,6 +526,39 @@ func _load_texture(path: String) -> Texture2D:
 		return null
 	return ImageTexture.create_from_image(image)
 	return null
+
+
+func _enter_sanctum_intro() -> void:
+	state = DuelState.SANCTUM_INTRO
+	collector_intro_index = 0
+	if field_layer != null:
+		field_layer.visible = false
+	_set_duel_ui_visible(true)
+	_set_action_buttons_enabled(false)
+	reward_panel.visible = false
+	archive_panel.visible = false
+	continue_button.visible = true
+	continue_button.text = "继续"
+	_update_actor_pose("idle", "confess")
+	_show_collector_intro_line()
+	_update_ui()
+
+
+func _advance_sanctum_intro() -> void:
+	collector_intro_index += 1
+	if collector_intro_index >= collector_intro_lines.size():
+		_enter_field_exploration()
+		return
+	_show_collector_intro_line()
+
+
+func _show_collector_intro_line() -> void:
+	var line := collector_intro_lines[collector_intro_index]
+	dialogue_label.text = "[b]收藏家[/b]\n%s" % line
+	dice_label.text = "[center][b]无声圣匣[/b]\n一具银白空壳在档案匣中醒来。收藏家的正式立绘尚未接入。[/center]"
+	intent_label.text = "开场：收藏家记录样本 | 按 空格 / 回车 或继续"
+	player_actor_label.text = "无韵回响\n[刚醒来]\n\n脏银残片 / 胃纹未稳定"
+	farmer_actor_label.text = "收藏家\n[占位剪影]\n\n银灰长袍 / 记录器具 / 像医生不像恶魔"
 
 
 func _enter_field_exploration() -> void:
@@ -879,6 +923,8 @@ func _enter_defeat() -> void:
 
 func _on_continue_pressed() -> void:
 	match state:
+		DuelState.SANCTUM_INTRO:
+			_advance_sanctum_intro()
 		DuelState.PRE_DIALOGUE:
 			_enter_player_choice()
 		DuelState.VICTORY_STORY:
@@ -901,7 +947,7 @@ func _reset_run() -> void:
 		"hat": false
 	}
 	continue_button.text = "开始决斗"
-	_enter_field_exploration()
+	_enter_sanctum_intro()
 
 
 func _current_enemy_action() -> int:
@@ -911,7 +957,10 @@ func _current_enemy_action() -> int:
 func _update_ui() -> void:
 	player_hp_label.text = "无韵回响 HP %d / %d" % [player_hp, player_max_hp]
 	farmer_hp_label.text = "饥民农夫 HP %d / %d" % [farmer_hp, FARMER_MAX_HP]
-	intent_label.text = "农夫下一步：%s  |  序列：防御 -> 攻击 -> 防御 -> 攻击" % _action_name(_current_enemy_action())
+	if state == DuelState.SANCTUM_INTRO:
+		intent_label.text = "开场：收藏家记录样本 | 按 空格 / 回车 或继续"
+	else:
+		intent_label.text = "农夫下一步：%s  |  序列：防御 -> 攻击 -> 防御 -> 攻击" % _action_name(_current_enemy_action())
 	state_label.text = _state_name()
 	title_label.text = "神烬使徒：低语田野卡牌骰子 Demo"
 
@@ -1031,6 +1080,8 @@ func _action_name(action: int) -> String:
 
 func _state_name() -> String:
 	match state:
+		DuelState.SANCTUM_INTRO:
+			return "无声圣匣"
 		DuelState.PRE_DIALOGUE:
 			return "战前对话"
 		DuelState.PLAYER_CHOICE:
