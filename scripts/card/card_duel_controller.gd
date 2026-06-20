@@ -1475,6 +1475,7 @@ func _reward_effect_short(kind: String) -> String:
 func _archive_panel_text() -> String:
 	var collected := archived_fragments.size()
 	var story_progress := mini(collected, restore_story_threshold)
+	var section_rule := "[color=#8f7a52]------------------------------[/color]"
 	var latest: Dictionary = current_log_fragment
 	if not archived_fragments.is_empty():
 		latest = archived_fragments[archived_fragments.size() - 1]
@@ -1487,6 +1488,7 @@ func _archive_panel_text() -> String:
 		String(latest.get("text", "")),
 		"[i]胃囊反应：%s[/i]" % String(latest.get("reaction", "暂无反应")),
 		"",
+		section_rule,
 		"[b]已收集碎片[/b]"
 	]
 	if archived_fragments.is_empty():
@@ -1496,12 +1498,15 @@ func _archive_panel_text() -> String:
 			var fragment: Dictionary = archived_fragments[i]
 			lines.append("%d. %s" % [i + 1, String(fragment.get("title", "未命名样本"))])
 	lines.append("")
+	lines.append(section_rule)
 	lines.append("[b]失败回收[/b]")
 	if failed_recoveries <= 0:
 		lines.append("暂无。土地还没有学会你的死法。")
 	else:
 		lines.append("回收次数：%d" % failed_recoveries)
 		lines.append("最近记录：%s" % last_failure_record)
+	lines.append("")
+	lines.append(section_rule)
 	if collected >= restore_story_threshold:
 		lines.append("")
 		lines.append("[b]复原片段[/b]：田野不是饿了才吃人，是有人教会它把饥饿当成秩序。")
