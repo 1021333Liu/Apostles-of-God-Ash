@@ -909,7 +909,11 @@ func _update_field_positions() -> void:
 func _update_field_prompt() -> void:
 	if field_prompt_label == null:
 		return
-	if _is_near_farmer():
+	var near_target := _is_near_farmer()
+	field_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.58, 1.0) if near_target else Color(0.96, 0.88, 0.68, 1.0))
+	if field_farmer_sprite != null:
+		field_farmer_sprite.modulate = Color(1.0, 0.90, 0.62, 1.0) if near_target else Color.WHITE
+	if near_target:
 		field_prompt_label.text = "按 空格 / 回车 与%s对话" % _current_encounter_name()
 	else:
 		var remaining_distance := maxi(int(ceil(field_player_position.distance_to(FIELD_FARMER_POS) - FIELD_INTERACT_DISTANCE)), 0)
