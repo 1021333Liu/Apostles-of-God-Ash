@@ -1777,7 +1777,17 @@ func _format_lines(lines: Array[String], speaker: String) -> String:
 
 func _append_roll(lines: Array[String], label: String, value: int) -> void:
 	if value >= 0:
-		lines.append("%s：%d" % [label, value])
+		lines.append("%s：%s" % [label, _format_roll_value(label, value)])
+
+
+func _format_roll_value(label: String, value: int) -> String:
+	if not label.contains("骰") or label.contains("效果") or label.contains("奖励"):
+		return str(value)
+	if value == Dice.HIT_MAX:
+		return "%d [color=#ff8a5f]大成功[/color]" % value
+	if value == Dice.HIT_MIN:
+		return "%d [color=#8f7a52]大失败[/color]" % value
+	return str(value)
 
 
 func _format_delta(value: int) -> String:
