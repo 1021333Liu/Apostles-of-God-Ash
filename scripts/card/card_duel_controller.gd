@@ -486,11 +486,13 @@ func _toggle_archive_panel() -> void:
 		archive_panel.visible = false
 		if state == DuelState.REWARD_CHOICE:
 			reward_panel.visible = true
+		_update_ui()
 		return
 	archive_label.text = _archive_panel_text()
 	archive_panel.visible = true
 	if state == DuelState.REWARD_CHOICE:
 		reward_panel.visible = false
+	_update_ui()
 
 
 func _setup_art_assets() -> void:
@@ -1594,7 +1596,8 @@ func _update_ui() -> void:
 			intent_label.text = "%s意图：%s | Turn %d | Next %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), turn_index + 1, _upcoming_pattern_text()]
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
-	state_label.text = "%s | %s | %s | P 圣匣日志" % [_encounter_progress_text(), _current_room_name(), _state_name()]
+	var archive_hint := "P 返回" if archive_panel.visible else "P 圣匣日志"
+	state_label.text = "%s | %s | %s | %s" % [_encounter_progress_text(), _current_room_name(), _state_name(), archive_hint]
 	title_label.text = "神烬使徒：%s卡牌骰子 Demo" % _chapter_title()
 
 
