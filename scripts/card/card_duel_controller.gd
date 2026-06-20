@@ -1482,7 +1482,7 @@ func _archive_panel_text() -> String:
 	var lines: Array[String] = [
 		"[b]圣匣日志 / %s[/b]" % _chapter_title(),
 		"已归档样本：%d" % collected,
-		"第一故事拼图：%d / %d" % [story_progress, restore_story_threshold],
+		"第一故事拼图：%s (%d / %d)" % [_story_progress_bar(story_progress, restore_story_threshold), story_progress, restore_story_threshold],
 		"",
 		"[b]最新样本：%s[/b]" % String(latest.get("title", "未命名样本")),
 		String(latest.get("text", "")),
@@ -1514,6 +1514,16 @@ func _archive_panel_text() -> String:
 		lines.append("")
 		lines.append("[i]还需要 %d 枚碎片才能复原第一段故事。[/i]" % maxi(restore_story_threshold - collected, 0))
 	return "\n".join(lines)
+
+
+func _story_progress_bar(progress: int, total: int) -> String:
+	var safe_total := maxi(total, 1)
+	var filled := clampi(progress, 0, safe_total)
+	var slots: Array[String] = []
+	for i: int in range(safe_total):
+		slots.append("■" if i < filled else "□")
+	var percent := int(round(float(filled) / float(safe_total) * 100.0))
+	return "%s %d%%" % ["".join(slots), percent]
 
 
 func _failure_record_text() -> String:
