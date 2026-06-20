@@ -1493,6 +1493,7 @@ func _enter_defeat() -> void:
 	continue_button.text = "回圣匣重试"
 	dialogue_label.text = "[center]%s仍在%s。你被这套流程回收。[/center]" % [_current_encounter_name(), _current_room_name()]
 	dice_label.text = "[center][b]回收失败样本[/b]\n死因：没有在攻防骰里活下来。[/center]"
+	_show_center_banner("回收失败样本\n%s / %s" % [_current_room_name(), _current_encounter_name()], Color(0.20, 0.055, 0.045, 0.95), 0.95)
 	_update_actor_pose("hit", "idle")
 	_update_ui()
 
