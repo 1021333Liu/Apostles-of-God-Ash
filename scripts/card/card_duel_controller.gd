@@ -1150,10 +1150,18 @@ func _roll_single_die(label: String, final_value: int, kind: String, sides: int)
 		var face := randi_range(0, sides)
 		dice_roll_label.text = "%s\n%d" % [label, face]
 		await get_tree().create_timer(0.055 + float(i) * 0.012).timeout
-	dice_roll_label.text = "%s\n%d" % [label, final_value]
+	dice_roll_label.text = _roll_result_label(label, final_value, sides)
 	_flash_node(dice_roll_stage)
 	await get_tree().create_timer(0.42).timeout
 	dice_roll_stage.visible = false
+
+
+func _roll_result_label(label: String, final_value: int, sides: int) -> String:
+	if sides == 20 and final_value == 20:
+		return "%s\n20 大成功" % label
+	if sides == 20 and final_value == 0:
+		return "%s\n0 大失败" % label
+	return "%s\n%d" % [label, final_value]
 
 
 func _play_result_motion(result: Dictionary) -> void:
