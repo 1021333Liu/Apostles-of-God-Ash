@@ -860,6 +860,7 @@ func _enter_field_exploration() -> void:
 	continue_button.visible = false
 	_update_field_positions()
 	_update_field_prompt()
+	_show_room_entry_banner()
 
 
 func _update_field_exploration(delta: float) -> void:
@@ -1184,15 +1185,24 @@ func _hp_delta_color(delta: int) -> Color:
 
 
 func _play_result_banner(result: Dictionary) -> void:
+	await _show_center_banner(_result_banner_text(result), _result_banner_color(result), 0.34)
+
+
+func _show_room_entry_banner() -> void:
+	var text := "%s\n%s" % [_encounter_progress_text(), _current_room_name()]
+	_show_center_banner(text, Color(0.10, 0.085, 0.065, 0.94), 0.72)
+
+
+func _show_center_banner(text: String, bg_color: Color, hold_time: float) -> void:
 	if result_banner == null or result_banner_label == null:
 		return
 	var banner_style := StyleBoxFlat.new()
-	banner_style.bg_color = _result_banner_color(result)
+	banner_style.bg_color = bg_color
 	banner_style.border_color = Color(0.96, 0.82, 0.48, 1.0)
 	banner_style.set_border_width_all(2)
 	banner_style.set_corner_radius_all(4)
 	result_banner.add_theme_stylebox_override("panel", banner_style)
-	result_banner_label.text = _result_banner_text(result)
+	result_banner_label.text = text
 	result_banner.visible = true
 	result_banner.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	result_banner.scale = Vector2(0.92, 0.92)
@@ -1201,7 +1211,7 @@ func _play_result_banner(result: Dictionary) -> void:
 	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(result_banner, "scale", Vector2.ONE, 0.16)
 	tween.tween_property(result_banner, "modulate:a", 1.0, 0.12)
-	await get_tree().create_timer(0.34).timeout
+	await get_tree().create_timer(hold_time).timeout
 	var fade := create_tween()
 	fade.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	fade.tween_property(result_banner, "modulate:a", 0.0, 0.18)
