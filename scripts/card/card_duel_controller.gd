@@ -1193,6 +1193,11 @@ func _show_room_entry_banner() -> void:
 	_show_center_banner(text, Color(0.10, 0.085, 0.065, 0.94), 0.72)
 
 
+func _show_log_fragment_banner() -> void:
+	var title := String(current_log_fragment.get("title", "未命名碎片"))
+	_show_center_banner("新碎片归档\n%s" % title, Color(0.13, 0.10, 0.055, 0.94), 0.82)
+
+
 func _show_center_banner(text: String, bg_color: Color, hold_time: float) -> void:
 	if result_banner == null or result_banner_label == null:
 		return
@@ -1323,6 +1328,7 @@ func _enter_reward_choice() -> void:
 	archive_panel.visible = true
 	if not archived_log:
 		archived_fragments.append(current_log_fragment.duplicate())
+		_show_log_fragment_banner()
 	archived_log = true
 	archive_label.text = _archive_panel_text()
 	dice_label.text = "[center]选择一项从%s身上留下来的东西。[/center]" % _current_encounter_name()
