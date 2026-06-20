@@ -1163,6 +1163,10 @@ func _roll_result_label(label: String, final_value: int, sides: int) -> String:
 		return "%s\n20 大成功" % label
 	if sides == 20 and final_value == 0:
 		return "%s\n0 大失败" % label
+	if sides == 3 and final_value == 3:
+		return "%s\n3 满值" % label
+	if sides == 3 and final_value == 0:
+		return "%s\n0 空值" % label
 	return "%s\n%d" % [label, final_value]
 
 
@@ -1171,6 +1175,10 @@ func _roll_result_flash_color(final_value: int, sides: int) -> Color:
 		return Color(1.0, 0.42, 0.25, 1.0)
 	if sides == 20 and final_value == 0:
 		return Color(0.42, 0.34, 0.22, 1.0)
+	if sides == 3 and final_value == 3:
+		return Color(0.96, 0.68, 0.28, 1.0)
+	if sides == 3 and final_value == 0:
+		return Color(0.34, 0.30, 0.24, 1.0)
 	return Color(1.0, 0.82, 0.45, 1.0)
 
 
