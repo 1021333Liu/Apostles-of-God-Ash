@@ -1323,6 +1323,7 @@ func _show_result(result: Dictionary) -> void:
 	var enemy_action_name: String = _action_name(result["enemy_action"])
 	var lines: Array[String] = []
 	lines.append("[b]本回合[/b] 你：%s / %s：%s" % [player_action_name, _current_encounter_name(), enemy_action_name])
+	lines.append(_combat_feedback_line(result))
 	lines.append("[b]%s[/b]：%s" % [result["event"], result["summary"]])
 	_append_roll(lines, "你的攻击骰", result["player_hit_roll"])
 	_append_roll(lines, "你的防御骰", result["player_defense_roll"])
@@ -1345,6 +1346,27 @@ func _show_result(result: Dictionary) -> void:
 	if int(result["player_hp_delta"]) < 0:
 		player_pose = "hit"
 	_update_actor_pose(player_pose, farmer_pose)
+
+
+func _combat_feedback_line(result: Dictionary) -> String:
+	var event_text := String(result.get("event", ""))
+	var player_delta := int(result.get("player_hp_delta", 0))
+	var enemy_delta := int(result.get("enemy_hp_delta", 0))
+	if event_text.contains("大失败"):
+		return "[color=#8f7a52][b]失手[/b] 行动落空，田野短暂噎住。[/color]"
+	if event_text.contains("完美防御"):
+		return "[color=#9bd7de][b]完美防御[/b] 攻击被封住，并立刻反弹。[/color]"
+	if event_text.contains("反弹"):
+		return "[color=#e8c16a][b]防御反弹[/b] 防线反咬攻击者。[/color]"
+	if event_text.contains("大成功"):
+		return "[color=#ff8a5f][b]大成功[/b] 骰子咬穿了防线。[/color]"
+	if enemy_delta < 0 and player_delta < 0:
+		return "[color=#d9b06a][b]互相命中[/b] 双方都付出了血的代价。[/color]"
+	if enemy_delta < 0:
+		return "[color=#d9b06a][b]命中[/b] 样本被撕开一道可归档的裂口。[/color]"
+	if player_delta < 0:
+		return "[color=#ff7d68][b]受击[/b] 圣匣记录了一次失败风险。[/color]"
+	return "[color=#c7b277][b]僵持[/b] 本回合没有造成伤害。[/color]"
 
 
 func _enter_victory_story() -> void:
