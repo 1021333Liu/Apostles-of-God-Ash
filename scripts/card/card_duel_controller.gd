@@ -156,6 +156,7 @@ var log_fragment: Dictionary = {
 	"reaction": "胃囊收缩了一下，像在模仿劳动。"
 }
 var archived_fragments: Array[Dictionary] = []
+var archive_fragment_index: int = 0
 var failed_recoveries: int = 0
 var last_failure_record: String = ""
 
@@ -447,14 +448,20 @@ func _action_has_physical_key(action_name: String, physical_keycode: int) -> boo
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):
-		if state == DuelState.PLAYER_CHOICE:
+		if _archive_has_input_focus():
+			_step_archive_fragment(-1)
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.PLAYER_CHOICE:
 			_set_action_selection(action_selection_index - 1)
 			get_viewport().set_input_as_handled()
 		elif state == DuelState.REWARD_CHOICE:
 			_set_reward_selection(reward_selection_index - 1)
 			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("menu_right"):
-		if state == DuelState.PLAYER_CHOICE:
+		if _archive_has_input_focus():
+			_step_archive_fragment(1)
+			get_viewport().set_input_as_handled()
+		elif state == DuelState.PLAYER_CHOICE:
 			_set_action_selection(action_selection_index + 1)
 			get_viewport().set_input_as_handled()
 		elif state == DuelState.REWARD_CHOICE:
@@ -1358,6 +1365,7 @@ func _enter_reward_choice() -> void:
 	archive_panel.visible = true
 	if not archived_log:
 		archived_fragments.append(current_log_fragment.duplicate())
+		archive_fragment_index = archived_fragments.size() - 1
 		_show_log_fragment_banner()
 	archived_log = true
 	archive_label.text = _archive_panel_text()
@@ -1477,14 +1485,18 @@ func _archive_panel_text() -> String:
 	var story_progress := mini(collected, restore_story_threshold)
 	var section_rule := "[color=#8f7a52]------------------------------[/color]"
 	var latest: Dictionary = current_log_fragment
+	var selected_number := 0
+	var selected_total := collected
 	if not archived_fragments.is_empty():
-		latest = archived_fragments[archived_fragments.size() - 1]
+		archive_fragment_index = clampi(archive_fragment_index, 0, archived_fragments.size() - 1)
+		latest = archived_fragments[archive_fragment_index]
+		selected_number = archive_fragment_index + 1
 	var lines: Array[String] = [
 		"[b]圣匣日志 / %s[/b]" % _chapter_title(),
 		"已归档样本：%d" % collected,
 		"第一故事拼图：%s (%d / %d)" % [_story_progress_bar(story_progress, restore_story_threshold), story_progress, restore_story_threshold],
 		"",
-		"[b]最新样本：%s[/b]" % String(latest.get("title", "未命名样本")),
+		"[b]当前样本 %d / %d：%s[/b]" % [selected_number, selected_total, String(latest.get("title", "未归档样本"))],
 		String(latest.get("text", "")),
 		"[i]胃囊反应：%s[/i]" % String(latest.get("reaction", "暂无反应")),
 		"",
@@ -1496,7 +1508,12 @@ func _archive_panel_text() -> String:
 	else:
 		for i: int in range(archived_fragments.size()):
 			var fragment: Dictionary = archived_fragments[i]
-			lines.append("%d. %s" % [i + 1, String(fragment.get("title", "未命名样本"))])
+			var marker := ">" if i == archive_fragment_index else " "
+			lines.append("%s %d. %s" % [marker, i + 1, String(fragment.get("title", "未命名样本"))])
+		if _archive_has_input_focus():
+			lines.append("[color=#c7b277]A/D 翻阅样本，P 返回。[/color]")
+		else:
+			lines.append("[color=#c7b277]P 放大日志；奖励界面中 A/D 仍切换奖励。[/color]")
 	lines.append("")
 	lines.append(section_rule)
 	lines.append("[b]失败回收[/b]")
@@ -1514,6 +1531,17 @@ func _archive_panel_text() -> String:
 		lines.append("")
 		lines.append("[i]还需要 %d 枚碎片才能复原第一段故事。[/i]" % maxi(restore_story_threshold - collected, 0))
 	return "\n".join(lines)
+
+
+func _step_archive_fragment(direction: int) -> void:
+	if archived_fragments.is_empty():
+		return
+	archive_fragment_index = wrapi(archive_fragment_index + direction, 0, archived_fragments.size())
+	archive_label.text = _archive_panel_text()
+
+
+func _archive_has_input_focus() -> bool:
+	return archive_panel.visible and not reward_panel.visible
 
 
 func _story_progress_bar(progress: int, total: int) -> String:
