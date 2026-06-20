@@ -64,6 +64,8 @@
 | `30_COLLECTOR_INTRO_ART_BRIEF.md` | 画师、美术负责人、程序接入 | 收藏家开场、无声圣匣背景、收藏家对话 UI 的 P0 美术需求 |
 | `ART_ATLAS_AUTOMATION_HANDOFF_20260618.md` | 程序、美术技术、主线程 | 现有角色帧打包为 Godot atlas/manifest 的结构、接入规则和巡检条件 |
 
+补充约定：当前主角最终视觉基准为 `assets/card_demo/actors/player_echo/source/player_echo_visual_benchmark_20260610.png`。卡牌 Demo 中已有的 `player_echo` 动作帧仍是 P0 代理，后续动作帧必须围绕这张基准图去噪、拆帧和重画。
+
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 
 ## 当前版本形态

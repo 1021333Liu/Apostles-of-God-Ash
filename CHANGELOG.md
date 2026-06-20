@@ -1,5 +1,22 @@
 # 更新日志 / Changelog
 
+## 2026-06-20
+
+### Art direction: lock player visual benchmark
+
+- Owner: 刘秉昂 / Codex
+- Changes:
+  - Copied the approved Player Echo visual benchmark into `assets/card_demo/actors/player_echo/source/player_echo_visual_benchmark_20260610.png`.
+  - Added `assets/card_demo/actors/player_echo/source/README_PLAYER_ECHO_BENCHMARK.md`.
+  - Updated `assets/card_demo/card_demo_art_manifest.json` so current `player_echo` frames are marked as P0 proxies that must be redrawn against the benchmark.
+  - Updated the card demo art README and production index with the new benchmark rule.
+- Reason:
+  - The current playable frames came from older placeholder sprites and do not match the cleaner character version selected by the user.
+  - Future art should denoise and animate the approved character image instead of continuing the old placeholder lineage.
+- Impact:
+  - The game remains playable with existing proxy frames.
+  - Art production now has one clear source of truth for the protagonist.
+
 ## 2026-06-19
 
 ### Art planning: collector intro assets

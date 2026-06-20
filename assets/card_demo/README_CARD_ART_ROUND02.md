@@ -10,9 +10,12 @@
 
 这些文件是 P0 可运行代理资产，不是最终美术。它们从现有项目精灵扩展、放大并重新锚定到 Godot 友好的 768x768 透明 PNG 序列，方便程序先把流程跑通。
 
+重要修正：主角最终视觉基准已改为 `assets/card_demo/actors/player_echo/source/player_echo_visual_benchmark_20260610.png`。当前 `player_echo` 动作帧只是可运行占位，后续必须按这张干净彩色主角图重新去噪、拆分、重画动作帧，不再把旧低清占位精灵当作主角标准。
+
 ## 输出目录
 
 - `assets/card_demo/actors/player_echo/`：主角探索与卡牌战斗动作帧。
+- `assets/card_demo/actors/player_echo/source/`：主角最终视觉基准图与源图处理说明。
 - `assets/card_demo/actors/enemy_farmer/`：农夫探索与卡牌战斗动作帧。
 - `assets/card_demo/ui/intent/`：攻击 / 防御意图气泡。
 - `assets/card_demo/ui/dice/`：骰子滚动底座。
@@ -30,12 +33,12 @@
 
 | Actor | Action | Frames | FPS | 用途 | 当前状态 |
 | --- | ---: | ---: | ---: | --- | --- |
-| `player_echo` | `field_idle` | 6 | 6 | 田野探索待机，呼吸 / 布条轻晃 | P0 可用 |
-| `player_echo` | `field_walk` | 8 | 10 | 田野探索行走循环，脚底稳定 | P0 可用 |
-| `player_echo` | `card_attack` | 8 | 12 | 出牌攻击动作 | 复用旧 `player_echo_attack_*`，需最终重画 |
-| `player_echo` | `card_defend` | 8 | 8 | 防御动作 | 待机代理，需重画举刃 / 护胃动作 |
-| `player_echo` | `card_hurt` | 6 | 10 | 受击后仰 | 复用旧 `player_echo_hit_*` |
-| `player_echo` | `card_win` | 8 | 8 | 胜利回稳 | 待机代理，需重画胜利收刀 |
+| `player_echo` | `field_idle` | 6 | 6 | 田野探索待机，呼吸 / 布条轻晃 | P0 代理，需按主角基准图重画 |
+| `player_echo` | `field_walk` | 8 | 10 | 田野探索行走循环，脚底稳定 | P0 代理，需按主角基准图重画 |
+| `player_echo` | `card_attack` | 8 | 12 | 出牌攻击动作 | 复用旧 `player_echo_attack_*`，需按主角基准图重画 |
+| `player_echo` | `card_defend` | 8 | 8 | 防御动作 | 待机代理，需按主角基准图重画举刃 / 护胃动作 |
+| `player_echo` | `card_hurt` | 6 | 10 | 受击后仰 | 复用旧 `player_echo_hit_*`，需按主角基准图重画 |
+| `player_echo` | `card_win` | 8 | 8 | 胜利回稳 | 待机代理，需按主角基准图重画胜利收刀 |
 | `enemy_farmer` | `field_idle` | 6 | 6 | 农夫田路待机，佝偻颤动 | P0 可用 |
 | `enemy_farmer` | `field_mutter` | 8 | 8 | 农夫喃喃自语 | 行走 / 待机代理，需最终重画嘴部和肩颈动作 |
 | `enemy_farmer` | `card_attack` | 8 | 12 | 农夫出牌攻击 | 复用旧 `enemy_farmer_attack_*` |
