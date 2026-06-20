@@ -1264,19 +1264,34 @@ func _show_center_banner(text: String, bg_color: Color, hold_time: float) -> voi
 
 func _result_banner_text(result: Dictionary) -> String:
 	var event_text := String(result.get("event", "结算"))
+	var title := event_text
 	if event_text.contains("大成功"):
-		return "大成功"
-	if event_text.contains("完美防御"):
-		return "完美防御"
-	if event_text.contains("反弹"):
-		return "防御反弹"
-	if int(result.get("enemy_hp_delta", 0)) < 0 and int(result.get("player_hp_delta", 0)) < 0:
-		return "互相命中"
-	if int(result.get("enemy_hp_delta", 0)) < 0:
-		return "命中"
-	if int(result.get("player_hp_delta", 0)) < 0:
-		return "受击"
-	return event_text
+		title = "大成功"
+	elif event_text.contains("完美防御"):
+		title = "完美防御"
+	elif event_text.contains("反弹"):
+		title = "防御反弹"
+	elif int(result.get("enemy_hp_delta", 0)) < 0 and int(result.get("player_hp_delta", 0)) < 0:
+		title = "互相命中"
+	elif int(result.get("enemy_hp_delta", 0)) < 0:
+		title = "命中"
+	elif int(result.get("player_hp_delta", 0)) < 0:
+		title = "受击"
+	var hp_line := _result_banner_hp_line(result)
+	if hp_line.is_empty():
+		return title
+	return "%s\n%s" % [title, hp_line]
+
+
+func _result_banner_hp_line(result: Dictionary) -> String:
+	var player_delta := int(result.get("player_hp_delta", 0))
+	var enemy_delta := int(result.get("enemy_hp_delta", 0))
+	var parts: Array[String] = []
+	if player_delta != 0:
+		parts.append("你 %s" % _format_delta(player_delta))
+	if enemy_delta != 0:
+		parts.append("%s %s" % [_current_encounter_name(), _format_delta(enemy_delta)])
+	return " / ".join(parts)
 
 
 func _result_banner_color(result: Dictionary) -> Color:
