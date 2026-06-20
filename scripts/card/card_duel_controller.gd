@@ -9,6 +9,7 @@ const FARMER_PATTERN: Array[int] = [
 	Dice.Action.DEFEND,
 	Dice.Action.ATTACK
 ]
+const ENCOUNTER_DATA_PATH: String = "res://data/encounters/low_whispering_field.json"
 const CARD_ART_ROOT: String = "res://assets/card_demo"
 const BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_card_field_entrance.png"
 const PLAYER_ART_ROOT: String = CARD_ART_ROOT + "/actors/player_echo"
@@ -58,12 +59,20 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var state: DuelState = DuelState.SANCTUM_INTRO
 var player_max_hp: int = PLAYER_MAX_HP_START
 var player_hp: int = PLAYER_MAX_HP_START
-var farmer_hp: int = FARMER_MAX_HP
+var enemy_hp: int = FARMER_MAX_HP
+var enemy_max_hp: int = FARMER_MAX_HP
 var turn_index: int = 0
 var selected_reward: String = ""
 var action_selection_index: int = 0
 var reward_selection_index: int = 0
 var archived_log: bool = false
+var restore_story_threshold: int = 3
+var encounter_data: Dictionary = {}
+var encounters: Array = []
+var current_encounter_index: int = 0
+var current_encounter: Dictionary = {}
+var current_rewards: Array = []
+var current_log_fragment: Dictionary = {}
 var bonuses: Dictionary = {
 	"sickle": false,
 	"hat": false
@@ -174,6 +183,7 @@ var archived_fragments: Array[Dictionary] = []
 func _ready() -> void:
 	_ensure_gameplay_input_actions()
 	rng.randomize()
+	_load_encounter_data()
 	_connect_signals()
 	_build_theme()
 	_setup_art_assets()
@@ -191,9 +201,138 @@ func _connect_signals() -> void:
 	attack_button.pressed.connect(func() -> void: _choose_action(Dice.Action.ATTACK))
 	defend_button.pressed.connect(func() -> void: _choose_action(Dice.Action.DEFEND))
 	continue_button.pressed.connect(_on_continue_pressed)
-	reward_sickle_button.pressed.connect(func() -> void: _choose_reward("sickle"))
-	reward_hat_button.pressed.connect(func() -> void: _choose_reward("hat"))
-	reward_wheat_button.pressed.connect(func() -> void: _choose_reward("wheat"))
+	reward_sickle_button.pressed.connect(func() -> void: _choose_reward_by_index(0))
+	reward_hat_button.pressed.connect(func() -> void: _choose_reward_by_index(1))
+	reward_wheat_button.pressed.connect(func() -> void: _choose_reward_by_index(2))
+
+
+func _load_encounter_data() -> void:
+	encounter_data = _fallback_encounter_data()
+	var file := FileAccess.open(ENCOUNTER_DATA_PATH, FileAccess.READ)
+	if file == null:
+		push_error("CardDuelController._load_encounter_data: cannot open %s" % ENCOUNTER_DATA_PATH)
+	else:
+		var parsed: Variant = JSON.parse_string(file.get_as_text())
+		if parsed is Dictionary:
+			encounter_data = parsed
+		else:
+			push_error("CardDuelController._load_encounter_data: invalid JSON in %s" % ENCOUNTER_DATA_PATH)
+	restore_story_threshold = maxi(int(encounter_data.get("restore_story_threshold", 3)), 1)
+	encounters = encounter_data.get("encounters", [])
+	if encounters.is_empty():
+		encounter_data = _fallback_encounter_data()
+		encounters = encounter_data.get("encounters", [])
+		restore_story_threshold = int(encounter_data.get("restore_story_threshold", 3))
+	current_encounter_index = 0
+	_set_current_encounter(0)
+
+
+func _fallback_encounter_data() -> Dictionary:
+	return {
+		"chapter_title": "低语田野",
+		"restore_story_threshold": 1,
+		"collector_intro": collector_intro_lines,
+		"collector_departure": [],
+		"encounters": [
+			{
+				"id": "famine_farmer",
+				"order": 1,
+				"display_name": "饥民农夫",
+				"room_name": "登记田路",
+				"field_target": "田路中央的农夫",
+				"actor_key": "farmer",
+				"max_hp": FARMER_MAX_HP,
+				"intent_pattern": ["defend", "attack", "defend", "attack"],
+				"exploration_prompt": "WASD / 方向键移动，靠近田路中央的农夫",
+				"field_dialogue": field_dialogue_lines,
+				"pre_dialogue": pre_dialogue,
+				"combat_barks": {"attack": "误了时辰，田会醒。", "defend": "规矩在这。"},
+				"victory_story": victory_story,
+				"log_fragment": log_fragment,
+				"rewards": [
+					{"id": "farmer_sickle", "title": "农夫的镰刀", "kind": "attack_bonus", "description": "攻击牌额外掷 0-3 追加伤害。", "button_text": "农夫的镰刀\n攻击追加 0-3"},
+					{"id": "farmer_hat", "title": "农夫的帽子", "kind": "defense_bonus", "description": "防御牌额外掷 0-3 加到防御骰。", "button_text": "农夫的帽子\n防御追加 0-3"},
+					{"id": "farmer_wheat", "title": "农夫种的麦子", "kind": "heal", "description": "最大 HP 和当前 HP 增加 1-3。", "button_text": "农夫种的麦子\n最大 HP + 1-3"}
+				]
+			}
+		]
+	}
+
+
+func _set_current_encounter(index: int) -> void:
+	if encounters.is_empty():
+		return
+	current_encounter_index = clampi(index, 0, encounters.size() - 1)
+	current_encounter = encounters[current_encounter_index]
+	enemy_max_hp = maxi(int(current_encounter.get("max_hp", FARMER_MAX_HP)), 1)
+	enemy_hp = enemy_max_hp
+	turn_index = 0
+	action_selection_index = 0
+	reward_selection_index = 0
+	archived_log = false
+	current_rewards = current_encounter.get("rewards", [])
+	current_log_fragment = current_encounter.get("log_fragment", log_fragment)
+
+
+func _current_encounter_name() -> String:
+	return String(current_encounter.get("display_name", "未知样本"))
+
+
+func _current_field_target() -> String:
+	return String(current_encounter.get("field_target", _current_encounter_name()))
+
+
+func _current_room_name() -> String:
+	return String(current_encounter.get("room_name", "低语田野"))
+
+
+func _current_lines(key: String, fallback: Array[String]) -> Array[String]:
+	var raw: Array = current_encounter.get(key, fallback)
+	var lines: Array[String] = []
+	for line: Variant in raw:
+		lines.append(String(line))
+	return lines
+
+
+func _chapter_title() -> String:
+	return String(encounter_data.get("chapter_title", "低语田野"))
+
+
+func _pattern_text() -> String:
+	var names: Array[String] = []
+	for action: int in _current_enemy_pattern():
+		names.append(_action_name(action))
+	return " - ".join(names)
+
+
+func _current_enemy_pattern() -> Array[int]:
+	var raw_pattern: Array = current_encounter.get("intent_pattern", [])
+	var pattern: Array[int] = []
+	for raw_action: Variant in raw_pattern:
+		pattern.append(_action_from_key(String(raw_action)))
+	if pattern.is_empty():
+		return FARMER_PATTERN.duplicate()
+	return pattern
+
+
+func _action_from_key(action_key: String) -> int:
+	match action_key:
+		"attack":
+			return Dice.Action.ATTACK
+		"defend":
+			return Dice.Action.DEFEND
+		_:
+			return Dice.Action.DEFEND
+
+
+func _reward_at(index: int) -> Dictionary:
+	if index >= 0 and index < current_rewards.size() and current_rewards[index] is Dictionary:
+		return current_rewards[index]
+	return {}
+
+
+func _has_next_encounter() -> bool:
+	return current_encounter_index + 1 < encounters.size()
 
 
 func _build_theme() -> void:
@@ -620,6 +759,7 @@ func _load_texture(path: String) -> Texture2D:
 func _enter_sanctum_intro() -> void:
 	state = DuelState.SANCTUM_INTRO
 	collector_intro_index = 0
+	_set_current_encounter(0)
 	if field_layer != null:
 		field_layer.visible = false
 	_set_duel_ui_visible(true)
@@ -635,19 +775,30 @@ func _enter_sanctum_intro() -> void:
 
 func _advance_sanctum_intro() -> void:
 	collector_intro_index += 1
-	if collector_intro_index >= collector_intro_lines.size():
+	if collector_intro_index >= _collector_intro().size():
 		_enter_field_exploration()
 		return
 	_show_collector_intro_line()
 
 
 func _show_collector_intro_line() -> void:
-	var line := collector_intro_lines[collector_intro_index]
+	var lines := _collector_intro()
+	var line := lines[clampi(collector_intro_index, 0, lines.size() - 1)]
 	dialogue_label.text = "[b]收藏家[/b]\n%s" % line
 	dice_label.text = "[center][b]无声圣匣[/b]\n一具银白空壳在档案匣中醒来。收藏家的正式立绘尚未接入。[/center]"
 	intent_label.text = "开场：收藏家记录样本 | 按 空格 / 回车 或继续"
 	player_actor_label.text = "无韵回响\n[刚醒来]\n\n脏银残片 / 胃纹未稳定"
 	farmer_actor_label.text = "收藏家\n[占位剪影]\n\n银灰长袍 / 记录器具 / 像医生不像恶魔"
+
+
+func _collector_intro() -> Array[String]:
+	var raw: Array = encounter_data.get("collector_intro", collector_intro_lines)
+	var lines: Array[String] = []
+	for line: Variant in raw:
+		lines.append(String(line))
+	if lines.is_empty():
+		return collector_intro_lines.duplicate()
+	return lines
 
 
 func _enter_field_exploration() -> void:
@@ -688,9 +839,9 @@ func _update_field_prompt() -> void:
 	if field_prompt_label == null:
 		return
 	if _is_near_farmer():
-		field_prompt_label.text = "按 空格 / 回车 与农夫对话"
+		field_prompt_label.text = "按 空格 / 回车 与%s对话" % _current_encounter_name()
 	else:
-		field_prompt_label.text = "WASD / 方向键移动，靠近田路中央的农夫"
+		field_prompt_label.text = String(current_encounter.get("exploration_prompt", "WASD / 方向键移动，靠近%s" % _current_field_target()))
 
 
 func _is_near_farmer() -> bool:
@@ -709,7 +860,7 @@ func _enter_field_dialogue() -> void:
 
 func _advance_field_dialogue() -> void:
 	field_dialogue_index += 1
-	if field_dialogue_index >= field_dialogue_lines.size():
+	if field_dialogue_index >= _current_lines("field_dialogue", field_dialogue_lines).size():
 		_enter_pre_dialogue()
 		return
 	_show_field_dialogue_line()
@@ -718,7 +869,8 @@ func _advance_field_dialogue() -> void:
 func _show_field_dialogue_line() -> void:
 	if field_dialogue_label == null:
 		return
-	field_dialogue_label.text = "[b]饥民农夫[/b]\n%s" % field_dialogue_lines[field_dialogue_index]
+	var lines := _current_lines("field_dialogue", field_dialogue_lines)
+	field_dialogue_label.text = "[b]%s[/b]\n%s" % [_current_encounter_name(), lines[clampi(field_dialogue_index, 0, lines.size() - 1)]]
 
 
 func _set_duel_ui_visible(visible: bool) -> void:
@@ -735,8 +887,8 @@ func _enter_pre_dialogue() -> void:
 	reward_panel.visible = false
 	archive_panel.visible = false
 	continue_button.visible = true
-	dice_label.text = "[center]农夫站在田路中央，像一条还没执行完的命令。[/center]"
-	dialogue_label.text = _format_lines(pre_dialogue, "农夫")
+	dice_label.text = "[center]%s站在%s，像一条还没执行完的命令。[/center]" % [_current_encounter_name(), _current_room_name()]
+	dialogue_label.text = _format_lines(_current_lines("pre_dialogue", pre_dialogue), _current_encounter_name())
 	_update_actor_pose("idle", "mutter")
 	_update_ui()
 
@@ -794,7 +946,7 @@ func _finish_resolved_action(result: Dictionary) -> void:
 	_show_result(result)
 	turn_index += 1
 
-	if farmer_hp <= 0:
+	if enemy_hp <= 0:
 		_enter_victory_story()
 	elif player_hp <= 0:
 		_enter_defeat()
@@ -858,13 +1010,13 @@ func _roll_relevant_dice(result: Dictionary) -> void:
 	else:
 		_add_roll_step(roll_steps, "我方防御 D20", result["player_defense_roll"], "defense", 20)
 	if enemy_action == Dice.Action.ATTACK:
-		_add_roll_step(roll_steps, "农夫命中 D20", result["enemy_hit_roll"], "hit", 20)
+		_add_roll_step(roll_steps, "%s命中 D20" % _current_encounter_name(), result["enemy_hit_roll"], "hit", 20)
 	else:
-		_add_roll_step(roll_steps, "农夫防御 D20", result["enemy_defense_roll"], "defense", 20)
+		_add_roll_step(roll_steps, "%s防御 D20" % _current_encounter_name(), result["enemy_defense_roll"], "defense", 20)
 	if int(result["player_effect_roll"]) >= 0:
 		_add_roll_step(roll_steps, "我方效果 D3", result["player_effect_roll"], "effect", 3)
 	elif int(result["enemy_effect_roll"]) >= 0:
-		_add_roll_step(roll_steps, "农夫效果 D3", result["enemy_effect_roll"], "effect", 3)
+		_add_roll_step(roll_steps, "%s效果 D3" % _current_encounter_name(), result["enemy_effect_roll"], "effect", 3)
 	if int(result["player_bonus_roll"]) >= 0:
 		_add_roll_step(roll_steps, "奖励 D3", result["player_bonus_roll"], "effect", 3)
 	for step: Dictionary in roll_steps:
@@ -941,27 +1093,28 @@ func _nudge_panel(panel: Control, offset: Vector2) -> void:
 
 func _apply_result(result: Dictionary) -> void:
 	player_hp = clampi(player_hp + int(result["player_hp_delta"]), 0, player_max_hp)
-	farmer_hp = clampi(farmer_hp + int(result["enemy_hp_delta"]), 0, FARMER_MAX_HP)
+	enemy_hp = clampi(enemy_hp + int(result["enemy_hp_delta"]), 0, enemy_max_hp)
 
 
 func _show_result(result: Dictionary) -> void:
 	var player_action_name: String = _action_name(result["player_action"])
 	var enemy_action_name: String = _action_name(result["enemy_action"])
 	var lines: Array[String] = []
-	lines.append("[b]本回合[/b] 你：%s / 农夫：%s" % [player_action_name, enemy_action_name])
+	lines.append("[b]本回合[/b] 你：%s / %s：%s" % [player_action_name, _current_encounter_name(), enemy_action_name])
 	lines.append("[b]%s[/b]：%s" % [result["event"], result["summary"]])
 	_append_roll(lines, "你的攻击骰", result["player_hit_roll"])
 	_append_roll(lines, "你的防御骰", result["player_defense_roll"])
 	_append_roll(lines, "你的效果骰/伤害", result["player_effect_roll"])
 	_append_roll(lines, "你的奖励骰", result["player_bonus_roll"])
-	_append_roll(lines, "农夫攻击骰", result["enemy_hit_roll"])
-	_append_roll(lines, "农夫防御骰", result["enemy_defense_roll"])
-	_append_roll(lines, "农夫效果骰/伤害", result["enemy_effect_roll"])
-	lines.append("HP 变化：你 %s，农夫 %s" % [_format_delta(result["player_hp_delta"]), _format_delta(result["enemy_hp_delta"])])
+	_append_roll(lines, "%s攻击骰" % _current_encounter_name(), result["enemy_hit_roll"])
+	_append_roll(lines, "%s防御骰" % _current_encounter_name(), result["enemy_defense_roll"])
+	_append_roll(lines, "%s效果骰/伤害" % _current_encounter_name(), result["enemy_effect_roll"])
+	lines.append("HP 变化：你 %s，%s %s" % [_format_delta(result["player_hp_delta"]), _current_encounter_name(), _format_delta(result["enemy_hp_delta"])])
 	dice_label.text = "\n".join(lines)
 
-	var farmer_bark: String = "规矩在这。" if result["enemy_action"] == Dice.Action.DEFEND else "误了时辰，田会醒。"
-	dialogue_label.text = "[b]农夫[/b]\n%s" % farmer_bark
+	var barks: Dictionary = current_encounter.get("combat_barks", {})
+	var farmer_bark: String = String(barks.get("defend" if result["enemy_action"] == Dice.Action.DEFEND else "attack", "……"))
+	dialogue_label.text = "[b]%s[/b]\n%s" % [_current_encounter_name(), farmer_bark]
 
 	var player_pose: String = "attack" if result["player_action"] == Dice.Action.ATTACK else "defend"
 	var farmer_pose: String = "attack" if result["enemy_action"] == Dice.Action.ATTACK else "defend"
@@ -977,8 +1130,8 @@ func _enter_victory_story() -> void:
 	_set_action_buttons_enabled(false)
 	continue_button.visible = true
 	continue_button.text = "归档日志"
-	dialogue_label.text = _format_lines(victory_story, "农夫")
-	dice_label.text = "[center][b]胜利[/b]\n农夫终于停下了。他开始说完整的话。[/center]"
+	dialogue_label.text = _format_lines(_current_lines("victory_story", victory_story), _current_encounter_name())
+	dice_label.text = "[center][b]胜利[/b]\n%s终于停下了。样本开始说完整的话。[/center]" % _current_encounter_name()
 	_update_actor_pose("victory", "confess")
 	_update_ui()
 
@@ -989,13 +1142,28 @@ func _enter_reward_choice() -> void:
 	reward_panel.visible = true
 	archive_panel.visible = true
 	if not archived_log:
-		archived_fragments.append(log_fragment.duplicate())
+		archived_fragments.append(current_log_fragment.duplicate())
 	archived_log = true
 	archive_label.text = _archive_panel_text()
-	dice_label.text = "[center]选择一项从农夫身上留下来的东西。[/center]"
+	dice_label.text = "[center]选择一项从%s身上留下来的东西。[/center]" % _current_encounter_name()
 	dialogue_label.text = "[center]日志碎片已进入圣匣索引。A/D 切换奖励，Enter / Space 领取。[/center]"
+	_apply_reward_button_texts()
 	_update_ui()
 	_set_reward_selection(reward_selection_index)
+
+
+func _apply_reward_button_texts() -> void:
+	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
+	for i: int in range(buttons.size()):
+		var reward := _reward_at(i)
+		buttons[i].text = String(reward.get("button_text", "未知遗物\n等待归档"))
+
+
+func _choose_reward_by_index(index: int) -> void:
+	var reward := _reward_at(index)
+	if reward.is_empty():
+		return
+	_choose_reward(String(reward.get("id", "")))
 
 
 func _choose_reward(reward_id: String) -> void:
@@ -1003,26 +1171,37 @@ func _choose_reward(reward_id: String) -> void:
 		return
 
 	selected_reward = reward_id
-	if reward_id == "sickle":
+	var reward: Dictionary = {}
+	for item: Variant in current_rewards:
+		if item is Dictionary and String(item.get("id", "")) == reward_id:
+			reward = item
+			break
+	var reward_title := String(reward.get("title", "未知遗物"))
+	var reward_kind := String(reward.get("kind", "heal"))
+	var reward_description := String(reward.get("description", "圣匣暂时无法解释它。"))
+	if reward_kind == "attack_bonus":
 		bonuses["sickle"] = true
-		dice_label.text = "[center][b]获得：农夫的镰刀[/b]\n攻击牌额外掷 0-3 追加伤害。[/center]"
-	elif reward_id == "hat":
+		dice_label.text = "[center][b]获得：%s[/b]\n%s[/center]" % [reward_title, reward_description]
+	elif reward_kind == "defense_bonus":
 		bonuses["hat"] = true
-		dice_label.text = "[center][b]获得：农夫的帽子[/b]\n防御牌额外掷 0-3 加到防御骰。[/center]"
+		dice_label.text = "[center][b]获得：%s[/b]\n%s[/center]" % [reward_title, reward_description]
 	else:
 		var heal: int = Dice.roll_heal(rng)
 		player_max_hp += heal
 		player_hp = min(player_hp + heal, player_max_hp)
-		dice_label.text = "[center][b]食用：农夫种的麦子[/b]\n最大 HP 和当前 HP 增加 %d。[/center]" % heal
+		dice_label.text = "[center][b]食用：%s[/b]\n%s\n本次增加 %d。[/center]" % [reward_title, reward_description, heal]
 
 	state = DuelState.COMPLETE
 	reward_panel.visible = false
 	for button: Button in [reward_sickle_button, reward_hat_button, reward_wheat_button]:
 		button.button_pressed = false
 	continue_button.visible = true
-	continue_button.text = "重新开始"
+	continue_button.text = "进入下一处" if _has_next_encounter() else "重新开始"
 	archive_label.text = _archive_panel_text()
-	dialogue_label.text = "[center]第一场样本结束。圣匣已保存本轮日志，下一轮可继续验证更多敌人和卡牌。[/center]"
+	if _has_next_encounter():
+		dialogue_label.text = "[center]%s样本结束。圣匣已保存本轮日志，下一处异常正在打开。[/center]" % _current_encounter_name()
+	else:
+		dialogue_label.text = "[center]第一章样本完成。神之胃囊已归档低语田野的四段故事。[/center]"
 	_update_ui()
 
 
@@ -1032,32 +1211,30 @@ func _set_reward_selection(index: int) -> void:
 	for i: int in range(buttons.size()):
 		buttons[i].button_pressed = i == reward_selection_index
 	buttons[reward_selection_index].grab_focus()
-	var preview_lines: Array[String] = [
-		"[center][b]农夫的镰刀[/b]\n攻击牌追加一次 D3 伤害。[/center]",
-		"[center][b]农夫的帽子[/b]\n防御牌追加一次 D3 防御修正。[/center]",
-		"[center][b]农夫种的麦子[/b]\n立刻恢复并提高最大 HP 1-3。[/center]"
-	]
-	dice_label.text = preview_lines[reward_selection_index]
+	var reward := _reward_at(reward_selection_index)
+	dice_label.text = "[center][b]%s[/b]\n%s[/center]" % [String(reward.get("title", "未知遗物")), String(reward.get("description", "等待圣匣识别。"))]
 
 
 func _confirm_reward_selection() -> void:
-	var reward_ids: Array[String] = ["sickle", "hat", "wheat"]
-	_choose_reward(reward_ids[reward_selection_index])
+	_choose_reward_by_index(reward_selection_index)
 
 
 func _archive_panel_text() -> String:
 	var collected := archived_fragments.size()
-	var story_progress := mini(collected, 3)
+	var story_progress := mini(collected, restore_story_threshold)
+	var latest: Dictionary = current_log_fragment
+	if not archived_fragments.is_empty():
+		latest = archived_fragments[archived_fragments.size() - 1]
 	var lines: Array[String] = [
-		"[b]圣匣日志 / 低语田野[/b]",
+		"[b]圣匣日志 / %s[/b]" % _chapter_title(),
 		"已归档样本：%d" % collected,
-		"第一故事拼图：%d / 3" % story_progress,
+		"第一故事拼图：%d / %d" % [story_progress, restore_story_threshold],
 		"",
-		"[b]最新样本：%s[/b]" % log_fragment["title"],
-		log_fragment["text"],
-		"[i]胃囊反应：%s[/i]" % log_fragment["reaction"]
+		"[b]最新样本：%s[/b]" % String(latest.get("title", "未命名样本")),
+		String(latest.get("text", "")),
+		"[i]胃囊反应：%s[/i]" % String(latest.get("reaction", "暂无反应"))
 	]
-	if collected >= 3:
+	if collected >= restore_story_threshold:
 		lines.append("")
 		lines.append("[b]复原片段[/b]：田野不是饿了才吃人，是有人教会它把饥饿当成秩序。")
 	return "\n".join(lines)
@@ -1070,7 +1247,7 @@ func _enter_defeat() -> void:
 	archive_panel.visible = false
 	continue_button.visible = true
 	continue_button.text = "回圣匣重试"
-	dialogue_label.text = "[center]农夫仍在照常下田。你被这套流程回收。[/center]"
+	dialogue_label.text = "[center]%s仍在%s。你被这套流程回收。[/center]" % [_current_encounter_name(), _current_room_name()]
 	dice_label.text = "[center][b]回收失败样本[/b]\n死因：没有在攻防骰里活下来。[/center]"
 	_update_actor_pose("hit", "idle")
 	_update_ui()
@@ -1084,21 +1261,34 @@ func _on_continue_pressed() -> void:
 			_enter_player_choice()
 		DuelState.VICTORY_STORY:
 			_enter_reward_choice()
-		DuelState.COMPLETE, DuelState.DEFEAT:
+		DuelState.COMPLETE:
+			if _has_next_encounter():
+				_advance_to_next_encounter()
+			else:
+				_reset_run()
+		DuelState.DEFEAT:
 			_reset_run()
 		_:
 			pass
 
 
+func _advance_to_next_encounter() -> void:
+	_set_current_encounter(current_encounter_index + 1)
+	selected_reward = ""
+	_enter_field_exploration()
+
+
 func _reset_run() -> void:
 	player_max_hp = PLAYER_MAX_HP_START
 	player_hp = PLAYER_MAX_HP_START
-	farmer_hp = FARMER_MAX_HP
+	current_encounter_index = 0
+	_set_current_encounter(0)
 	turn_index = 0
 	selected_reward = ""
 	action_selection_index = 0
 	reward_selection_index = 0
 	archived_log = false
+	archived_fragments.clear()
 	bonuses = {
 		"sickle": false,
 		"hat": false
@@ -1108,27 +1298,28 @@ func _reset_run() -> void:
 
 
 func _current_enemy_action() -> int:
-	return FARMER_PATTERN[turn_index % FARMER_PATTERN.size()]
+	var pattern := _current_enemy_pattern()
+	return pattern[turn_index % pattern.size()]
 
 
 func _update_ui() -> void:
 	player_hp_label.text = "无韵回响 HP %d / %d" % [player_hp, player_max_hp]
-	farmer_hp_label.text = "饥民农夫 HP %d / %d" % [farmer_hp, FARMER_MAX_HP]
+	farmer_hp_label.text = "%s HP %d / %d" % [_current_encounter_name(), enemy_hp, enemy_max_hp]
 	match state:
 		DuelState.SANCTUM_INTRO:
 			intent_label.text = "无声圣匣 | 收藏家记录样本"
 			farmer_hp_label.text = "收藏家：待接入全身像"
 		DuelState.FIELD_EXPLORATION:
 			intent_label.text = "WASD / 方向键移动 | Space / Enter 对话"
-			farmer_hp_label.text = "目标：田路中央的农夫"
+			farmer_hp_label.text = "目标：%s" % _current_field_target()
 		DuelState.FIELD_DIALOGUE, DuelState.PRE_DIALOGUE:
 			intent_label.text = "对话失败将进入卡牌骰子决斗"
 		DuelState.PLAYER_CHOICE, DuelState.RESOLVING:
-			intent_label.text = "农夫意图：%s | 序列 防御 - 攻击 - 防御 - 攻击" % _action_name(_current_enemy_action())
+			intent_label.text = "%s意图：%s | 序列 %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), _pattern_text()]
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
 	state_label.text = _state_name()
-	title_label.text = "神烬使徒：低语田野卡牌骰子 Demo"
+	title_label.text = "神烬使徒：%s卡牌骰子 Demo" % _chapter_title()
 
 
 func _set_action_buttons_enabled(enabled: bool) -> void:
@@ -1140,7 +1331,7 @@ func _update_actor_pose(player_pose: String, farmer_pose: String) -> void:
 	_set_actor_pose("player", player_pose, player_pose in ["attack", "defend", "hit"])
 	_set_actor_pose("farmer", farmer_pose, farmer_pose in ["attack", "defend", "hit"])
 	player_actor_label.text = "无韵回响\n[%s]\n\n脏银残片 / 胃纹微亮" % player_pose
-	farmer_actor_label.text = "饥民农夫\n[%s]\n\n旧帽 / 种袋 / 名单" % farmer_pose
+	farmer_actor_label.text = "%s\n[%s]\n\n%s / 样本 %d" % [_current_encounter_name(), farmer_pose, _current_room_name(), current_encounter_index + 1]
 
 
 func _set_actor_pose(actor_key: String, pose: String, one_shot: bool) -> void:

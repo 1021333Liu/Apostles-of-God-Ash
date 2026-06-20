@@ -1,0 +1,274 @@
+{
+  "schema": "godash.low_whispering_field.encounters.v1",
+  "chapter_title": "低语田野",
+  "restore_story_threshold": 4,
+  "collector_intro": [
+    "你醒了。很好，这具身体还没有拒绝你。",
+    "无声圣匣会把你带回来。痛会过去，留下来的东西更有用。",
+    "第一站是低语田野。那里以前是粮仓，现在更像一张没合上的嘴。",
+    "先别急着要名字。低语田野会给所有东西登记，名字在那里可能会被吃掉哦。",
+    "记住，饿久了的人不一定盼着公道。他们先盼着下一顿。"
+  ],
+  "collector_departure": [
+    "低语田野听不懂饱。它只听得懂再多一点。",
+    "别被庄稼骗了。长得越好，下面埋的东西越多。",
+    "把神之胃囊带回来。它不干净，但很适合活下去。"
+  ],
+  "encounters": [
+    {
+      "id": "empty_stomach",
+      "order": 1,
+      "display_name": "空腹者",
+      "room_name": "低语田野入口",
+      "field_target": "队伍末尾的空腹者",
+      "actor_key": "farmer",
+      "max_hp": 7,
+      "intent_pattern": ["attack", "attack", "defend"],
+      "exploration_prompt": "WASD / 方向键移动，靠近队伍末尾的空腹者",
+      "field_dialogue": [
+        "一点就好。",
+        "碗呢？谁偷了我的碗。",
+        "别走，我还没吃饱。",
+        "我等到了。"
+      ],
+      "pre_dialogue": [
+        "还没到我？",
+        "我排了很久，别挡着队。",
+        "一点就好。",
+        "你闻起来好香。"
+      ],
+      "combat_barks": {
+        "attack": "我还差一口。",
+        "defend": "碗还空着。"
+      },
+      "victory_story": [
+        "我曾经排在最后。",
+        "最后的人拿不到粮，也轮不到被正式记名。",
+        "他们说田边总会剩下一点。",
+        "我去了很久，久到后来连碗也找不到了。"
+      ],
+      "log_fragment": {
+        "id": "field_empty_01",
+        "title": "队伍最后",
+        "text": "空腹者不是第一个被吃掉的人。他只是第一个被名单忘掉的人。",
+        "reaction": "胃囊贴着肋骨轻轻收缩，像在学习等待。"
+      },
+      "rewards": [
+        {
+          "id": "empty_bowl",
+          "title": "空腹者的碗",
+          "kind": "defense_bonus",
+          "description": "防御牌额外掷 0-3 加到防御骰。",
+          "button_text": "空腹者的碗\n防御追加 0-3"
+        },
+        {
+          "id": "gnawed_wheat",
+          "title": "啃过的麦壳",
+          "kind": "attack_bonus",
+          "description": "攻击牌额外掷 0-3 追加伤害。",
+          "button_text": "啃过的麦壳\n攻击追加 0-3"
+        },
+        {
+          "id": "queue_scrap",
+          "title": "队尾碎纸",
+          "kind": "heal",
+          "description": "最大 HP 和当前 HP 增加 1-3。",
+          "button_text": "队尾碎纸\n最大 HP + 1-3"
+        }
+      ]
+    },
+    {
+      "id": "famine_farmer",
+      "order": 2,
+      "display_name": "饥民农夫",
+      "room_name": "登记田路",
+      "field_target": "田路中央的农夫",
+      "actor_key": "farmer",
+      "max_hp": 9,
+      "intent_pattern": ["defend", "attack", "defend", "attack"],
+      "exploration_prompt": "WASD / 方向键移动，靠近田路中央的农夫",
+      "field_dialogue": [
+        "咕噜……饿了。",
+        "名单别乱。孩子还在田边等我。",
+        "不是我不讲理，是田先听不懂人话。",
+        "你也饿吗？那就照规矩来。"
+      ],
+      "pre_dialogue": [
+        "天亮就下田。",
+        "名单别乱。",
+        "先收这片。",
+        "哭完再干活。",
+        "我好饿。",
+        "我的孩子还在等。"
+      ],
+      "combat_barks": {
+        "attack": "误了时辰，田会醒。",
+        "defend": "规矩在这。"
+      },
+      "victory_story": [
+        "我不是第一个把人带去田里的。",
+        "我只是记得路。",
+        "那年冬天，碗从门口摆到井边。",
+        "有人说，只要名单干净，粮就会回来。",
+        "我信了。",
+        "第二天我照常下田。后来每天都是第二天。"
+      ],
+      "log_fragment": {
+        "id": "field_farmer_01",
+        "title": "照常下田",
+        "text": "他不觉得自己在杀人。他只是害怕哪一天没有人继续照常。",
+        "reaction": "胃囊收缩了一下，像在模仿劳动。"
+      },
+      "rewards": [
+        {
+          "id": "farmer_sickle",
+          "title": "农夫的镰刀",
+          "kind": "attack_bonus",
+          "description": "攻击牌额外掷 0-3 追加伤害。",
+          "button_text": "农夫的镰刀\n攻击追加 0-3"
+        },
+        {
+          "id": "farmer_hat",
+          "title": "农夫的帽子",
+          "kind": "defense_bonus",
+          "description": "防御牌额外掷 0-3 加到防御骰。",
+          "button_text": "农夫的帽子\n防御追加 0-3"
+        },
+        {
+          "id": "farmer_wheat",
+          "title": "农夫种的麦子",
+          "kind": "heal",
+          "description": "最大 HP 和当前 HP 增加 1-3。",
+          "button_text": "农夫种的麦子\n最大 HP + 1-3"
+        }
+      ]
+    },
+    {
+      "id": "hungry_scarecrow",
+      "order": 3,
+      "display_name": "饥饿稻草人",
+      "room_name": "血肉麦田",
+      "field_target": "麦田中央的饥饿稻草人",
+      "actor_key": "farmer",
+      "max_hp": 11,
+      "intent_pattern": ["defend", "defend", "attack", "attack"],
+      "exploration_prompt": "WASD / 方向键移动，靠近麦田中央的稻草人",
+      "field_dialogue": [
+        "不是我偷吃的。",
+        "别偷粮。",
+        "站好。",
+        "风里有人。"
+      ],
+      "pre_dialogue": [
+        "名字留下。",
+        "我看见了。",
+        "田主会来。",
+        "王的意愿不再构成停止条件。"
+      ],
+      "combat_barks": {
+        "attack": "麦刺会封住路。",
+        "defend": "站好。别偷粮。"
+      },
+      "victory_story": [
+        "第一年绑的是草。",
+        "第二年绑的是偷粮者的衣服。",
+        "第三年里面开始有骨头。",
+        "它不追远，因为它相信逃出去的人迟早会回来。"
+      ],
+      "log_fragment": {
+        "id": "field_scarecrow_01",
+        "title": "守到名字烂掉",
+        "text": "稻草人不是守卫田地的东西。它是恐惧和命令被绑在一起之后留下的自动程序。",
+        "reaction": "胃囊短暂闭合，像不愿吞下干草里的声音。"
+      },
+      "rewards": [
+        {
+          "id": "scarecrow_straw",
+          "title": "胃响稻草",
+          "kind": "defense_bonus",
+          "description": "防御牌额外掷 0-3 加到防御骰。",
+          "button_text": "胃响稻草\n防御追加 0-3"
+        },
+        {
+          "id": "tooth_wheat",
+          "title": "牙齿麦穗",
+          "kind": "attack_bonus",
+          "description": "攻击牌额外掷 0-3 追加伤害。",
+          "button_text": "牙齿麦穗\n攻击追加 0-3"
+        },
+        {
+          "id": "stolen_cloth",
+          "title": "偷粮者旧衣",
+          "kind": "heal",
+          "description": "最大 HP 和当前 HP 增加 1-3。",
+          "button_text": "偷粮者旧衣\n最大 HP + 1-3"
+        }
+      ]
+    },
+    {
+      "id": "barn_king",
+      "order": 4,
+      "display_name": "谷仓王",
+      "room_name": "谷仓王胃室",
+      "field_target": "半开仓门后的谷仓王",
+      "actor_key": "farmer",
+      "max_hp": 16,
+      "intent_pattern": ["defend", "attack", "attack", "defend", "attack"],
+      "exploration_prompt": "WASD / 方向键移动，靠近半开仓门后的谷仓王",
+      "field_dialogue": [
+        "轻一点。田刚睡下，别又把饥荒吵醒。",
+        "他们说我是王。那时我只是拿着粮仓钥匙的人。",
+        "名字太多了。",
+        "饥荒还在。"
+      ],
+      "pre_dialogue": [
+        "开仓。",
+        "开腹。",
+        "先救孩子。",
+        "谁还活着？",
+        "还不够。"
+      ],
+      "combat_barks": {
+        "attack": "田又醒了。",
+        "defend": "别让仓空。"
+      },
+      "victory_story": [
+        "粮食够撑两个月。",
+        "两个月后如果旧神的残骸还没运到，我们还是会死。",
+        "我以为如果我自己献出最多，我就有资格让这件事停下来。",
+        "但停下来需要的不是资格，是一个所有人都能接受的替代方案。",
+        "我没有。",
+        "原来我一直没赢过饥荒。我只是替它守门。"
+      ],
+      "log_fragment": {
+        "id": "field_barn_king_01",
+        "title": "我把胃献出去的那一天",
+        "text": "谷仓王献出自己的胃，是为了让献祭到他为止。田地接受了他，也学会了通过他继续索要。",
+        "reaction": "胃囊彻底张开。它认出了同类，也认出了饥荒。"
+      },
+      "rewards": [
+        {
+          "id": "barn_key",
+          "title": "谷仓钥匙",
+          "kind": "attack_bonus",
+          "description": "攻击牌额外掷 0-3 追加伤害。",
+          "button_text": "谷仓钥匙\n攻击追加 0-3"
+        },
+        {
+          "id": "king_ledger",
+          "title": "王的登记簿",
+          "kind": "defense_bonus",
+          "description": "防御牌额外掷 0-3 加到防御骰。",
+          "button_text": "王的登记簿\n防御追加 0-3"
+        },
+        {
+          "id": "god_stomach_seed",
+          "title": "神之胃囊残种",
+          "kind": "heal",
+          "description": "最大 HP 和当前 HP 增加 1-3。",
+          "button_text": "神之胃囊残种\n最大 HP + 1-3"
+        }
+      ]
+    }
+  ]
+}
