@@ -1363,11 +1363,22 @@ func _archive_panel_text() -> String:
 		"",
 		"[b]最新样本：%s[/b]" % String(latest.get("title", "未命名样本")),
 		String(latest.get("text", "")),
-		"[i]胃囊反应：%s[/i]" % String(latest.get("reaction", "暂无反应"))
+		"[i]胃囊反应：%s[/i]" % String(latest.get("reaction", "暂无反应")),
+		"",
+		"[b]已收集碎片[/b]"
 	]
+	if archived_fragments.is_empty():
+		lines.append("暂无。圣匣还在等待第一个可用样本。")
+	else:
+		for i: int in range(archived_fragments.size()):
+			var fragment: Dictionary = archived_fragments[i]
+			lines.append("%d. %s" % [i + 1, String(fragment.get("title", "未命名样本"))])
 	if collected >= restore_story_threshold:
 		lines.append("")
 		lines.append("[b]复原片段[/b]：田野不是饿了才吃人，是有人教会它把饥饿当成秩序。")
+	else:
+		lines.append("")
+		lines.append("[i]还需要 %d 枚碎片才能复原第一段故事。[/i]" % maxi(restore_story_threshold - collected, 0))
 	return "\n".join(lines)
 
 
