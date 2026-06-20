@@ -156,6 +156,8 @@ var log_fragment: Dictionary = {
 	"reaction": "胃囊收缩了一下，像在模仿劳动。"
 }
 var archived_fragments: Array[Dictionary] = []
+var failed_recoveries: int = 0
+var last_failure_record: String = ""
 
 @onready var background: ColorRect = %Background
 @onready var title_label: Label = %TitleLabel
@@ -1484,15 +1486,21 @@ func _archive_panel_text() -> String:
 	return "\n".join(lines)
 
 
+func _failure_record_text() -> String:
+	return "第 %d 次回收：%s / %s" % [failed_recoveries, _current_room_name(), _current_encounter_name()]
+
+
 func _enter_defeat() -> void:
 	state = DuelState.DEFEAT
+	failed_recoveries += 1
+	last_failure_record = _failure_record_text()
 	_set_action_buttons_enabled(false)
 	reward_panel.visible = false
 	archive_panel.visible = false
 	continue_button.visible = true
 	continue_button.text = "回圣匣重试"
-	dialogue_label.text = "[center]%s仍在%s。你被这套流程回收。[/center]" % [_current_encounter_name(), _current_room_name()]
-	dice_label.text = "[center][b]回收失败样本[/b]\n死因：没有在攻防骰里活下来。[/center]"
+	dialogue_label.text = "[center]%s仍在%s。你被这套流程回收。\n圣匣新增记录：%s[/center]" % [_current_encounter_name(), _current_room_name(), last_failure_record]
+	dice_label.text = "[center][b]回收失败样本[/b]\n死因：没有在攻防骰里活下来。\n土地学习次数：%d[/center]" % failed_recoveries
 	_show_center_banner("回收失败样本\n%s / %s" % [_current_room_name(), _current_encounter_name()], Color(0.20, 0.055, 0.045, 0.95), 0.95)
 	_update_actor_pose("hit", "idle")
 	_update_ui()
