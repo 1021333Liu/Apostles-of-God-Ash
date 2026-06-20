@@ -288,6 +288,12 @@ func _current_room_name() -> String:
 	return String(current_encounter.get("room_name", "低语田野"))
 
 
+func _encounter_progress_text() -> String:
+	if encounters.is_empty():
+		return "样本 0/0"
+	return "样本 %d/%d" % [current_encounter_index + 1, encounters.size()]
+
+
 func _current_lines(key: String, fallback: Array[String]) -> Array[String]:
 	var raw: Array = current_encounter.get(key, fallback)
 	var lines: Array[String] = []
@@ -1527,7 +1533,7 @@ func _update_ui() -> void:
 			intent_label.text = "%s意图：%s | Turn %d | Next %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), turn_index + 1, _upcoming_pattern_text()]
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
-	state_label.text = _state_name()
+	state_label.text = "%s | %s | %s" % [_encounter_progress_text(), _current_room_name(), _state_name()]
 	title_label.text = "神烬使徒：%s卡牌骰子 Demo" % _chapter_title()
 
 
