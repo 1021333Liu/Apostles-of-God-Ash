@@ -125,6 +125,7 @@ var collector_intro_lines: Array[String] = [
 	"记住，饿久了的人不一定盼着公道。他们先盼着下一顿。"
 ]
 var field_dialogue_index: int = 0
+var field_player_facing: float = 1.0
 var field_dialogue_lines: Array[String] = [
 	"咕噜……饿了。",
 	"名单别乱。孩子还在田边等我。",
@@ -726,6 +727,7 @@ func _make_field_sprite(sprite_name: String, actor_key: String, pose: String, si
 	sprite.name = sprite_name
 	sprite.custom_minimum_size = size
 	sprite.size = size
+	sprite.pivot_offset = size * 0.5
 	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -874,6 +876,7 @@ func _collector_intro() -> Array[String]:
 func _enter_field_exploration() -> void:
 	state = DuelState.FIELD_EXPLORATION
 	field_player_position = FIELD_PLAYER_START
+	field_player_facing = 1.0
 	field_dialogue_index = 0
 	get_viewport().gui_release_focus()
 	_set_duel_ui_visible(false)
@@ -893,6 +896,8 @@ func _enter_field_exploration() -> void:
 func _update_field_exploration(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if input_dir != Vector2.ZERO:
+		if not is_zero_approx(input_dir.x):
+			field_player_facing = signf(input_dir.x)
 		field_player_position += input_dir * FIELD_PLAYER_SPEED * delta
 		field_player_position.x = clampf(field_player_position.x, 150.0, 1130.0)
 		field_player_position.y = clampf(field_player_position.y, 250.0, 620.0)
@@ -904,6 +909,7 @@ func _update_field_positions() -> void:
 	if field_player_sprite == null:
 		return
 	field_player_sprite.position = field_player_position - field_player_sprite.custom_minimum_size * 0.5
+	field_player_sprite.scale.x = field_player_facing
 
 
 func _update_field_prompt() -> void:
