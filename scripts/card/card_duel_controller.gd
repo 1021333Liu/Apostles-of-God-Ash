@@ -1477,6 +1477,13 @@ func _archive_panel_text() -> String:
 		for i: int in range(archived_fragments.size()):
 			var fragment: Dictionary = archived_fragments[i]
 			lines.append("%d. %s" % [i + 1, String(fragment.get("title", "未命名样本"))])
+	lines.append("")
+	lines.append("[b]失败回收[/b]")
+	if failed_recoveries <= 0:
+		lines.append("暂无。土地还没有学会你的死法。")
+	else:
+		lines.append("回收次数：%d" % failed_recoveries)
+		lines.append("最近记录：%s" % last_failure_record)
 	if collected >= restore_story_threshold:
 		lines.append("")
 		lines.append("[b]复原片段[/b]：田野不是饿了才吃人，是有人教会它把饥饿当成秩序。")
