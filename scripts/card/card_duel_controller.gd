@@ -1342,7 +1342,9 @@ func _apply_reward_button_texts() -> void:
 	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
 	for i: int in range(buttons.size()):
 		var reward := _reward_at(i)
-		buttons[i].text = "%s\n[%s]\n%s" % [
+		var prefix := "> 选择 " if i == reward_selection_index else "  "
+		buttons[i].text = "%s%s\n[%s]\n%s" % [
+			prefix,
 			String(reward.get("title", "未知遗物")),
 			_reward_kind_label(String(reward.get("kind", ""))),
 			_reward_effect_short(String(reward.get("kind", "")))
@@ -1400,6 +1402,7 @@ func _set_reward_selection(index: int) -> void:
 	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
 	for i: int in range(buttons.size()):
 		buttons[i].button_pressed = i == reward_selection_index
+	_apply_reward_button_texts()
 	buttons[reward_selection_index].grab_focus()
 	var reward := _reward_at(reward_selection_index)
 	var reward_kind := String(reward.get("kind", ""))
