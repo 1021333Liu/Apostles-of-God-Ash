@@ -1093,6 +1093,7 @@ func _play_result_motion(result: Dictionary) -> void:
 		player_pose = "hit"
 	_update_actor_pose(player_pose, farmer_pose)
 	_show_hp_delta_popups(result)
+	_flash_result_actor_panels(result)
 	_nudge_actor_panels(player_pose, farmer_pose)
 
 
@@ -1109,6 +1110,28 @@ func _flash_node(node: CanvasItem) -> void:
 	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "modulate", Color(1.0, 0.82, 0.45, 1.0), 0.08)
 	tween.tween_property(node, "modulate", Color.WHITE, 0.18)
+
+
+func _flash_result_actor_panels(result: Dictionary) -> void:
+	var player_delta := int(result.get("player_hp_delta", 0))
+	var enemy_delta := int(result.get("enemy_hp_delta", 0))
+	if player_delta < 0:
+		_flash_actor_panel(player_actor, Color(1.0, 0.34, 0.24, 1.0))
+	elif int(result.get("player_action", Dice.Action.ATTACK)) == Dice.Action.DEFEND:
+		_flash_actor_panel(player_actor, Color(0.76, 0.90, 1.0, 1.0))
+	if enemy_delta < 0:
+		_flash_actor_panel(farmer_actor, Color(1.0, 0.34, 0.24, 1.0))
+	elif int(result.get("enemy_action", Dice.Action.ATTACK)) == Dice.Action.DEFEND:
+		_flash_actor_panel(farmer_actor, Color(0.76, 0.90, 1.0, 1.0))
+
+
+func _flash_actor_panel(panel: Control, color: Color) -> void:
+	if panel == null:
+		return
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(panel, "modulate", color, 0.08)
+	tween.tween_property(panel, "modulate", Color.WHITE, 0.18)
 
 
 func _show_hp_delta_popups(result: Dictionary) -> void:
