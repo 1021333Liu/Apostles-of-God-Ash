@@ -1482,6 +1482,7 @@ func _set_reward_selection(index: int) -> void:
 	buttons[reward_selection_index].grab_focus()
 	var reward := _reward_at(reward_selection_index)
 	var reward_kind := String(reward.get("kind", ""))
+	dialogue_label.text = "[center]当前选择：%s\nA/D 切换奖励，Enter / Space 领取。[/center]" % String(reward.get("title", "未知遗物"))
 	dice_label.text = "[center][b]%s[/b]\n[%s] %s\n%s[/center]" % [
 		String(reward.get("title", "未知遗物")),
 		_reward_kind_label(reward_kind),
