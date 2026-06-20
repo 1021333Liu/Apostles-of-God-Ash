@@ -912,7 +912,8 @@ func _update_field_prompt() -> void:
 	if _is_near_farmer():
 		field_prompt_label.text = "按 空格 / 回车 与%s对话" % _current_encounter_name()
 	else:
-		field_prompt_label.text = String(current_encounter.get("exploration_prompt", "WASD / 方向键移动，靠近%s" % _current_field_target()))
+		var remaining_distance := maxi(int(ceil(field_player_position.distance_to(FIELD_FARMER_POS) - FIELD_INTERACT_DISTANCE)), 0)
+		field_prompt_label.text = "%s | 还差 %d" % [String(current_encounter.get("exploration_prompt", "WASD / 方向键移动，靠近%s" % _current_field_target())), remaining_distance]
 
 
 func _is_near_farmer() -> bool:
