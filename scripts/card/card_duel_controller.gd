@@ -111,6 +111,8 @@ var field_dialogue_label: RichTextLabel
 var dice_roll_stage: PanelContainer
 var dice_roll_icon: TextureRect
 var dice_roll_label: Label
+var result_banner: PanelContainer
+var result_banner_label: Label
 var player_bubble: PanelContainer
 var farmer_bubble: PanelContainer
 var field_player_position: Vector2 = FIELD_PLAYER_START
@@ -524,6 +526,31 @@ func _setup_combat_presentation_layer() -> void:
 	farmer_bubble = _make_action_bubble("FarmerActionBubble", Vector2(-136.0, 214.0))
 	add_child(player_bubble)
 	add_child(farmer_bubble)
+	_setup_result_banner()
+
+
+func _setup_result_banner() -> void:
+	result_banner = PanelContainer.new()
+	result_banner.name = "CombatResultBanner"
+	result_banner.visible = false
+	result_banner.custom_minimum_size = Vector2(520.0, 78.0)
+	result_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	result_banner.offset_left = -260.0
+	result_banner.offset_top = 124.0
+	result_banner.offset_right = 260.0
+	result_banner.offset_bottom = 202.0
+	add_child(result_banner)
+
+	result_banner_label = Label.new()
+	result_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	result_banner_label.add_theme_font_size_override("font_size", 28)
+	result_banner_label.add_theme_color_override("font_color", Color(0.98, 0.90, 0.66, 1.0))
+	result_banner_label.add_theme_color_override("font_shadow_color", Color(0.03, 0.02, 0.015, 1.0))
+	result_banner_label.add_theme_constant_override("shadow_offset_x", 2)
+	result_banner_label.add_theme_constant_override("shadow_offset_y", 2)
+	result_banner_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	result_banner.add_child(result_banner_label)
 
 
 func _make_action_bubble(bubble_name: String, center_offset: Vector2) -> PanelContainer:
@@ -966,6 +993,7 @@ func _play_combat_presentation(result: Dictionary) -> void:
 	await get_tree().create_timer(0.55).timeout
 	await _roll_relevant_dice(result)
 	_hide_action_bubbles()
+	await _play_result_banner(result)
 	_play_result_motion(result)
 	await get_tree().create_timer(0.65).timeout
 
@@ -1070,6 +1098,65 @@ func _flash_node(node: CanvasItem) -> void:
 	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "modulate", Color(1.0, 0.82, 0.45, 1.0), 0.08)
 	tween.tween_property(node, "modulate", Color.WHITE, 0.18)
+
+
+func _play_result_banner(result: Dictionary) -> void:
+	if result_banner == null or result_banner_label == null:
+		return
+	var banner_style := StyleBoxFlat.new()
+	banner_style.bg_color = _result_banner_color(result)
+	banner_style.border_color = Color(0.96, 0.82, 0.48, 1.0)
+	banner_style.set_border_width_all(2)
+	banner_style.set_corner_radius_all(4)
+	result_banner.add_theme_stylebox_override("panel", banner_style)
+	result_banner_label.text = _result_banner_text(result)
+	result_banner.visible = true
+	result_banner.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	result_banner.scale = Vector2(0.92, 0.92)
+	result_banner.pivot_offset = result_banner.size * 0.5
+	var tween := create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(result_banner, "scale", Vector2.ONE, 0.16)
+	tween.tween_property(result_banner, "modulate:a", 1.0, 0.12)
+	await get_tree().create_timer(0.34).timeout
+	var fade := create_tween()
+	fade.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	fade.tween_property(result_banner, "modulate:a", 0.0, 0.18)
+	await fade.finished
+	result_banner.visible = false
+	result_banner.modulate = Color.WHITE
+
+
+func _result_banner_text(result: Dictionary) -> String:
+	var event_text := String(result.get("event", "结算"))
+	if event_text.contains("大成功"):
+		return "大成功"
+	if event_text.contains("完美防御"):
+		return "完美防御"
+	if event_text.contains("反弹"):
+		return "防御反弹"
+	if int(result.get("enemy_hp_delta", 0)) < 0 and int(result.get("player_hp_delta", 0)) < 0:
+		return "互相命中"
+	if int(result.get("enemy_hp_delta", 0)) < 0:
+		return "命中"
+	if int(result.get("player_hp_delta", 0)) < 0:
+		return "受击"
+	return event_text
+
+
+func _result_banner_color(result: Dictionary) -> Color:
+	var event_text := String(result.get("event", ""))
+	if event_text.contains("大成功"):
+		return Color(0.42, 0.10, 0.055, 0.94)
+	if event_text.contains("完美防御"):
+		return Color(0.12, 0.22, 0.25, 0.94)
+	if event_text.contains("反弹"):
+		return Color(0.27, 0.18, 0.075, 0.94)
+	if int(result.get("player_hp_delta", 0)) < 0:
+		return Color(0.28, 0.075, 0.055, 0.94)
+	if int(result.get("enemy_hp_delta", 0)) < 0:
+		return Color(0.22, 0.15, 0.065, 0.94)
+	return Color(0.085, 0.075, 0.06, 0.94)
 
 
 func _nudge_actor_panels(player_pose: String, farmer_pose: String) -> void:
