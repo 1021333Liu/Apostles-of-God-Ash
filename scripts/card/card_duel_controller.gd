@@ -307,6 +307,16 @@ func _pattern_text() -> String:
 	return " - ".join(names)
 
 
+func _upcoming_pattern_text(count: int = 4) -> String:
+	var pattern := _current_enemy_pattern()
+	var names: Array[String] = []
+	for i in count:
+		var action: int = pattern[(turn_index + i) % pattern.size()]
+		var prefix := "> " if i == 0 else ""
+		names.append("%s%s" % [prefix, _action_name(action)])
+	return " / ".join(names)
+
+
 func _current_enemy_pattern() -> Array[int]:
 	var raw_pattern: Array = current_encounter.get("intent_pattern", [])
 	var pattern: Array[int] = []
@@ -1491,7 +1501,7 @@ func _update_ui() -> void:
 		DuelState.FIELD_DIALOGUE, DuelState.PRE_DIALOGUE:
 			intent_label.text = "对话失败将进入卡牌骰子决斗"
 		DuelState.PLAYER_CHOICE, DuelState.RESOLVING:
-			intent_label.text = "%s意图：%s | 序列 %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), _pattern_text()]
+			intent_label.text = "%s意图：%s | Turn %d | Next %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), turn_index + 1, _upcoming_pattern_text()]
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
 	state_label.text = _state_name()
