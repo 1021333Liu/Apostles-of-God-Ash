@@ -1082,6 +1082,7 @@ func _play_result_motion(result: Dictionary) -> void:
 	if int(result["player_hp_delta"]) < 0:
 		player_pose = "hit"
 	_update_actor_pose(player_pose, farmer_pose)
+	_show_hp_delta_popups(result)
 	_nudge_actor_panels(player_pose, farmer_pose)
 
 
@@ -1098,6 +1099,49 @@ func _flash_node(node: CanvasItem) -> void:
 	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "modulate", Color(1.0, 0.82, 0.45, 1.0), 0.08)
 	tween.tween_property(node, "modulate", Color.WHITE, 0.18)
+
+
+func _show_hp_delta_popups(result: Dictionary) -> void:
+	var player_delta := int(result.get("player_hp_delta", 0))
+	var enemy_delta := int(result.get("enemy_hp_delta", 0))
+	if player_delta != 0:
+		_spawn_hp_delta_popup(player_actor, player_delta)
+	if enemy_delta != 0:
+		_spawn_hp_delta_popup(farmer_actor, enemy_delta)
+
+
+func _spawn_hp_delta_popup(anchor: Control, delta: int) -> void:
+	if anchor == null:
+		return
+	var popup := Label.new()
+	popup.text = _format_delta(delta)
+	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	popup.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	popup.add_theme_font_size_override("font_size", 34)
+	popup.add_theme_color_override("font_color", _hp_delta_color(delta))
+	popup.add_theme_color_override("font_shadow_color", Color(0.02, 0.012, 0.008, 1.0))
+	popup.add_theme_constant_override("shadow_offset_x", 2)
+	popup.add_theme_constant_override("shadow_offset_y", 2)
+	popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	popup.custom_minimum_size = Vector2(110.0, 48.0)
+	add_child(popup)
+	var start := anchor.global_position + Vector2(anchor.size.x * 0.5 - 55.0, -24.0)
+	popup.global_position = start
+	popup.scale = Vector2(0.86, 0.86)
+	popup.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	var tween := create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "global_position", start + Vector2(0.0, -54.0), 0.62)
+	tween.tween_property(popup, "scale", Vector2(1.08, 1.08), 0.18)
+	tween.tween_property(popup, "modulate:a", 1.0, 0.10)
+	tween.chain().tween_property(popup, "modulate:a", 0.0, 0.20)
+	tween.tween_callback(popup.queue_free)
+
+
+func _hp_delta_color(delta: int) -> Color:
+	if delta < 0:
+		return Color(0.98, 0.36, 0.24, 1.0)
+	return Color(0.62, 0.92, 0.68, 1.0)
 
 
 func _play_result_banner(result: Dictionary) -> void:
