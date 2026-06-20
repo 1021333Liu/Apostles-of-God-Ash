@@ -950,6 +950,7 @@ func _enter_player_choice() -> void:
 	attack_button.text = "攻击\nD20 命中 + D3"
 	defend_button.text = "防御\nD20 抵挡"
 	_set_action_selection(action_selection_index)
+	_show_enemy_intent_preview()
 
 
 func _choose_action(player_action: int) -> void:
@@ -998,6 +999,7 @@ func _finish_resolved_action(result: Dictionary) -> void:
 		state = DuelState.PLAYER_CHOICE
 		_set_action_buttons_enabled(true)
 		_update_ui()
+		_show_enemy_intent_preview()
 
 
 func _play_combat_presentation(result: Dictionary) -> void:
@@ -1024,6 +1026,14 @@ func _show_action_bubbles(player_action: int, enemy_action: int) -> void:
 		_configure_action_bubble(farmer_bubble, enemy_action)
 		farmer_bubble.visible = true
 		_pop_node(farmer_bubble)
+
+
+func _show_enemy_intent_preview() -> void:
+	if farmer_bubble == null:
+		return
+	_configure_action_bubble(farmer_bubble, _current_enemy_action())
+	farmer_bubble.visible = true
+	_pop_node(farmer_bubble)
 
 
 func _configure_action_bubble(bubble: PanelContainer, action: int) -> void:
