@@ -1222,7 +1222,8 @@ func _hp_delta_color(delta: int) -> Color:
 
 
 func _play_result_banner(result: Dictionary) -> void:
-	await _show_center_banner(_result_banner_text(result), _result_banner_color(result), 0.34)
+	var hold_time := 0.52 if not _result_banner_hp_line(result).is_empty() else 0.34
+	await _show_center_banner(_result_banner_text(result), _result_banner_color(result), hold_time)
 
 
 func _show_room_entry_banner() -> void:
