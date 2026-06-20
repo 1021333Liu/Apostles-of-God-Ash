@@ -1590,7 +1590,7 @@ func _update_ui() -> void:
 			intent_label.text = "%s意图：%s | Turn %d | Next %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), turn_index + 1, _upcoming_pattern_text()]
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
-	state_label.text = "%s | %s | %s" % [_encounter_progress_text(), _current_room_name(), _state_name()]
+	state_label.text = "%s | %s | %s | P 圣匣日志" % [_encounter_progress_text(), _current_room_name(), _state_name()]
 	title_label.text = "神烬使徒：%s卡牌骰子 Demo" % _chapter_title()
 
 
