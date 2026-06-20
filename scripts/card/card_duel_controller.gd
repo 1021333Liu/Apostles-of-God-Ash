@@ -484,9 +484,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _toggle_archive_panel() -> void:
 	if archive_panel.visible:
 		archive_panel.visible = false
+		if state == DuelState.REWARD_CHOICE:
+			reward_panel.visible = true
 		return
 	archive_label.text = _archive_panel_text()
 	archive_panel.visible = true
+	if state == DuelState.REWARD_CHOICE:
+		reward_panel.visible = false
 
 
 func _setup_art_assets() -> void:
