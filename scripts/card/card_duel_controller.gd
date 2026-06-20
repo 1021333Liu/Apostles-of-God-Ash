@@ -105,6 +105,7 @@ var actor_return_pose: Dictionary = {
 var field_layer: Control
 var field_player_sprite: TextureRect
 var field_farmer_sprite: TextureRect
+var field_interact_hint_label: Label
 var field_prompt_label: Label
 var field_dialogue_panel: PanelContainer
 var field_dialogue_label: RichTextLabel
@@ -673,6 +674,18 @@ func _setup_field_layer() -> void:
 	field_farmer_sprite.position = FIELD_FARMER_POS - field_farmer_sprite.custom_minimum_size * 0.5
 	field_layer.add_child(field_farmer_sprite)
 
+	field_interact_hint_label = Label.new()
+	field_interact_hint_label.name = "FieldInteractHint"
+	field_interact_hint_label.text = "对话"
+	field_interact_hint_label.visible = false
+	field_interact_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	field_interact_hint_label.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62, 1.0))
+	field_interact_hint_label.add_theme_color_override("font_shadow_color", Color(0.05, 0.03, 0.02, 1.0))
+	field_interact_hint_label.add_theme_constant_override("shadow_offset_x", 2)
+	field_interact_hint_label.add_theme_constant_override("shadow_offset_y", 2)
+	field_interact_hint_label.size = Vector2(120.0, 32.0)
+	field_layer.add_child(field_interact_hint_label)
+
 	field_player_sprite = _make_field_sprite("FieldPlayer", "player", "idle", Vector2(190.0, 190.0))
 	field_layer.add_child(field_player_sprite)
 
@@ -910,6 +923,8 @@ func _update_field_positions() -> void:
 		return
 	field_player_sprite.position = field_player_position - field_player_sprite.custom_minimum_size * 0.5
 	field_player_sprite.scale.x = field_player_facing
+	if field_interact_hint_label != null:
+		field_interact_hint_label.position = FIELD_FARMER_POS + Vector2(-60.0, -152.0)
 
 
 func _update_field_prompt() -> void:
@@ -919,6 +934,8 @@ func _update_field_prompt() -> void:
 	field_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.58, 1.0) if near_target else Color(0.96, 0.88, 0.68, 1.0))
 	if field_farmer_sprite != null:
 		field_farmer_sprite.modulate = Color(1.0, 0.90, 0.62, 1.0) if near_target else Color.WHITE
+	if field_interact_hint_label != null:
+		field_interact_hint_label.visible = near_target
 	if near_target:
 		field_prompt_label.text = "按 空格 / 回车 与%s对话" % _current_encounter_name()
 	else:
