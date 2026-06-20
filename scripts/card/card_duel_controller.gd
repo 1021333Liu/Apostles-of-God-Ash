@@ -423,6 +423,7 @@ func _ensure_gameplay_input_actions() -> void:
 	_ensure_key_action("move_down", [KEY_S, KEY_DOWN])
 	_ensure_key_action("menu_left", [KEY_A, KEY_LEFT])
 	_ensure_key_action("menu_right", [KEY_D, KEY_RIGHT])
+	_ensure_key_action("toggle_archive", [KEY_P])
 
 
 func _ensure_key_action(action_name: String, physical_keycodes: Array[int]) -> void:
@@ -459,6 +460,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif state == DuelState.REWARD_CHOICE:
 			_set_reward_selection(reward_selection_index + 1)
 			get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("toggle_archive"):
+		_toggle_archive_panel()
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_accept"):
 		if state == DuelState.SANCTUM_INTRO:
 			_advance_sanctum_intro()
@@ -475,6 +479,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif state == DuelState.REWARD_CHOICE:
 			_confirm_reward_selection()
 			get_viewport().set_input_as_handled()
+
+
+func _toggle_archive_panel() -> void:
+	if archive_panel.visible:
+		archive_panel.visible = false
+		return
+	archive_label.text = _archive_panel_text()
+	archive_panel.visible = true
 
 
 func _setup_art_assets() -> void:
