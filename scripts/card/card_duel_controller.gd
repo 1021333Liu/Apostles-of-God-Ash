@@ -1151,7 +1151,7 @@ func _roll_single_die(label: String, final_value: int, kind: String, sides: int)
 		dice_roll_label.text = "%s\n%d" % [label, face]
 		await get_tree().create_timer(0.055 + float(i) * 0.012).timeout
 	dice_roll_label.text = _roll_result_label(label, final_value, sides)
-	_flash_node(dice_roll_stage)
+	_flash_node(dice_roll_stage, _roll_result_flash_color(final_value, sides))
 	await get_tree().create_timer(0.42).timeout
 	dice_roll_stage.visible = false
 
@@ -1162,6 +1162,14 @@ func _roll_result_label(label: String, final_value: int, sides: int) -> String:
 	if sides == 20 and final_value == 0:
 		return "%s\n0 大失败" % label
 	return "%s\n%d" % [label, final_value]
+
+
+func _roll_result_flash_color(final_value: int, sides: int) -> Color:
+	if sides == 20 and final_value == 20:
+		return Color(1.0, 0.42, 0.25, 1.0)
+	if sides == 20 and final_value == 0:
+		return Color(0.42, 0.34, 0.22, 1.0)
+	return Color(1.0, 0.82, 0.45, 1.0)
 
 
 func _play_result_motion(result: Dictionary) -> void:
@@ -1185,10 +1193,10 @@ func _pop_node(node: Control) -> void:
 	tween.tween_property(node, "scale", Vector2.ONE, 0.18)
 
 
-func _flash_node(node: CanvasItem) -> void:
+func _flash_node(node: CanvasItem, color: Color = Color(1.0, 0.82, 0.45, 1.0)) -> void:
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "modulate", Color(1.0, 0.82, 0.45, 1.0), 0.08)
+	tween.tween_property(node, "modulate", color, 0.08)
 	tween.tween_property(node, "modulate", Color.WHITE, 0.18)
 
 
