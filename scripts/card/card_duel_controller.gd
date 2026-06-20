@@ -1287,7 +1287,11 @@ func _apply_reward_button_texts() -> void:
 	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
 	for i: int in range(buttons.size()):
 		var reward := _reward_at(i)
-		buttons[i].text = String(reward.get("button_text", "未知遗物\n等待归档"))
+		buttons[i].text = "%s\n[%s]\n%s" % [
+			String(reward.get("title", "未知遗物")),
+			_reward_kind_label(String(reward.get("kind", ""))),
+			_reward_effect_short(String(reward.get("kind", "")))
+		]
 
 
 func _choose_reward_by_index(index: int) -> void:
@@ -1343,11 +1347,41 @@ func _set_reward_selection(index: int) -> void:
 		buttons[i].button_pressed = i == reward_selection_index
 	buttons[reward_selection_index].grab_focus()
 	var reward := _reward_at(reward_selection_index)
-	dice_label.text = "[center][b]%s[/b]\n%s[/center]" % [String(reward.get("title", "未知遗物")), String(reward.get("description", "等待圣匣识别。"))]
+	var reward_kind := String(reward.get("kind", ""))
+	dice_label.text = "[center][b]%s[/b]\n[%s] %s\n%s[/center]" % [
+		String(reward.get("title", "未知遗物")),
+		_reward_kind_label(reward_kind),
+		_reward_effect_short(reward_kind),
+		String(reward.get("description", "等待圣匣识别。"))
+	]
 
 
 func _confirm_reward_selection() -> void:
 	_choose_reward_by_index(reward_selection_index)
+
+
+func _reward_kind_label(kind: String) -> String:
+	match kind:
+		"attack_bonus":
+			return "攻击遗物"
+		"defense_bonus":
+			return "防御遗物"
+		"heal":
+			return "食用样本"
+		_:
+			return "未知遗物"
+
+
+func _reward_effect_short(kind: String) -> String:
+	match kind:
+		"attack_bonus":
+			return "攻击追加 D3"
+		"defense_bonus":
+			return "防御追加 D3"
+		"heal":
+			return "最大 HP +1-3"
+		_:
+			return "等待归档"
 
 
 func _archive_panel_text() -> String:
