@@ -1116,13 +1116,13 @@ func _roll_relevant_dice(result: Dictionary) -> void:
 	var player_action: int = result["player_action"]
 	var enemy_action: int = result["enemy_action"]
 	if player_action == Dice.Action.ATTACK:
-		_add_roll_step(roll_steps, "我方命中 D20", result["player_hit_roll"], "hit", 20)
+		_add_roll_step(roll_steps, "我方命中 D20", result["player_hit_roll"], "hit", 20, player_actor)
 	else:
-		_add_roll_step(roll_steps, "我方防御 D20", result["player_defense_roll"], "defense", 20)
+		_add_roll_step(roll_steps, "我方防御 D20", result["player_defense_roll"], "defense", 20, player_actor)
 	if enemy_action == Dice.Action.ATTACK:
-		_add_roll_step(roll_steps, "%s命中 D20" % _current_encounter_name(), result["enemy_hit_roll"], "hit", 20)
+		_add_roll_step(roll_steps, "%s命中 D20" % _current_encounter_name(), result["enemy_hit_roll"], "hit", 20, farmer_actor)
 	else:
-		_add_roll_step(roll_steps, "%s防御 D20" % _current_encounter_name(), result["enemy_defense_roll"], "defense", 20)
+		_add_roll_step(roll_steps, "%s防御 D20" % _current_encounter_name(), result["enemy_defense_roll"], "defense", 20, farmer_actor)
 	if int(result["player_effect_roll"]) >= 0:
 		_add_roll_step(roll_steps, "我方效果 D3", result["player_effect_roll"], "effect", 3)
 	elif int(result["enemy_effect_roll"]) >= 0:
@@ -1130,15 +1130,15 @@ func _roll_relevant_dice(result: Dictionary) -> void:
 	if int(result["player_bonus_roll"]) >= 0:
 		_add_roll_step(roll_steps, "奖励 D3", result["player_bonus_roll"], "effect", 3)
 	for step: Dictionary in roll_steps:
-		await _roll_single_die(step["label"], int(step["value"]), step["kind"], int(step["sides"]))
+		await _roll_single_die(step["label"], int(step["value"]), step["kind"], int(step["sides"]), step.get("owner", null))
 
 
-func _add_roll_step(roll_steps: Array[Dictionary], label: String, value: int, kind: String, sides: int) -> void:
+func _add_roll_step(roll_steps: Array[Dictionary], label: String, value: int, kind: String, sides: int, owner: Control = null) -> void:
 	if value >= 0:
-		roll_steps.append({"label": label, "value": value, "kind": kind, "sides": sides})
+		roll_steps.append({"label": label, "value": value, "kind": kind, "sides": sides, "owner": owner})
 
 
-func _roll_single_die(label: String, final_value: int, kind: String, sides: int) -> void:
+func _roll_single_die(label: String, final_value: int, kind: String, sides: int, owner: Control = null) -> void:
 	if dice_roll_stage == null or dice_roll_label == null:
 		return
 	if dice_roll_icon != null:
@@ -1152,6 +1152,8 @@ func _roll_single_die(label: String, final_value: int, kind: String, sides: int)
 		await get_tree().create_timer(0.055 + float(i) * 0.012).timeout
 	dice_roll_label.text = _roll_result_label(label, final_value, sides)
 	_flash_node(dice_roll_stage, _roll_result_flash_color(final_value, sides))
+	if owner != null and sides == 20 and (final_value == 20 or final_value == 0):
+		_flash_actor_panel(owner, _roll_result_flash_color(final_value, sides))
 	await get_tree().create_timer(0.42).timeout
 	dice_roll_stage.visible = false
 
