@@ -16,6 +16,37 @@
 
 ## 美术总方向
 
+### 与旧图的关系
+
+玩法转向不等于美术重启。
+
+仓库里已有的概念图、场景图和 UI 图仍然是新 Demo 的视觉母语。新图必须和它们统一，而不是重新发明一套风格。
+
+优先参考：
+
+| 参考文件 | 新 Demo 用途 |
+| --- | --- |
+| `assets/concepts/concept_famine_farmer_sheet.png` | 饥民农夫对峙动画组的身份、服装、劳作感 |
+| `assets/concepts/concept_player_placeholder_sheet.jpg` | 玩家无韵回响的脏银、胃纹、残片感 |
+| `assets/concepts/concept_memory_shard_icons.jpg` | 日志碎片、胜利归档、样本图标 |
+| `assets/concepts/concept_archive_ui.jpg` | 圣匣日志 UI、旧纸、封蜡、档案柜质感 |
+| `assets/concepts/concept_low_whispering_field_mood.jpg` | 低语田野整体色调和荒凉气质 |
+| `assets/concepts/concept_low_whispering_field_room.jpg` | 房间背景构图、枯麦边界、战斗留白 |
+| `assets/concepts/scene_key_art_round_01/concept_png/scene_02_field_entrance.png` | 第一场卡牌战背景 |
+| `assets/concepts/scene_key_art_round_01/concept_png/scene_10_casket_truth_archive.png` | 胜利归档 / 日志界面 |
+
+继承方式：
+
+- 继承色彩、材质、角色身份、符号系统。
+- 继承枯麦、灰土、旧纸、脏银、封蜡、暗红胃纹。
+- 继承“乡村荒凉 + 档案归档 + 神性残骸”的组合。
+
+不要机械复制：
+
+- 不要直接把旧动作小人放大当卡牌对峙角色。
+- 不要照搬旧背景构图导致卡牌 UI 没地方放。
+- 不要把动作版 HUD 原样搬到卡牌界面。
+
 ### 气质
 
 - 低饱和乡村荒凉。
@@ -560,6 +591,8 @@ enemy_idle_loop
 
 总体风格：
 低饱和、乡村荒凉、干燥、安静、旧纸、脏银、封蜡、枯麦。暗红只用于胃囊、伤害、日志核心和封蜡。可以参考 Andrew Wyeth 的乡村孤独感和干燥材质，但不要临摹任何具体作品，也不要做成纯写实海报。
+
+重要：之前仓库里的美术概念图不是废稿。新图必须和旧图统一。请先参考 `assets/concepts/concept_famine_farmer_sheet.png`、`concept_player_placeholder_sheet.jpg`、`concept_memory_shard_icons.jpg`、`concept_archive_ui.jpg`、`concept_low_whispering_field_mood.jpg`、`concept_low_whispering_field_room.jpg`，以及 `assets/concepts/scene_key_art_round_01/concept_png/scene_02_field_entrance.png`。这些图决定项目的材质、色调和世界观身份；新 Demo 只是把它们改造成卡牌骰子对峙界面。
 
 验收标准：
 放进 1920x1080 战斗界面后，玩家、农夫、攻击/防御选择、骰子结果和日志奖励必须一眼可读。播放动画时，角色不能呆站，攻击、防御、受击、战后讲述必须有对应动效。
