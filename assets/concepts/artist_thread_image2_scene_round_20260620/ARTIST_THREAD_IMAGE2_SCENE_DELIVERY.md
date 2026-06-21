@@ -12,6 +12,21 @@ I prepared the image2 batch prompt and attempted to call `gpt-image-2`, but the 
 
 No scene PNGs were generated. I did not fake placeholders or reuse old concept art as if it were new image2 output.
 
+## Retry Attempt: 2026-06-21
+
+The delivery was retried from the active `handoff/to-jin-rongjun` branch with both available generation routes:
+
+- Built-in image generation: the first scene request failed with a network error while calling the ChatGPT image-generation endpoint.
+- User-authorized Chrome Image2 session: Chrome could enumerate the open ChatGPT tab, but taking control of that tab repeatedly timed out before any prompt could be submitted or an image could be downloaded.
+
+Result: all five target PNGs remain absent. This file remains a blocker record, not an art delivery. Do not mark any of the five scenes as complete until the final PNG and contact sheet are committed.
+
+## Verified Existing Work
+
+- The five prompts in `tmp/imagegen/artist_thread_scene_round_20260620.jsonl` are present and match the human artist brief.
+- `HUMAN_ARTIST_SCENE_BRIEF.md` remains the authoritative filename, composition, and quality specification.
+- No existing concept art was substituted into this folder.
+
 ## Output Directory
 
 `assets/concepts/artist_thread_image2_scene_round_20260620/`
