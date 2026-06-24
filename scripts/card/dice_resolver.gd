@@ -32,6 +32,7 @@ static func resolve_exchange(player_action: Action, enemy_action: Action, rng: R
 		"player_defense_roll": -1,
 		"player_effect_roll": -1,
 		"player_bonus_roll": -1,
+		"player_bonus_rolls": [],
 		"enemy_hit_roll": -1,
 		"enemy_defense_roll": -1,
 		"enemy_effect_roll": -1,
@@ -58,9 +59,8 @@ static func _resolve_attack_vs_attack(result: Dictionary, rng: RandomNumberGener
 	var player_damage: int = _damage_for_attack(result["player_hit_roll"], rng)
 	var enemy_damage: int = _damage_for_attack(result["enemy_hit_roll"], rng)
 
-	if player_damage > 0 and bonuses.get("sickle", false):
-		result["player_bonus_roll"] = roll_effect(rng)
-		player_damage += result["player_bonus_roll"]
+	if player_damage > 0:
+		player_damage += _apply_bonus_rolls(result, rng, int(bonuses.get("sickle", 0)))
 
 	result["enemy_hp_delta"] = -player_damage
 	result["player_hp_delta"] = -enemy_damage
@@ -92,16 +92,17 @@ static func _resolve_attack_vs_defense(result: Dictionary, player_is_attacker: b
 	else:
 		result["enemy_hit_roll"] = attack_roll
 		result["player_defense_roll"] = defense_roll
-		if bonuses.get("hat", false):
-			result["player_bonus_roll"] = roll_effect(rng)
-			defense_roll += result["player_bonus_roll"]
+		defense_roll += _apply_bonus_rolls(result, rng, int(bonuses.get("hat", 0)))
 
 	if defense_roll >= HIT_MAX:
 		_apply_reflect(result, player_is_attacker, EFFECT_MAX, "完美防御", "防御骰掷出 20，攻击被完全封住并触发反弹。")
 		return
 
 	if attack_roll == HIT_MAX:
-		_apply_attack_damage(result, player_is_attacker, EFFECT_MAX, "攻击大成功", "攻击骰掷出 20，普通防御无法抵挡。")
+		var critical_damage := EFFECT_MAX
+		if player_is_attacker:
+			critical_damage += _apply_bonus_rolls(result, rng, int(bonuses.get("sickle", 0)))
+		_apply_attack_damage(result, player_is_attacker, critical_damage, "攻击大成功", "攻击骰掷出 20，普通防御无法抵挡。")
 		return
 
 	if attack_roll == HIT_MIN:
@@ -120,9 +121,8 @@ static func _resolve_attack_vs_defense(result: Dictionary, player_is_attacker: b
 		return
 
 	var damage: int = roll_effect(rng)
-	if player_is_attacker and damage > 0 and bonuses.get("sickle", false):
-		result["player_bonus_roll"] = roll_effect(rng)
-		damage += result["player_bonus_roll"]
+	if player_is_attacker and damage > 0:
+		damage += _apply_bonus_rolls(result, rng, int(bonuses.get("sickle", 0)))
 	_apply_attack_damage(result, player_is_attacker, damage, "攻击命中", "攻击骰高于防御骰，造成效果骰伤害。")
 
 
@@ -159,3 +159,18 @@ static func _apply_reflect(result: Dictionary, attacker_is_player: bool, damage:
 		result["player_hp_delta"] = -damage
 	result["event"] = event
 	result["summary"] = summary
+
+
+static func _apply_bonus_rolls(result: Dictionary, rng: RandomNumberGenerator, count: int) -> int:
+	var total := 0
+	var rolls: Array = result.get("player_bonus_rolls", [])
+	for i: int in range(maxi(count, 0)):
+		var roll := roll_effect(rng)
+		rolls.append(roll)
+		total += roll
+	result["player_bonus_rolls"] = rolls
+	var visible_total := 0
+	for roll: Variant in rolls:
+		visible_total += int(roll)
+	result["player_bonus_roll"] = visible_total if not rolls.is_empty() else -1
+	return total

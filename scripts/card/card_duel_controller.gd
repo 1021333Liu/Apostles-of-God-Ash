@@ -12,8 +12,22 @@ const FARMER_PATTERN: Array[int] = [
 const ENCOUNTER_DATA_PATH: String = "res://data/encounters/low_whispering_field.json"
 const CARD_ART_ROOT: String = "res://assets/card_demo"
 const BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_card_field_entrance.png"
+const SANCTUM_BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_silent_casket_intro.png"
+const COLLECTOR_PORTRAIT_PATH: String = "res://assets/portraits/portrait_collector_halfbody.png"
+const ENCOUNTER_BACKGROUND_ART_PATHS: Dictionary = {
+	"empty_stomach": CARD_ART_ROOT + "/backgrounds/bg_empty_stomach_queue.png",
+	"famine_farmer": CARD_ART_ROOT + "/backgrounds/bg_farmer_field_register.png",
+	"hungry_scarecrow": CARD_ART_ROOT + "/backgrounds/bg_scarecrow_blood_wheat.png",
+	"barn_king": CARD_ART_ROOT + "/backgrounds/bg_barn_king_chamber.png"
+}
 const PLAYER_ART_ROOT: String = CARD_ART_ROOT + "/actors/player_echo"
 const FARMER_ART_ROOT: String = CARD_ART_ROOT + "/actors/enemy_farmer"
+const ENEMY_ACTOR_SOURCES: Dictionary = {
+	"empty": {"root": "res://assets/sprites/characters/enemies", "prefix": "enemy_empty"},
+	"farmer": {"root": FARMER_ART_ROOT, "prefix": "actor_enemy_farmer"},
+	"scarecrow": {"root": "res://assets/sprites/runtime_concepts/enemies", "prefix": "enemy_scarecrow"},
+	"barn_king": {"root": "res://assets/sprites/characters/bosses", "prefix": "boss_barn_king_phase1"}
+}
 const REWARD_ICON_PATHS: Dictionary = {
 	"sickle": CARD_ART_ROOT + "/ui/rewards/reward_farmer_sickle.png",
 	"hat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_hat.png",
@@ -74,8 +88,8 @@ var current_encounter: Dictionary = {}
 var current_rewards: Array = []
 var current_log_fragment: Dictionary = {}
 var bonuses: Dictionary = {
-	"sickle": false,
-	"hat": false
+	"sickle": 0,
+	"hat": 0
 }
 var actor_frames: Dictionary = {
 	"player": {},
@@ -102,6 +116,8 @@ var actor_return_pose: Dictionary = {
 	"player": "idle",
 	"farmer": "idle"
 }
+var background_art: TextureRect
+var collector_portrait: TextureRect
 var field_layer: Control
 var field_player_sprite: TextureRect
 var field_farmer_sprite: TextureRect
@@ -200,7 +216,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_update_actor_animation("player", delta)
 	_update_actor_animation("farmer", delta)
-	if state == DuelState.FIELD_EXPLORATION:
+	var enemy_actor_key := _current_enemy_actor_key()
+	if enemy_actor_key != "farmer":
+		_update_actor_animation(enemy_actor_key, delta)
+	if state == DuelState.FIELD_EXPLORATION and not _archive_has_input_focus():
 		_update_field_exploration(delta)
 
 
@@ -279,10 +298,18 @@ func _set_current_encounter(index: int) -> void:
 	archived_log = false
 	current_rewards = current_encounter.get("rewards", [])
 	current_log_fragment = current_encounter.get("log_fragment", log_fragment)
+	_apply_enemy_actor_layout()
 
 
 func _current_encounter_name() -> String:
 	return String(current_encounter.get("display_name", "未知样本"))
+
+
+func _current_enemy_actor_key() -> String:
+	var actor_key := String(current_encounter.get("actor_key", "farmer"))
+	if actor_frames.has(actor_key):
+		return actor_key
+	return "farmer"
 
 
 func _current_field_target() -> String:
@@ -291,6 +318,33 @@ func _current_field_target() -> String:
 
 func _current_room_name() -> String:
 	return String(current_encounter.get("room_name", "低语田野"))
+
+
+func _apply_enemy_actor_layout() -> void:
+	if not actor_sprites.has("farmer"):
+		return
+	var sprite: TextureRect = actor_sprites["farmer"]
+	sprite.scale = Vector2.ONE
+	sprite.modulate = Color.WHITE
+	sprite.offset_left = 18.0
+	sprite.offset_top = 16.0
+	sprite.offset_right = -18.0
+	sprite.offset_bottom = -16.0
+	match String(current_encounter.get("actor_key", "farmer")):
+		"scarecrow":
+			sprite.scale = Vector2(0.92, 0.92)
+			sprite.modulate = Color(0.90, 0.84, 0.70, 1.0)
+			sprite.offset_left = 30.0
+			sprite.offset_top = 10.0
+			sprite.offset_right = -30.0
+			sprite.offset_bottom = -10.0
+		"barn_king":
+			sprite.scale = Vector2(1.05, 1.05)
+			sprite.modulate = Color(0.92, 0.86, 0.76, 1.0)
+			sprite.offset_left = -8.0
+			sprite.offset_top = 0.0
+			sprite.offset_right = 8.0
+			sprite.offset_bottom = 0.0
 
 
 func _encounter_progress_text() -> String:
@@ -408,13 +462,15 @@ func _build_theme() -> void:
 		label.add_theme_color_override("font_shadow_color", Color(0.02, 0.015, 0.012, 0.90))
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 1)
-	title_label.add_theme_font_size_override("font_size", 22)
+	title_label.add_theme_font_size_override("font_size", 20)
 	state_label.add_theme_font_size_override("font_size", 15)
 	intent_label.add_theme_font_size_override("font_size", 15)
 
 	for rich_label: RichTextLabel in [dialogue_label, dice_label, archive_label]:
-		rich_label.add_theme_color_override("default_color", Color(0.91, 0.84, 0.70, 1.0))
-		rich_label.add_theme_font_size_override("normal_font_size", 17)
+		rich_label.add_theme_color_override("default_color", Color(0.86, 0.78, 0.62, 1.0))
+		rich_label.add_theme_color_override("font_selected_color", Color(0.95, 0.86, 0.66, 1.0))
+		rich_label.add_theme_font_size_override("normal_font_size", 16)
+		rich_label.add_theme_font_size_override("bold_font_size", 18)
 
 	background.color = Color(0.13, 0.115, 0.075, 1.0)
 
@@ -427,6 +483,7 @@ func _ensure_gameplay_input_actions() -> void:
 	_ensure_key_action("menu_left", [KEY_A, KEY_LEFT])
 	_ensure_key_action("menu_right", [KEY_D, KEY_RIGHT])
 	_ensure_key_action("toggle_archive", [KEY_P])
+	_ensure_key_action("ui_accept", [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER])
 
 
 func _ensure_key_action(action_name: String, physical_keycodes: Array[int]) -> void:
@@ -448,7 +505,7 @@ func _action_has_physical_key(action_name: String, physical_keycode: int) -> boo
 	return false
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):
 		if _archive_has_input_focus():
 			_step_archive_fragment(-1)
@@ -488,31 +545,92 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif state == DuelState.REWARD_CHOICE:
 			_confirm_reward_selection()
 			get_viewport().set_input_as_handled()
+		elif state in [DuelState.PRE_DIALOGUE, DuelState.VICTORY_STORY, DuelState.COMPLETE, DuelState.DEFEAT]:
+			_on_continue_pressed()
+			get_viewport().set_input_as_handled()
 
 
 func _toggle_archive_panel() -> void:
 	if archive_panel.visible:
 		archive_panel.visible = false
-		if state == DuelState.REWARD_CHOICE:
-			reward_panel.visible = true
+		_set_archive_expanded(false)
+		_restore_ui_after_archive()
 		_update_ui()
 		return
+	_set_archive_expanded(true)
 	archive_label.text = _archive_panel_text()
 	archive_panel.visible = true
-	if state == DuelState.REWARD_CHOICE:
-		reward_panel.visible = false
+	_enter_archive_overlay()
 	_update_ui()
+
+
+func _set_archive_expanded(expanded: bool) -> void:
+	if archive_panel == null or archive_label == null:
+		return
+	if expanded:
+		archive_panel.custom_minimum_size = Vector2(0.0, 560.0)
+		archive_label.custom_minimum_size = Vector2(0.0, 510.0)
+		archive_label.fit_content = false
+		archive_label.scroll_active = true
+	else:
+		archive_panel.custom_minimum_size = Vector2(0.0, 150.0)
+		archive_label.custom_minimum_size = Vector2.ZERO
+		archive_label.fit_content = true
+		archive_label.scroll_active = false
+
+
+func _enter_archive_overlay() -> void:
+	for node: Control in [player_actor, farmer_actor, dice_panel, dialogue_panel, attack_button, defend_button, continue_button, reward_panel]:
+		node.visible = false
+	if field_layer != null:
+		field_layer.visible = false
+
+
+func _restore_ui_after_archive() -> void:
+	match state:
+		DuelState.FIELD_EXPLORATION:
+			_set_duel_ui_visible(false)
+			if field_layer != null:
+				field_layer.visible = true
+				_set_field_layer_intro_mode(false)
+			continue_button.visible = false
+		DuelState.FIELD_DIALOGUE, DuelState.PRE_DIALOGUE:
+			_set_duel_ui_visible(false)
+			if field_layer != null:
+				field_layer.visible = true
+			if field_dialogue_panel != null:
+				field_dialogue_panel.visible = true
+			continue_button.visible = false
+		DuelState.REWARD_CHOICE:
+			_set_duel_ui_visible(true)
+			continue_button.visible = false
+			reward_panel.visible = true
+			archive_panel.visible = false
+			_set_action_buttons_enabled(false)
+		DuelState.PLAYER_CHOICE:
+			_enter_player_choice()
+		_:
+			pass
 
 
 func _setup_art_assets() -> void:
 	_setup_background_art()
+	_setup_collector_intro_art()
 	_load_actor_frames("player", PLAYER_ART_ROOT, "actor_player_echo", PLAYER_POSES)
-	_load_actor_frames("farmer", FARMER_ART_ROOT, "actor_enemy_farmer", FARMER_POSES)
+	_load_enemy_actor_frames()
 	_setup_actor_sprite("player", player_actor, player_actor_label)
 	_setup_actor_sprite("farmer", farmer_actor, farmer_actor_label)
 	_setup_reward_icons()
 	_setup_field_layer()
 	_setup_combat_presentation_layer()
+
+
+func _load_enemy_actor_frames() -> void:
+	for actor_key: String in ENEMY_ACTOR_SOURCES.keys():
+		_ensure_actor_state(actor_key)
+		actor_frames[actor_key] = {}
+		var source: Dictionary = ENEMY_ACTOR_SOURCES[actor_key]
+		_load_actor_frames(actor_key, String(source["root"]), String(source["prefix"]), FARMER_POSES)
 
 
 func _setup_combat_presentation_layer() -> void:
@@ -646,11 +764,11 @@ func _make_action_bubble(bubble_name: String, center_offset: Vector2) -> PanelCo
 
 
 func _setup_background_art() -> void:
-	var texture := _load_texture(BACKGROUND_ART_PATH)
+	var texture := _load_texture(_background_path_for_state())
 	if texture == null:
 		return
 
-	var background_art := TextureRect.new()
+	background_art = TextureRect.new()
 	background_art.name = "BackgroundArt"
 	background_art.texture = texture
 	background_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -662,15 +780,62 @@ func _setup_background_art() -> void:
 	move_child(background_art, background.get_index() + 1)
 
 
+func _refresh_background_art() -> void:
+	if background_art == null:
+		return
+	var texture := _load_texture(_background_path_for_state())
+	if texture != null:
+		background_art.texture = texture
+
+
+func _background_path_for_state() -> String:
+	if state == DuelState.SANCTUM_INTRO:
+		return SANCTUM_BACKGROUND_ART_PATH
+	return _background_path_for_current_encounter()
+
+
+func _background_path_for_current_encounter() -> String:
+	var encounter_id := String(current_encounter.get("id", ""))
+	return String(ENCOUNTER_BACKGROUND_ART_PATHS.get(encounter_id, BACKGROUND_ART_PATH))
+
+
+func _setup_collector_intro_art() -> void:
+	var texture := _load_texture(COLLECTOR_PORTRAIT_PATH)
+	if texture == null:
+		return
+
+	collector_portrait = TextureRect.new()
+	collector_portrait.name = "CollectorPortrait"
+	collector_portrait.texture = texture
+	collector_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	collector_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	collector_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	collector_portrait.modulate = Color(0.92, 0.88, 0.80, 1.0)
+	collector_portrait.z_index = 2
+	collector_portrait.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	collector_portrait.offset_left = -245.0
+	collector_portrait.offset_top = -332.0
+	collector_portrait.offset_right = 245.0
+	collector_portrait.offset_bottom = 190.0
+	add_child(collector_portrait)
+	move_child(collector_portrait, background.get_index() + 2)
+
+
+func _set_collector_intro_art_visible(visible: bool) -> void:
+	if collector_portrait != null:
+		collector_portrait.visible = visible
+
+
 func _setup_field_layer() -> void:
 	field_layer = Control.new()
 	field_layer.name = "FieldExplorationLayer"
 	field_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	field_layer.z_index = 3
 	field_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(field_layer)
 	move_child(field_layer, background.get_index() + 2)
 
-	field_farmer_sprite = _make_field_sprite("FieldFarmer", "farmer", "mutter", Vector2(220.0, 220.0))
+	field_farmer_sprite = _make_field_sprite("FieldFarmer", _current_enemy_actor_key(), "mutter", Vector2(220.0, 220.0))
 	field_farmer_sprite.position = FIELD_FARMER_POS - field_farmer_sprite.custom_minimum_size * 0.5
 	field_layer.add_child(field_farmer_sprite)
 
@@ -706,10 +871,10 @@ func _setup_field_layer() -> void:
 	field_dialogue_panel.name = "FieldDialoguePanel"
 	field_dialogue_panel.visible = false
 	field_dialogue_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	field_dialogue_panel.offset_left = 160.0
-	field_dialogue_panel.offset_right = -160.0
-	field_dialogue_panel.offset_top = -178.0
-	field_dialogue_panel.offset_bottom = -32.0
+	field_dialogue_panel.offset_left = 44.0
+	field_dialogue_panel.offset_right = -44.0
+	field_dialogue_panel.offset_top = -176.0
+	field_dialogue_panel.offset_bottom = -34.0
 	var dialogue_style := StyleBoxFlat.new()
 	dialogue_style.bg_color = Color(0.065, 0.052, 0.04, 0.92)
 	dialogue_style.border_color = Color(0.72, 0.61, 0.42, 0.92)
@@ -730,9 +895,29 @@ func _setup_field_layer() -> void:
 	field_dialogue_label.fit_content = true
 	field_dialogue_label.scroll_active = false
 	field_dialogue_label.text = ""
-	field_dialogue_label.add_theme_color_override("default_color", Color(0.93, 0.86, 0.72, 1.0))
+	field_dialogue_label.add_theme_color_override("default_color", Color(0.86, 0.78, 0.62, 1.0))
+	field_dialogue_label.add_theme_font_size_override("normal_font_size", 19)
+	field_dialogue_label.add_theme_font_size_override("bold_font_size", 22)
 	dialogue_margin.add_child(field_dialogue_label)
 	_update_field_positions()
+
+
+func _set_field_layer_intro_mode(enabled: bool) -> void:
+	if field_player_sprite != null:
+		field_player_sprite.visible = not enabled
+	if field_farmer_sprite != null:
+		field_farmer_sprite.visible = not enabled
+	if field_interact_hint_label != null:
+		field_interact_hint_label.visible = false
+	if field_prompt_label != null:
+		field_prompt_label.visible = not enabled
+	if field_dialogue_panel != null:
+		field_dialogue_panel.visible = enabled
+		if enabled:
+			field_dialogue_panel.offset_left = 78.0
+			field_dialogue_panel.offset_right = -78.0
+			field_dialogue_panel.offset_top = -178.0
+			field_dialogue_panel.offset_bottom = -40.0
 
 
 func _make_field_sprite(sprite_name: String, actor_key: String, pose: String, size: Vector2) -> TextureRect:
@@ -799,17 +984,26 @@ func _setup_actor_sprite(actor_key: String, actor_panel: PanelContainer, fallbac
 	sprite.texture = frames[0]
 	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sprite.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	sprite.offset_top = -10.0
-	sprite.offset_bottom = 10.0
+	sprite.offset_left = 18.0
+	sprite.offset_top = 16.0
+	sprite.offset_right = -18.0
+	sprite.offset_bottom = -16.0
 	actor_panel.add_child(sprite)
 	actor_panel.move_child(sprite, 0)
 	actor_sprites[actor_key] = sprite
 	fallback_label.visible = false
+	if actor_key == "farmer":
+		_apply_enemy_actor_layout()
 
 
 func _setup_reward_icons() -> void:
+	for button: Button in [reward_sickle_button, reward_hat_button, reward_wheat_button]:
+		button.custom_minimum_size = Vector2(190.0, 72.0)
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.add_theme_font_size_override("font_size", 20)
 	_apply_button_icon(reward_sickle_button, REWARD_ICON_PATHS["sickle"])
 	_apply_button_icon(reward_hat_button, REWARD_ICON_PATHS["hat"])
 	_apply_button_icon(reward_wheat_button, REWARD_ICON_PATHS["wheat"])
@@ -821,13 +1015,13 @@ func _apply_button_icon(button: Button, path: String) -> void:
 		return
 	button.icon = texture
 	button.expand_icon = true
-	button.add_theme_constant_override("icon_max_width", 46)
+	button.add_theme_constant_override("icon_max_width", 34)
 
 
 func _load_texture(path: String) -> Texture2D:
 	if not FileAccess.file_exists(path):
 		return null
-	if path.begins_with(CARD_ART_ROOT):
+	if path.begins_with(CARD_ART_ROOT) or not FileAccess.file_exists("%s.import" % path):
 		var direct_image := Image.load_from_file(ProjectSettings.globalize_path(path))
 		if direct_image != null and not direct_image.is_empty():
 			return ImageTexture.create_from_image(direct_image)
@@ -838,20 +1032,19 @@ func _load_texture(path: String) -> Texture2D:
 	if image == null or image.is_empty():
 		return null
 	return ImageTexture.create_from_image(image)
-	return null
 
 
 func _enter_sanctum_intro() -> void:
 	state = DuelState.SANCTUM_INTRO
 	collector_intro_index = 0
 	_set_current_encounter(0)
+	_refresh_background_art()
+	_set_collector_intro_art_visible(true)
 	if field_layer != null:
-		field_layer.visible = false
-	_set_duel_ui_visible(true)
+		field_layer.visible = true
+		_set_field_layer_intro_mode(true)
+	_set_sanctum_intro_ui_visible(true)
 	_set_action_buttons_enabled(false)
-	reward_panel.visible = false
-	archive_panel.visible = false
-	continue_button.visible = true
 	continue_button.text = "继续"
 	_update_actor_pose("idle", "confess")
 	_show_collector_intro_line()
@@ -869,6 +1062,10 @@ func _advance_sanctum_intro() -> void:
 func _show_collector_intro_line() -> void:
 	var lines := _collector_intro()
 	var line := lines[clampi(collector_intro_index, 0, lines.size() - 1)]
+	if field_dialogue_panel != null:
+		field_dialogue_panel.visible = true
+	if field_dialogue_label != null:
+		field_dialogue_label.text = "[b]收藏家[/b]\n%s\n\n[color=#c7b277]Enter / Space 继续[/color]" % line
 	dialogue_label.text = "[b]收藏家[/b]\n%s" % line
 	dice_label.text = "[center][b]无声圣匣[/b]\n一具银白空壳在档案匣中醒来。收藏家的正式立绘尚未接入。[/center]"
 	intent_label.text = "开场：收藏家记录样本 | 按 空格 / 回车 或继续"
@@ -877,6 +1074,13 @@ func _show_collector_intro_line() -> void:
 
 
 func _collector_intro() -> Array[String]:
+	if failed_recoveries > 0:
+		return [
+			"你又醒了。很好，圣匣至少把失败也带回来了。",
+			"第 %d 次回收：%s。别急着解释，田野不会听解释。" % [failed_recoveries, last_failure_record],
+			"这一次记住：不要只看骰子，也要看对方下一步想做什么。",
+			"再进去。饥饿学得很快，你也必须学得更快。"
+		]
 	var raw: Array = encounter_data.get("collector_intro", collector_intro_lines)
 	var lines: Array[String] = []
 	for line: Variant in raw:
@@ -888,6 +1092,8 @@ func _collector_intro() -> Array[String]:
 
 func _enter_field_exploration() -> void:
 	state = DuelState.FIELD_EXPLORATION
+	_refresh_background_art()
+	_set_collector_intro_art_visible(false)
 	field_player_position = FIELD_PLAYER_START
 	field_player_facing = 1.0
 	field_dialogue_index = 0
@@ -895,6 +1101,7 @@ func _enter_field_exploration() -> void:
 	_set_duel_ui_visible(false)
 	if field_layer != null:
 		field_layer.visible = true
+		_set_field_layer_intro_mode(false)
 	if field_dialogue_panel != null:
 		field_dialogue_panel.visible = false
 	_set_action_buttons_enabled(false)
@@ -925,6 +1132,12 @@ func _update_field_positions() -> void:
 	field_player_sprite.scale.x = field_player_facing
 	if field_interact_hint_label != null:
 		field_interact_hint_label.position = FIELD_FARMER_POS + Vector2(-60.0, -152.0)
+	if field_farmer_sprite != null:
+		var frames := _get_actor_frames(_current_enemy_actor_key(), "mutter")
+		if frames.is_empty():
+			frames = _get_actor_frames(_current_enemy_actor_key(), "idle")
+		if not frames.is_empty():
+			field_farmer_sprite.texture = frames[0]
 
 
 func _update_field_prompt() -> void:
@@ -950,6 +1163,7 @@ func _is_near_farmer() -> bool:
 func _enter_field_dialogue() -> void:
 	state = DuelState.FIELD_DIALOGUE
 	field_dialogue_index = 0
+	continue_button.visible = false
 	if field_dialogue_panel != null:
 		field_dialogue_panel.visible = true
 	if field_prompt_label != null:
@@ -977,23 +1191,40 @@ func _set_duel_ui_visible(visible: bool) -> void:
 		node.visible = visible
 
 
+func _set_sanctum_intro_ui_visible(visible: bool) -> void:
+	for node: Control in [title_label]:
+		node.visible = visible
+	for node: Control in [state_label, player_hp_label, farmer_hp_label, intent_label, player_actor, farmer_actor, dice_panel, dialogue_panel, attack_button, defend_button, continue_button, reward_panel, archive_panel]:
+		node.visible = false
+
+
 func _enter_pre_dialogue() -> void:
 	state = DuelState.PRE_DIALOGUE
+	continue_button.visible = false
 	if field_layer != null:
-		field_layer.visible = false
-	_set_duel_ui_visible(true)
+		field_layer.visible = true
+	if field_dialogue_panel != null:
+		field_dialogue_panel.visible = true
+	if field_prompt_label != null:
+		field_prompt_label.text = "?? / ?? ??"
+	_set_collector_intro_art_visible(false)
+	_set_duel_ui_visible(false)
 	_set_action_buttons_enabled(false)
 	reward_panel.visible = false
 	archive_panel.visible = false
-	continue_button.visible = true
-	dice_label.text = "[center]%s站在%s，像一条还没执行完的命令。[/center]" % [_current_encounter_name(), _current_room_name()]
-	dialogue_label.text = _format_lines(_current_lines("pre_dialogue", pre_dialogue), _current_encounter_name())
+	continue_button.visible = false
+	if field_dialogue_label != null:
+		field_dialogue_label.text = _format_lines(_current_lines("pre_dialogue", pre_dialogue), _current_encounter_name())
 	_update_actor_pose("idle", "mutter")
 	_update_ui()
 
-
 func _enter_player_choice() -> void:
 	state = DuelState.PLAYER_CHOICE
+	if field_layer != null:
+		field_layer.visible = false
+	if field_dialogue_panel != null:
+		field_dialogue_panel.visible = false
+	_set_duel_ui_visible(true)
 	_set_action_buttons_enabled(true)
 	continue_button.visible = false
 	reward_panel.visible = false
@@ -1004,8 +1235,20 @@ func _enter_player_choice() -> void:
 	_update_ui()
 	attack_button.text = "攻击\nD20 命中 + D3"
 	defend_button.text = "防御\nD20 抵挡"
+	_refresh_card_button_texts()
 	_set_action_selection(action_selection_index)
 	_show_enemy_intent_preview()
+
+
+func _refresh_card_button_texts() -> void:
+	var attack_bonus := int(bonuses.get("sickle", 0))
+	var defend_bonus := int(bonuses.get("hat", 0))
+	attack_button.text = "攻击\n命中D20 / 伤害D3"
+	defend_button.text = "防御\n抵挡D20"
+	if attack_bonus > 0:
+		attack_button.text += "\n奖励D3 x%d" % attack_bonus
+	if defend_bonus > 0:
+		defend_button.text += "\n奖励D3 x%d" % defend_bonus
 
 
 func _choose_action(player_action: int) -> void:
@@ -1127,8 +1370,9 @@ func _roll_relevant_dice(result: Dictionary) -> void:
 		_add_roll_step(roll_steps, "我方效果 D3", result["player_effect_roll"], "effect", 3)
 	elif int(result["enemy_effect_roll"]) >= 0:
 		_add_roll_step(roll_steps, "%s效果 D3" % _current_encounter_name(), result["enemy_effect_roll"], "effect", 3)
-	if int(result["player_bonus_roll"]) >= 0:
-		_add_roll_step(roll_steps, "奖励 D3", result["player_bonus_roll"], "effect", 3)
+	var bonus_rolls: Array = result.get("player_bonus_rolls", [])
+	for i: int in range(bonus_rolls.size()):
+		_add_roll_step(roll_steps, "Bonus D3 #%d" % [i + 1], int(bonus_rolls[i]), "effect", 3)
 	for step: Dictionary in roll_steps:
 		await _roll_single_die(step["label"], int(step["value"]), step["kind"], int(step["sides"]), step.get("owner", null))
 
@@ -1454,13 +1698,14 @@ func _enter_reward_choice() -> void:
 	state = DuelState.REWARD_CHOICE
 	continue_button.visible = false
 	reward_panel.visible = true
-	archive_panel.visible = true
+	archive_panel.visible = false
 	if not archived_log:
 		archived_fragments.append(current_log_fragment.duplicate())
 		archive_fragment_index = archived_fragments.size() - 1
 		_show_log_fragment_banner()
 	archived_log = true
 	archive_label.text = _archive_panel_text()
+	_set_archive_expanded(false)
 	dice_label.text = "[center]选择一项从%s身上留下来的东西。[/center]" % _current_encounter_name()
 	dialogue_label.text = "[center]日志碎片已进入圣匣索引。A/D 切换奖励，Enter / Space 领取。[/center]"
 	_apply_reward_button_texts()
@@ -1502,11 +1747,15 @@ func _choose_reward(reward_id: String) -> void:
 	var reward_kind := String(reward.get("kind", "heal"))
 	var reward_description := String(reward.get("description", "圣匣暂时无法解释它。"))
 	if reward_kind == "attack_bonus":
-		bonuses["sickle"] = true
-		dice_label.text = "[center][b]获得：%s[/b]\n%s[/center]" % [reward_title, reward_description]
+		bonuses["sickle"] = int(bonuses.get("sickle", 0)) + 1
+		dice_label.text = "[center][b]%s[/b]
+%s
+Attack bonus D3 x%d[/center]" % [reward_title, reward_description, int(bonuses["sickle"])]
 	elif reward_kind == "defense_bonus":
-		bonuses["hat"] = true
-		dice_label.text = "[center][b]获得：%s[/b]\n%s[/center]" % [reward_title, reward_description]
+		bonuses["hat"] = int(bonuses.get("hat", 0)) + 1
+		dice_label.text = "[center][b]%s[/b]
+%s
+Defense bonus D3 x%d[/center]" % [reward_title, reward_description, int(bonuses["hat"])]
 	else:
 		var heal: int = Dice.roll_heal(rng)
 		player_max_hp += heal
@@ -1634,7 +1883,7 @@ func _step_archive_fragment(direction: int) -> void:
 
 
 func _archive_has_input_focus() -> bool:
-	return archive_panel.visible and not reward_panel.visible
+	return archive_panel.visible
 
 
 func _story_progress_bar(progress: int, total: int) -> String:
@@ -1704,8 +1953,8 @@ func _reset_run() -> void:
 	archived_log = false
 	archived_fragments.clear()
 	bonuses = {
-		"sickle": false,
-		"hat": false
+		"sickle": 0,
+		"hat": 0
 	}
 	continue_button.text = "开始决斗"
 	_enter_sanctum_intro()
@@ -1745,11 +1994,28 @@ func _set_action_buttons_enabled(enabled: bool) -> void:
 func _update_actor_pose(player_pose: String, farmer_pose: String) -> void:
 	_set_actor_pose("player", player_pose, player_pose in ["attack", "defend", "hit"])
 	_set_actor_pose("farmer", farmer_pose, farmer_pose in ["attack", "defend", "hit"])
+	_set_actor_pose(_current_enemy_actor_key(), farmer_pose, farmer_pose in ["attack", "defend", "hit"])
 	player_actor_label.text = "无韵回响\n[%s]\n\n脏银残片 / 胃纹微亮" % player_pose
 	farmer_actor_label.text = "%s\n[%s]\n\n%s / 样本 %d" % [_current_encounter_name(), farmer_pose, _current_room_name(), current_encounter_index + 1]
 
 
+func _ensure_actor_state(actor_key: String) -> void:
+	if not actor_frames.has(actor_key):
+		actor_frames[actor_key] = {}
+	if not actor_pose.has(actor_key):
+		actor_pose[actor_key] = "idle"
+	if not actor_frame_index.has(actor_key):
+		actor_frame_index[actor_key] = 0
+	if not actor_frame_time.has(actor_key):
+		actor_frame_time[actor_key] = 0.0
+	if not actor_one_shot_time.has(actor_key):
+		actor_one_shot_time[actor_key] = 0.0
+	if not actor_return_pose.has(actor_key):
+		actor_return_pose[actor_key] = "idle"
+
+
 func _set_actor_pose(actor_key: String, pose: String, one_shot: bool) -> void:
+	_ensure_actor_state(actor_key)
 	if _get_actor_frames(actor_key, pose).is_empty():
 		pose = "idle"
 	actor_pose[actor_key] = pose
@@ -1761,6 +2027,7 @@ func _set_actor_pose(actor_key: String, pose: String, one_shot: bool) -> void:
 
 
 func _update_actor_animation(actor_key: String, delta: float) -> void:
+	_ensure_actor_state(actor_key)
 	var pose: String = actor_pose.get(actor_key, "idle")
 	var frames: Array = _get_actor_frames(actor_key, pose)
 	if frames.is_empty():
@@ -1783,9 +2050,13 @@ func _update_actor_animation(actor_key: String, delta: float) -> void:
 
 
 func _apply_actor_frame(actor_key: String) -> void:
-	if not actor_sprites.has(actor_key):
+	_ensure_actor_state(actor_key)
+	var sprite_key := actor_key
+	if actor_key == _current_enemy_actor_key() and actor_sprites.has("farmer"):
+		sprite_key = "farmer"
+	if not actor_sprites.has(sprite_key):
 		return
-	var sprite: TextureRect = actor_sprites[actor_key]
+	var sprite: TextureRect = actor_sprites[sprite_key]
 	var pose: String = actor_pose.get(actor_key, "idle")
 	var frames: Array = _get_actor_frames(actor_key, pose)
 	if frames.is_empty():
