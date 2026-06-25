@@ -12,8 +12,8 @@ const FARMER_PATTERN: Array[int] = [
 const ENCOUNTER_DATA_PATH: String = "res://data/encounters/low_whispering_field.json"
 const CARD_ART_ROOT: String = "res://assets/card_demo"
 const BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_card_field_entrance.png"
-const SANCTUM_BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_silent_casket_intro.png"
-const COLLECTOR_PORTRAIT_PATH: String = "res://assets/portraits/portrait_collector_halfbody.png"
+const SANCTUM_BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_silent_casket_collector_intro.png"
+const COLLECTOR_PORTRAIT_PATH: String = CARD_ART_ROOT + "/actors/collector/source/collector_fullbody_front_20260625_alpha.png"
 const ENCOUNTER_BACKGROUND_ART_PATHS: Dictionary = {
 	"empty_stomach": CARD_ART_ROOT + "/backgrounds/bg_empty_stomach_queue.png",
 	"famine_farmer": CARD_ART_ROOT + "/backgrounds/bg_farmer_field_register.png",
@@ -813,10 +813,10 @@ func _setup_collector_intro_art() -> void:
 	collector_portrait.modulate = Color(0.92, 0.88, 0.80, 1.0)
 	collector_portrait.z_index = 2
 	collector_portrait.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	collector_portrait.offset_left = -245.0
-	collector_portrait.offset_top = -332.0
-	collector_portrait.offset_right = 245.0
-	collector_portrait.offset_bottom = 190.0
+	collector_portrait.offset_left = -170.0
+	collector_portrait.offset_top = -322.0
+	collector_portrait.offset_right = 170.0
+	collector_portrait.offset_bottom = 182.0
 	add_child(collector_portrait)
 	move_child(collector_portrait, background.get_index() + 2)
 
