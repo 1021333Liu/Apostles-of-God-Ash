@@ -13,13 +13,20 @@ func _init() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 19
 	var bonuses: Dictionary = {
-		"sickle": false,
-		"hat": false
+		"sickle": 1,
+		"hat": 1
 	}
 	for i: int in 20:
-		var player_action: int = Dice.Action.ATTACK if i % 2 == 0 else Dice.Action.DEFEND
-		var enemy_action: int = Dice.Action.DEFEND if i % 3 == 0 else Dice.Action.ATTACK
-		var result: Dictionary = Dice.resolve_exchange(player_action, enemy_action, rng, bonuses)
+		var result: Dictionary
+		match i % 4:
+			0:
+				result = Dice.resolve_player_action(Dice.Action.ATTACK, rng, bonuses)
+			1:
+				result = Dice.resolve_player_action(Dice.Action.HEAVY, rng, bonuses)
+			2:
+				result = Dice.resolve_enemy_attack(rng, bonuses, true)
+			_:
+				result = Dice.resolve_player_action(Dice.Action.ULTIMATE, rng, bonuses, true)
 		if not result.has("event") or str(result["event"]).is_empty():
 			push_error("Missing event in card duel result")
 			quit(1)
@@ -33,13 +40,7 @@ func _init() -> void:
 	await process_frame
 	demo._on_continue_pressed()
 	await process_frame
-	for i: int in 8:
-		if demo.state != demo.DuelState.PLAYER_CHOICE:
-			break
-		var action: int = Dice.Action.ATTACK if i % 2 == 0 else Dice.Action.DEFEND
-		demo._choose_action(action)
-		await process_frame
-	if demo.player_hp < 0 or demo.farmer_hp < 0:
+	if demo.player_hp < 0 or demo.enemy_hp < 0:
 		push_error("Card duel demo produced negative HP")
 		quit(1)
 		return

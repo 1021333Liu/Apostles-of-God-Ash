@@ -45,7 +45,9 @@ const DICE_ICON_PATHS: Dictionary = {
 const DICE_ROLL_STAGE_PATH: String = CARD_ART_ROOT + "/ui/dice/dice_roll_stage.png"
 const CARD_UI_PATHS: Dictionary = {
 	"attack": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
+	"heavy": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
 	"defend": CARD_ART_ROOT + "/ui/cards/card_defend_base.png",
+	"ultimate": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
 	"selected": CARD_ART_ROOT + "/ui/cards/card_selected_frame.png",
 	"hover": CARD_ART_ROOT + "/ui/cards/card_hover_frame.png"
 }
@@ -61,11 +63,11 @@ const ACTOR_ACTION_ALIASES: Dictionary = {
 	},
 	"farmer": {
 		"idle": ["idle", "field_idle"],
-		"mutter": ["idle", "card_mutter", "field_mutter", "mutter"],
-		"attack": ["card_attack", "attack"],
-		"defend": ["card_defend", "defend"],
-		"hit": ["card_hurt", "hit"],
-		"confess": ["card_confess", "confess"]
+		"mutter": ["idle"],
+		"attack": ["idle"],
+		"defend": ["idle"],
+		"hit": ["idle"],
+		"confess": ["idle"]
 	}
 }
 const FIELD_PLAYER_START: Vector2 = Vector2(300.0, 540.0)
@@ -82,6 +84,8 @@ var player_hp: int = PLAYER_MAX_HP_START
 var enemy_hp: int = FARMER_MAX_HP
 var enemy_max_hp: int = FARMER_MAX_HP
 var turn_index: int = 0
+var player_attack_count: int = 0
+var player_guard_charged: bool = false
 var selected_reward: String = ""
 var action_selection_index: int = 0
 var reward_selection_index: int = 0
@@ -135,6 +139,8 @@ var dice_roll_stage: PanelContainer
 var dice_roll_icon: TextureRect
 var dice_roll_label: Label
 var dice_roll_icon_tween: Tween
+var heavy_button: Button
+var ultimate_button: Button
 var result_banner: PanelContainer
 var result_banner_label: Label
 var action_card_overlays: Dictionary = {}
@@ -223,10 +229,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_update_actor_animation("player", delta)
-	_update_actor_animation("farmer", delta)
 	var enemy_actor_key := _current_enemy_actor_key()
-	if enemy_actor_key != "farmer":
-		_update_actor_animation(enemy_actor_key, delta)
+	_update_actor_animation(enemy_actor_key, delta)
 	if state == DuelState.FIELD_EXPLORATION and not _archive_has_input_focus():
 		_update_field_exploration(delta)
 
@@ -465,6 +469,13 @@ func _build_theme() -> void:
 	for button: Button in [attack_button, defend_button, reward_sickle_button, reward_hat_button, reward_wheat_button]:
 		button.toggle_mode = true
 	_setup_action_card_buttons()
+	for button: Button in [heavy_button, ultimate_button]:
+		button.add_theme_stylebox_override("normal", button_style)
+		button.add_theme_stylebox_override("hover", button_hover_style)
+		button.add_theme_stylebox_override("pressed", button_pressed_style)
+		button.add_theme_stylebox_override("focus", button_hover_style)
+		button.focus_mode = Control.FOCUS_ALL
+		button.toggle_mode = true
 
 	for label: Label in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor_label, farmer_actor_label]:
 		label.add_theme_color_override("font_color", Color(0.92, 0.86, 0.73, 1.0))
@@ -591,6 +602,9 @@ func _set_archive_expanded(expanded: bool) -> void:
 func _enter_archive_overlay() -> void:
 	for node: Control in [player_actor, farmer_actor, dice_panel, dialogue_panel, attack_button, defend_button, continue_button, reward_panel]:
 		node.visible = false
+	for node: Control in [heavy_button, ultimate_button]:
+		if node != null:
+			node.visible = false
 	if field_layer != null:
 		field_layer.visible = false
 
@@ -1023,8 +1037,23 @@ func _setup_reward_icons() -> void:
 
 
 func _setup_action_card_buttons() -> void:
+	var bottom_row := attack_button.get_parent()
+	heavy_button = Button.new()
+	heavy_button.name = "HeavyButton"
+	heavy_button.text = ""
+	heavy_button.pressed.connect(func() -> void: _choose_action(Dice.Action.HEAVY))
+	bottom_row.add_child(heavy_button)
+	bottom_row.move_child(heavy_button, attack_button.get_index() + 1)
+	ultimate_button = Button.new()
+	ultimate_button.name = "UltimateButton"
+	ultimate_button.text = ""
+	ultimate_button.pressed.connect(func() -> void: _choose_action(Dice.Action.ULTIMATE))
+	bottom_row.add_child(ultimate_button)
+	bottom_row.move_child(ultimate_button, defend_button.get_index() + 1)
 	_configure_action_card_button(attack_button, "attack")
+	_configure_action_card_button(heavy_button, "heavy")
 	_configure_action_card_button(defend_button, "defend")
+	_configure_action_card_button(ultimate_button, "ultimate")
 
 
 func _configure_action_card_button(button: Button, card_key: String) -> void:
@@ -1304,6 +1333,9 @@ func _show_field_dialogue_line() -> void:
 func _set_duel_ui_visible(visible: bool) -> void:
 	for node: Control in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor, farmer_actor, dialogue_panel, dice_panel, attack_button, defend_button, continue_button, reward_panel, archive_panel]:
 		node.visible = visible
+	for node: Control in [heavy_button, ultimate_button]:
+		if node != null:
+			node.visible = visible
 
 
 func _set_sanctum_intro_ui_visible(visible: bool) -> void:
@@ -1311,6 +1343,9 @@ func _set_sanctum_intro_ui_visible(visible: bool) -> void:
 		node.visible = visible
 	for node: Control in [state_label, player_hp_label, farmer_hp_label, intent_label, player_actor, farmer_actor, dice_panel, dialogue_panel, attack_button, defend_button, continue_button, reward_panel, archive_panel]:
 		node.visible = false
+	for node: Control in [heavy_button, ultimate_button]:
+		if node != null:
+			node.visible = false
 
 
 func _enter_pre_dialogue() -> void:
@@ -1348,24 +1383,27 @@ func _enter_player_choice() -> void:
 	dice_label.text = "[center]选择本回合行动。[/center]"
 	_update_actor_pose("idle", "idle")
 	_update_ui()
-	attack_button.text = "攻击\nD20 命中 + D3"
-	defend_button.text = "防御\nD20 抵挡"
 	_refresh_card_button_texts()
 	_set_action_selection(action_selection_index)
-	_show_enemy_intent_preview()
+	_hide_action_bubbles()
 
 
 func _refresh_card_button_texts() -> void:
 	var attack_bonus := int(bonuses.get("sickle", 0))
 	var defend_bonus := int(bonuses.get("hat", 0))
-	var attack_text := "攻击\n命中D20 / 伤害D3"
-	var defend_text := "防御\n抵挡D20"
+	var attack_text := "攻击\nD20 > 防御\n命中掷 D3"
+	var heavy_text := "重击\n高出5点\nD3 x2"
+	var defend_text := "蓄防\n下次受击\n防御投2取高"
+	var ultimate_text := "大招\n%s\nD6直伤" % ("可用" if _ultimate_ready() else "%d/3" % player_attack_count)
 	if attack_bonus > 0:
 		attack_text += "\n奖励D3 x%d" % attack_bonus
+		heavy_text += "\n奖励D3 x%d" % attack_bonus
 	if defend_bonus > 0:
 		defend_text += "\n奖励D3 x%d" % defend_bonus
 	_set_action_card_text(attack_button, attack_text)
+	_set_action_card_text(heavy_button, heavy_text)
 	_set_action_card_text(defend_button, defend_text)
+	_set_action_card_text(ultimate_button, ultimate_text)
 
 
 func _choose_action(player_action: int) -> void:
@@ -1376,31 +1414,55 @@ func _choose_action(player_action: int) -> void:
 	_set_action_buttons_enabled(false)
 	attack_button.button_pressed = false
 	defend_button.button_pressed = false
-	var enemy_action: int = _current_enemy_action()
-	var result: Dictionary = Dice.resolve_exchange(player_action, enemy_action, rng, bonuses)
+	var result: Dictionary
+	if _is_enemy_turn():
+		result = Dice.resolve_enemy_attack(rng, bonuses, player_guard_charged)
+		player_guard_charged = false
+	else:
+		result = Dice.resolve_player_action(player_action, rng, bonuses, _ultimate_ready())
+		if player_action in [Dice.Action.ATTACK, Dice.Action.HEAVY]:
+			player_attack_count += 1
+		elif player_action == Dice.Action.DEFEND:
+			player_guard_charged = true
+		elif player_action == Dice.Action.ULTIMATE and int(result.get("enemy_hp_delta", 0)) < 0:
+			player_attack_count = 0
 	await _play_combat_presentation(result)
 	_finish_resolved_action(result)
 
 
 func _set_action_selection(index: int) -> void:
-	action_selection_index = wrapi(index, 0, 2)
-	attack_button.button_pressed = action_selection_index == 0
-	defend_button.button_pressed = action_selection_index == 1
-	_set_action_card_selected("attack", action_selection_index == 0)
-	_set_action_card_selected("defend", action_selection_index == 1)
-	if action_selection_index == 0:
-		attack_button.grab_focus()
-		dice_label.text = "[center][b]攻击牌[/b]\nA/D 切换，Enter / Space 打出。\n命中 D20，命中后掷 D3 伤害。[/center]"
-	else:
-		defend_button.grab_focus()
-		dice_label.text = "[center][b]防御牌[/b]\nA/D 切换，Enter / Space 打出。\n防御 D20，完美防御或高出 5 点触发反弹。[/center]"
+	action_selection_index = wrapi(index, 0, 4)
+	if _is_enemy_turn():
+		action_selection_index = 2
+	var buttons: Array[Button] = [attack_button, heavy_button, defend_button, ultimate_button]
+	var keys: Array[String] = ["attack", "heavy", "defend", "ultimate"]
+	for i: int in range(buttons.size()):
+		buttons[i].button_pressed = action_selection_index == i
+		_set_action_card_selected(keys[i], action_selection_index == i)
+	buttons[action_selection_index].grab_focus()
+	if _is_enemy_turn():
+		dice_label.text = "[center][b]敌方攻击轮[/b]\nEnter / Space 结算自动防御。\n%s[/center]" % ("蓄防已就绪：防御骰投两次取最高。" if player_guard_charged else "未蓄防：防御骰投一次。")
+		return
+	match action_selection_index:
+		0:
+			dice_label.text = "[center][b]攻击[/b]\nD20 对抗敌方防御，成功后掷 D3 伤害。[/center]"
+		1:
+			dice_label.text = "[center][b]重击[/b]\nD20 必须比敌方防御高 5 点，命中后 D3 伤害翻倍。[/center]"
+		2:
+			dice_label.text = "[center][b]蓄防[/b]\n本轮不攻击。下一次敌方攻击时，防御 D20 投两次取最高。[/center]"
+		_:
+			dice_label.text = "[center][b]大招[/b]\n攻击累计 3 次后可用。无视防御，造成 D6 直伤。当前 %d/3。[/center]" % player_attack_count
 
 
 func _confirm_action_selection() -> void:
-	if action_selection_index == 0:
-		_choose_action(Dice.Action.ATTACK)
-	else:
+	if _is_enemy_turn():
 		_choose_action(Dice.Action.DEFEND)
+		return
+	if action_selection_index == 3 and not _ultimate_ready():
+		_set_action_selection(action_selection_index)
+		return
+	var actions: Array[int] = [Dice.Action.ATTACK, Dice.Action.HEAVY, Dice.Action.DEFEND, Dice.Action.ULTIMATE]
+	_choose_action(actions[action_selection_index])
 
 
 func _finish_resolved_action(result: Dictionary) -> void:
@@ -1415,14 +1477,15 @@ func _finish_resolved_action(result: Dictionary) -> void:
 	else:
 		state = DuelState.PLAYER_CHOICE
 		_set_action_buttons_enabled(true)
+		_refresh_card_button_texts()
+		_set_action_selection(action_selection_index)
 		_update_ui()
-		_show_enemy_intent_preview()
 
 
 func _play_combat_presentation(result: Dictionary) -> void:
 	var player_action: int = result["player_action"]
 	var enemy_action: int = result["enemy_action"]
-	dialogue_label.text = "[center]双方亮出行动。[/center]"
+	dialogue_label.text = "[center]%s[/center]" % _turn_phase_text()
 	dice_label.text = "[center]骰子正在落下。[/center]"
 	_show_action_bubbles(player_action, enemy_action)
 	_update_actor_pose("idle", "mutter")
@@ -1454,16 +1517,24 @@ func _show_enemy_intent_preview() -> void:
 
 
 func _configure_action_bubble(bubble: PanelContainer, action: int) -> void:
-	var action_key := "attack" if action == Dice.Action.ATTACK else "defend"
+	var action_key := "defend" if action == Dice.Action.DEFEND else "attack"
 	var bg := bubble.find_child("BubbleArt", true, false) as TextureRect
 	if bg != null:
 		bg.texture = _load_texture(INTENT_ICON_PATHS[action_key])
 	var icon := bubble.find_child("Icon", true, false) as TextureRect
 	if icon != null:
-		icon.texture = _load_texture(DICE_ICON_PATHS["hit" if action == Dice.Action.ATTACK else "defense"])
+		icon.texture = _load_texture(DICE_ICON_PATHS["defense" if action == Dice.Action.DEFEND else "hit"])
 	var label := bubble.find_child("Label", true, false) as Label
 	if label != null:
-		label.text = "ATTACK" if action == Dice.Action.ATTACK else "GUARD"
+		match action:
+			Dice.Action.HEAVY:
+				label.text = "HEAVY"
+			Dice.Action.ULTIMATE:
+				label.text = "BURST"
+			Dice.Action.DEFEND:
+				label.text = "GUARD"
+			_:
+				label.text = "ATTACK"
 
 
 func _hide_action_bubbles() -> void:
@@ -1477,18 +1548,19 @@ func _roll_relevant_dice(result: Dictionary) -> void:
 	var roll_steps: Array[Dictionary] = []
 	var player_action: int = result["player_action"]
 	var enemy_action: int = result["enemy_action"]
-	if player_action == Dice.Action.ATTACK:
+	if player_action in [Dice.Action.ATTACK, Dice.Action.HEAVY]:
 		_add_roll_step(roll_steps, "我方命中 D20", result["player_hit_roll"], "hit", 20, player_actor)
-	else:
+	elif player_action == Dice.Action.DEFEND:
 		_add_roll_step(roll_steps, "我方防御 D20", result["player_defense_roll"], "defense", 20, player_actor)
+		_add_roll_step(roll_steps, "我方蓄防 D20", result["player_defense_roll_2"], "defense", 20, player_actor)
 	if enemy_action == Dice.Action.ATTACK:
 		_add_roll_step(roll_steps, "%s命中 D20" % _current_encounter_name(), result["enemy_hit_roll"], "hit", 20, farmer_actor)
-	else:
+	elif enemy_action == Dice.Action.DEFEND:
 		_add_roll_step(roll_steps, "%s防御 D20" % _current_encounter_name(), result["enemy_defense_roll"], "defense", 20, farmer_actor)
 	if int(result["player_effect_roll"]) >= 0:
-		_add_roll_step(roll_steps, "我方效果 D3", result["player_effect_roll"], "effect", 3)
+		_add_roll_step(roll_steps, "我方效果 D%d" % int(result.get("player_effect_sides", 3)), result["player_effect_roll"], "effect", int(result.get("player_effect_sides", 3)))
 	elif int(result["enemy_effect_roll"]) >= 0:
-		_add_roll_step(roll_steps, "%s效果 D3" % _current_encounter_name(), result["enemy_effect_roll"], "effect", 3)
+		_add_roll_step(roll_steps, "%s效果 D%d" % [_current_encounter_name(), int(result.get("enemy_effect_sides", 3))], result["enemy_effect_roll"], "effect", int(result.get("enemy_effect_sides", 3)))
 	var bonus_rolls: Array = result.get("player_bonus_rolls", [])
 	for i: int in range(bonus_rolls.size()):
 		_add_roll_step(roll_steps, "Bonus D3 #%d" % [i + 1], int(bonus_rolls[i]), "effect", 3)
@@ -1575,15 +1647,14 @@ func _roll_result_flash_color(final_value: int, sides: int) -> Color:
 
 
 func _play_result_motion(result: Dictionary) -> void:
-	var player_pose: String = "attack" if result["player_action"] == Dice.Action.ATTACK else "defend"
-	var farmer_pose: String = "attack" if result["enemy_action"] == Dice.Action.ATTACK else "defend"
+	var player_pose: String = _pose_for_action(int(result["player_action"]))
+	var farmer_pose: String = _pose_for_action(int(result["enemy_action"]))
 	if int(result["enemy_hp_delta"]) < 0:
 		farmer_pose = "hit"
 	if int(result["player_hp_delta"]) < 0:
 		player_pose = "hit"
 	_update_actor_pose(player_pose, farmer_pose)
 	_show_hp_delta_popups(result)
-	_flash_result_actor_panels(result)
 	_nudge_actor_panels(player_pose, farmer_pose)
 
 
@@ -1784,11 +1855,12 @@ func _show_result(result: Dictionary) -> void:
 	var player_action_name: String = _action_name(result["player_action"])
 	var enemy_action_name: String = _action_name(result["enemy_action"])
 	var lines: Array[String] = []
-	lines.append("[b]本回合[/b] 你：%s / %s：%s" % [player_action_name, _current_encounter_name(), enemy_action_name])
+	lines.append("[b]%s[/b] 你：%s / %s：%s" % [_turn_phase_text(), player_action_name, _current_encounter_name(), enemy_action_name])
 	lines.append(_combat_feedback_line(result))
 	lines.append("[b]%s[/b]：%s" % [result["event"], result["summary"]])
 	_append_roll(lines, "你的攻击骰", result["player_hit_roll"])
 	_append_roll(lines, "你的防御骰", result["player_defense_roll"])
+	_append_roll(lines, "你的蓄防骰", result["player_defense_roll_2"])
 	_append_roll(lines, "你的效果骰/伤害", result["player_effect_roll"])
 	_append_roll(lines, "你的奖励骰", result["player_bonus_roll"])
 	_append_roll(lines, "%s攻击骰" % _current_encounter_name(), result["enemy_hit_roll"])
@@ -1801,13 +1873,23 @@ func _show_result(result: Dictionary) -> void:
 	var farmer_bark: String = String(barks.get("defend" if result["enemy_action"] == Dice.Action.DEFEND else "attack", "……"))
 	dialogue_label.text = "[b]%s[/b]\n%s" % [_current_encounter_name(), farmer_bark]
 
-	var player_pose: String = "attack" if result["player_action"] == Dice.Action.ATTACK else "defend"
-	var farmer_pose: String = "attack" if result["enemy_action"] == Dice.Action.ATTACK else "defend"
+	var player_pose: String = _pose_for_action(int(result["player_action"]))
+	var farmer_pose: String = _pose_for_action(int(result["enemy_action"]))
 	if int(result["enemy_hp_delta"]) < 0:
 		farmer_pose = "hit"
 	if int(result["player_hp_delta"]) < 0:
 		player_pose = "hit"
 	_update_actor_pose(player_pose, farmer_pose)
+
+
+func _pose_for_action(action: int) -> String:
+	match action:
+		Dice.Action.ATTACK, Dice.Action.HEAVY, Dice.Action.ULTIMATE:
+			return "attack"
+		Dice.Action.DEFEND:
+			return "defend"
+		_:
+			return "idle"
 
 
 func _combat_feedback_line(result: Dictionary) -> String:
@@ -2095,6 +2177,8 @@ func _reset_run() -> void:
 	current_encounter_index = 0
 	_set_current_encounter(0)
 	turn_index = 0
+	player_attack_count = 0
+	player_guard_charged = false
 	selected_reward = ""
 	action_selection_index = 0
 	reward_selection_index = 0
@@ -2126,7 +2210,7 @@ func _update_ui() -> void:
 		DuelState.FIELD_DIALOGUE, DuelState.PRE_DIALOGUE:
 			intent_label.text = "对话失败将进入卡牌骰子决斗"
 		DuelState.PLAYER_CHOICE, DuelState.RESOLVING:
-			intent_label.text = "%s意图：%s | Turn %d | Next %s" % [_current_encounter_name(), _action_name(_current_enemy_action()), turn_index + 1, _upcoming_pattern_text()]
+			intent_label.text = "%s | %s | 大招 %d/3" % [_current_encounter_name(), _turn_phase_text(), mini(player_attack_count, 3)]
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
 	var archive_hint := "P 返回" if archive_panel.visible else "P 圣匣日志"
@@ -2135,13 +2219,29 @@ func _update_ui() -> void:
 
 
 func _set_action_buttons_enabled(enabled: bool) -> void:
-	attack_button.disabled = not enabled
+	var enemy_turn := _is_enemy_turn()
+	attack_button.disabled = not enabled or enemy_turn
+	heavy_button.disabled = not enabled or enemy_turn
 	defend_button.disabled = not enabled
+	ultimate_button.disabled = not enabled or enemy_turn or not _ultimate_ready()
+
+
+func _is_enemy_turn() -> bool:
+	return turn_index % 2 == 1
+
+
+func _ultimate_ready() -> bool:
+	return player_attack_count >= 3
+
+
+func _turn_phase_text() -> String:
+	if _is_enemy_turn():
+		return "敌方攻击轮：自动投防御骰%s" % (" x2取高" if player_guard_charged else "")
+	return "我方行动轮：攻击 / 重击 / 蓄防 / 大招"
 
 
 func _update_actor_pose(player_pose: String, farmer_pose: String) -> void:
 	_set_actor_pose("player", player_pose, player_pose in ["attack", "defend", "hit"])
-	_set_actor_pose("farmer", farmer_pose, farmer_pose in ["attack", "defend", "hit"])
 	_set_actor_pose(_current_enemy_actor_key(), farmer_pose, farmer_pose in ["attack", "defend", "hit"])
 	player_actor_label.text = "无韵回响\n[%s]\n\n脏银残片 / 胃纹微亮" % player_pose
 	farmer_actor_label.text = "%s\n[%s]\n\n%s / 样本 %d" % [_current_encounter_name(), farmer_pose, _current_room_name(), current_encounter_index + 1]
@@ -2274,7 +2374,11 @@ func _action_name(action: int) -> String:
 		Dice.Action.ATTACK:
 			return "攻击"
 		Dice.Action.DEFEND:
-			return "防御"
+			return "蓄防"
+		Dice.Action.HEAVY:
+			return "重击"
+		Dice.Action.ULTIMATE:
+			return "大招"
 		_:
 			return "未知"
 
