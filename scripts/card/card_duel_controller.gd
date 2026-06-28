@@ -134,6 +134,7 @@ var field_dialogue_label: RichTextLabel
 var dice_roll_stage: PanelContainer
 var dice_roll_icon: TextureRect
 var dice_roll_label: Label
+var dice_roll_icon_tween: Tween
 var result_banner: PanelContainer
 var result_banner_label: Label
 var action_card_overlays: Dictionary = {}
@@ -680,9 +681,10 @@ func _setup_combat_presentation_layer() -> void:
 	dice_margin.add_child(dice_box)
 
 	dice_roll_icon = TextureRect.new()
-	dice_roll_icon.custom_minimum_size = Vector2(50.0, 50.0)
+	dice_roll_icon.custom_minimum_size = Vector2(70.0, 70.0)
 	dice_roll_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	dice_roll_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dice_roll_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dice_box.add_child(dice_roll_icon)
 
 	dice_roll_label = Label.new()
@@ -1506,17 +1508,46 @@ func _roll_single_die(label: String, final_value: int, kind: String, sides: int,
 		dice_roll_icon.texture = _load_texture(DICE_ICON_PATHS.get(kind, DICE_ICON_PATHS["hit"]))
 	dice_roll_stage.visible = true
 	dice_roll_stage.scale = Vector2(0.88, 0.88)
+	if dice_roll_icon != null:
+		dice_roll_icon.rotation = 0.0
+		dice_roll_icon.scale = Vector2.ONE
+		dice_roll_icon.pivot_offset = dice_roll_icon.custom_minimum_size * 0.5
 	_pop_node(dice_roll_stage)
 	for i: int in range(8):
-		var face := randi_range(0, sides)
+		var face := _roll_tick_face(sides, final_value, i)
 		dice_roll_label.text = "%s\n%d" % [label, face]
+		if dice_roll_icon != null:
+			_tumble_die_icon(i)
 		await get_tree().create_timer(0.055 + float(i) * 0.012).timeout
 	dice_roll_label.text = _roll_result_label(label, final_value, sides)
+	if dice_roll_icon != null:
+		if dice_roll_icon_tween != null:
+			dice_roll_icon_tween.kill()
+		dice_roll_icon.rotation = 0.0
+		dice_roll_icon.scale = Vector2.ONE
 	_flash_node(dice_roll_stage, _roll_result_flash_color(final_value, sides))
 	if owner != null and sides == 20 and (final_value == 20 or final_value == 0):
 		_flash_actor_panel(owner, _roll_result_flash_color(final_value, sides))
 	await get_tree().create_timer(0.42).timeout
 	dice_roll_stage.visible = false
+
+
+func _roll_tick_face(sides: int, final_value: int, tick_index: int) -> int:
+	if tick_index >= 7:
+		return final_value
+	return randi_range(0, sides)
+
+
+func _tumble_die_icon(tick_index: int) -> void:
+	if dice_roll_icon_tween != null:
+		dice_roll_icon_tween.kill()
+	var angle := deg_to_rad(float(45 + (tick_index % 4) * 28))
+	var scale_peak := 1.12 if tick_index % 2 == 0 else 0.94
+	dice_roll_icon_tween = create_tween().set_parallel(true)
+	dice_roll_icon_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	dice_roll_icon_tween.tween_property(dice_roll_icon, "rotation", angle, 0.045)
+	dice_roll_icon_tween.tween_property(dice_roll_icon, "scale", Vector2(scale_peak, scale_peak), 0.045)
+	dice_roll_icon_tween.chain().tween_property(dice_roll_icon, "scale", Vector2.ONE, 0.035)
 
 
 func _roll_result_label(label: String, final_value: int, sides: int) -> String:
