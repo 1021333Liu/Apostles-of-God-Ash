@@ -2,7 +2,9 @@
 
 给金荣俊 / 美术处理线程：
 
-这份文档是当前 playable 版本的美术同步单。请先按这里分类整理，不要再主攻场景图；场景目前够用。接下来最影响试玩观感的是：收藏家开场立绘、主角与敌人动作、四张行动牌、骰子、投掷舞台和核心 FX。
+这份文档是当前 playable 版本的美术同步单。请先按这里分类整理，不要再主攻场景图；场景目前够用。接下来最影响试玩观感的是：收藏家开场立绘、主角与敌人动作、技能栏图标、掉落物 / 道具栏图标、骰子、投掷舞台和核心 FX。
+
+2026-06-28 修正：复杂大卡牌暂缓，优先做底部技能栏图标和道具栏掉落物图标。具体见 `ART_UI_ICON_AND_LOOT_REQUEST_20260628.md`。
 
 ## 当前确认采用的资产
 
@@ -101,16 +103,16 @@ assets/card_demo/actors/boss_barn_king/source/fullbody_clean.png
 assets/card_demo/actors/boss_barn_king/idle/idle_0.png ... idle_3.png
 ```
 
-### 4. 当前卡牌 UI
+### 4. 当前行动 UI
 
-目前游戏机制已经不是单纯“攻击 / 防御按钮”，而是行动牌：
+目前游戏机制已经不是单纯“攻击 / 防御按钮”。UI 方向暂定优先做技能栏图标，而不是复杂大卡牌：
 
 - 攻击
 - 重击
 - 蓄防
 - 大招
 
-已有基础牌面：
+已有基础牌面可作为旧参考，但不作为本轮主任务：
 
 ```text
 assets/card_demo/ui/cards/card_attack_base.png
@@ -124,8 +126,9 @@ assets/card_demo/cards/card_basic_defense_art.png
 问题：
 
 - 只有攻击 / 防御方向，不够支撑当前机制。
-- 需要新增重击牌和大招牌。
-- 卡牌不要烘焙大段文字，Godot 会渲染中文标题、数值和规则。
+- 本轮优先新增技能栏 icon：攻击、重击、蓄防、大招。
+- 复杂卡牌大图可以暂缓。
+- UI 图不要烘焙大段中文规则，Godot 会渲染中文标题、数值和规则。
 
 ### 5. 当前骰子与投掷舞台
 
@@ -209,16 +212,16 @@ assets/card_demo/actors/boss_barn_king/
 - 空腹者不是普通僵尸，要有空碗、等粮、被等待掏空的状态。
 - 农夫是制度执行者和受害者混合，不是普通稻田怪。
 
-4. 四张行动牌
+4. 技能栏图标，复杂卡牌暂缓
 
 ```text
-assets/card_demo/ui/cards/card_attack_base.png
-assets/card_demo/ui/cards/card_heavy_base.png
-assets/card_demo/ui/cards/card_guard_base.png
-assets/card_demo/ui/cards/card_ultimate_base.png
-assets/card_demo/ui/cards/card_hover_frame.png
-assets/card_demo/ui/cards/card_selected_frame.png
-assets/card_demo/ui/cards/card_disabled_overlay.png
+assets/card_demo/ui/skills/skill_attack.png
+assets/card_demo/ui/skills/skill_heavy_attack.png
+assets/card_demo/ui/skills/skill_guard_charge.png
+assets/card_demo/ui/skills/skill_ultimate.png
+assets/card_demo/ui/skills/skill_locked_overlay.png
+assets/card_demo/ui/skills/skill_selected_frame.png
+assets/card_demo/ui/skills/skill_cooldown_overlay.png
 ```
 
 规则对应：
@@ -227,6 +230,21 @@ assets/card_demo/ui/cards/card_disabled_overlay.png
 - 重击：攻击骰必须比敌方防御骰高 5 点，成功后 D3 伤害翻倍。
 - 蓄防：本回合不攻击；下一次敌人攻击时，玩家防御 D20 投两次取最高。
 - 大招：攻击 / 重击累计 3 次后可用；D6 直伤，无视敌方防御。
+
+4.5 掉落物 / 道具栏图标
+
+```text
+assets/card_demo/ui/items/item_empty_bowl_cracked.png
+assets/card_demo/ui/items/item_farmer_sickle.png
+assets/card_demo/ui/items/item_farmer_hat.png
+assets/card_demo/ui/items/item_blood_wheat_seed.png
+assets/card_demo/ui/items/item_register_tag.png
+assets/card_demo/ui/items/item_scarecrow_straw_bundle.png
+assets/card_demo/ui/items/item_barn_key_rusty.png
+assets/card_demo/ui/items/item_god_ash_fragment.png
+assets/card_demo/ui/items/item_stomach_seal_wax.png
+assets/card_demo/ui/items/item_old_cloth_strip.png
+```
 
 5. 骰子与投掷舞台
 
@@ -267,7 +285,8 @@ assets/card_demo/fx/fx_reflect/fx_reflect_0.png ... fx_reflect_5.png
 - 角色动作帧：`768x768 RGBA PNG`，透明背景。
 - 脚底锚点：`x=384, y=720`。
 - 角色帧必须 body-only；刀光、尘土、骰子、文字、命中特效不要画进角色 body 帧。
-- 卡牌：`512x768 RGBA PNG`，不要烘焙长文字。
+- 技能栏图标：`256x256 RGBA PNG`，不要烘焙长文字。
+- 掉落物 / 道具栏图标：`256x256 RGBA PNG`，透明背景，单物件为主。
 - 骰子：单骰 `512x512 RGBA PNG`。
 - 投掷舞台：`768x384` 或 `640x320 RGBA PNG`。
 - FX：`512x512` 或 `768x768 RGBA PNG` 序列帧。
@@ -295,4 +314,3 @@ docs/planning/32_NANOBANANA_CARD_COMBAT_ART_PROMPTS.md
 ```
 
 这里已经包含 nanobanana / image-to-image 的中文和英文提示词、负面提示词、文件命名、QC 和 P0/P1 清单。
-
