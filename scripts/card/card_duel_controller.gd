@@ -23,10 +23,10 @@ const ENCOUNTER_BACKGROUND_ART_PATHS: Dictionary = {
 const PLAYER_ART_ROOT: String = CARD_ART_ROOT + "/actors/player_echo"
 const FARMER_ART_ROOT: String = CARD_ART_ROOT + "/actors/enemy_farmer"
 const ENEMY_ACTOR_SOURCES: Dictionary = {
-	"empty": {"root": "res://assets/sprites/characters/enemies", "prefix": "enemy_empty"},
+	"empty": {"root": CARD_ART_ROOT + "/actors/enemy_empty", "prefix": "enemy_empty"},
 	"farmer": {"root": FARMER_ART_ROOT, "prefix": "actor_enemy_farmer"},
-	"scarecrow": {"root": "res://assets/sprites/runtime_concepts/enemies", "prefix": "enemy_scarecrow"},
-	"barn_king": {"root": "res://assets/sprites/characters/bosses", "prefix": "boss_barn_king_phase1"}
+	"scarecrow": {"root": CARD_ART_ROOT + "/actors/enemy_scarecrow", "prefix": "enemy_scarecrow"},
+	"barn_king": {"root": CARD_ART_ROOT + "/actors/boss_barn_king", "prefix": "boss_barn_king"}
 }
 const REWARD_ICON_PATHS: Dictionary = {
 	"sickle": CARD_ART_ROOT + "/ui/rewards/reward_farmer_sickle.png",
@@ -38,11 +38,17 @@ const INTENT_ICON_PATHS: Dictionary = {
 	"defend": CARD_ART_ROOT + "/ui/intent/bubble_defend.png"
 }
 const DICE_ICON_PATHS: Dictionary = {
-	"hit": CARD_ART_ROOT + "/ui/dice/ui_die_hit_d20.png",
-	"defense": CARD_ART_ROOT + "/ui/dice/ui_die_defense_d20.png",
-	"effect": CARD_ART_ROOT + "/ui/dice/ui_die_effect_d3.png"
+	"hit": CARD_ART_ROOT + "/ui/dice/d20_attack_die.png",
+	"defense": CARD_ART_ROOT + "/ui/dice/d20_defense_die.png",
+	"effect": CARD_ART_ROOT + "/ui/dice/d3_effect_die.png"
 }
 const DICE_ROLL_STAGE_PATH: String = CARD_ART_ROOT + "/ui/dice/dice_roll_stage.png"
+const CARD_UI_PATHS: Dictionary = {
+	"attack": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
+	"defend": CARD_ART_ROOT + "/ui/cards/card_defend_base.png",
+	"selected": CARD_ART_ROOT + "/ui/cards/card_selected_frame.png",
+	"hover": CARD_ART_ROOT + "/ui/cards/card_hover_frame.png"
+}
 const PLAYER_POSES: Array[String] = ["idle", "attack", "defend", "hit", "victory"]
 const FARMER_POSES: Array[String] = ["idle", "mutter", "attack", "defend", "hit", "confess"]
 const ACTOR_ACTION_ALIASES: Dictionary = {
@@ -54,8 +60,8 @@ const ACTOR_ACTION_ALIASES: Dictionary = {
 		"victory": ["card_win", "victory"]
 	},
 	"farmer": {
-		"idle": ["field_idle", "idle"],
-		"mutter": ["card_mutter", "field_mutter", "mutter"],
+		"idle": ["idle", "field_idle"],
+		"mutter": ["idle", "card_mutter", "field_mutter", "mutter"],
 		"attack": ["card_attack", "attack"],
 		"defend": ["card_defend", "defend"],
 		"hit": ["card_hurt", "hit"],
@@ -130,6 +136,7 @@ var dice_roll_icon: TextureRect
 var dice_roll_label: Label
 var result_banner: PanelContainer
 var result_banner_label: Label
+var action_card_overlays: Dictionary = {}
 var player_bubble: PanelContainer
 var farmer_bubble: PanelContainer
 var field_player_position: Vector2 = FIELD_PLAYER_START
@@ -456,6 +463,7 @@ func _build_theme() -> void:
 		button.focus_mode = Control.FOCUS_ALL
 	for button: Button in [attack_button, defend_button, reward_sickle_button, reward_hat_button, reward_wheat_button]:
 		button.toggle_mode = true
+	_setup_action_card_buttons()
 
 	for label: Label in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor_label, farmer_actor_label]:
 		label.add_theme_color_override("font_color", Color(0.92, 0.86, 0.73, 1.0))
@@ -962,6 +970,9 @@ func _load_actor_frame_sequence(root_path: String, file_prefix: String, action_n
 		var path := "%s/%s_%d.png" % [root_path, action_name, frame_index]
 		var texture := _load_texture(path)
 		if texture == null:
+			path = "%s/%s/%s_%d.png" % [root_path, action_name, action_name, frame_index]
+			texture = _load_texture(path)
+		if texture == null:
 			path = "%s/%s_%s_%d.png" % [root_path, file_prefix, action_name, frame_index]
 			texture = _load_texture(path)
 		if texture == null:
@@ -1007,6 +1018,108 @@ func _setup_reward_icons() -> void:
 	_apply_button_icon(reward_sickle_button, REWARD_ICON_PATHS["sickle"])
 	_apply_button_icon(reward_hat_button, REWARD_ICON_PATHS["hat"])
 	_apply_button_icon(reward_wheat_button, REWARD_ICON_PATHS["wheat"])
+
+
+func _setup_action_card_buttons() -> void:
+	_configure_action_card_button(attack_button, "attack")
+	_configure_action_card_button(defend_button, "defend")
+
+
+func _configure_action_card_button(button: Button, card_key: String) -> void:
+	var base_texture := _load_texture(String(CARD_UI_PATHS.get(card_key, "")))
+	if base_texture == null:
+		return
+	button.custom_minimum_size = Vector2(172.0, 214.0)
+	button.clip_contents = true
+	button.icon = null
+	button.expand_icon = false
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	button.add_theme_font_size_override("font_size", 16)
+	button.add_theme_color_override("font_color", Color(0.16, 0.10, 0.055, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(0.09, 0.055, 0.032, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(0.08, 0.04, 0.025, 1.0))
+
+	var base := TextureRect.new()
+	base.name = "CardBaseArt"
+	base.texture = base_texture
+	base.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	base.stretch_mode = TextureRect.STRETCH_SCALE
+	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	base.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.add_child(base)
+	button.move_child(base, 0)
+
+	var hover := TextureRect.new()
+	hover.name = "CardHoverArt"
+	hover.texture = _load_texture(String(CARD_UI_PATHS.get("hover", "")))
+	hover.visible = false
+	hover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	hover.stretch_mode = TextureRect.STRETCH_SCALE
+	hover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.add_child(hover)
+
+	var selected := TextureRect.new()
+	selected.name = "CardSelectedArt"
+	selected.texture = _load_texture(String(CARD_UI_PATHS.get("selected", "")))
+	selected.visible = false
+	selected.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	selected.stretch_mode = TextureRect.STRETCH_SCALE
+	selected.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selected.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.add_child(selected)
+	action_card_overlays[card_key] = {"hover": hover, "selected": selected}
+
+	var card_text := Label.new()
+	card_text.name = "CardText"
+	card_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	card_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	card_text.add_theme_font_size_override("font_size", 15)
+	card_text.add_theme_color_override("font_color", Color(0.12, 0.075, 0.04, 1.0))
+	card_text.add_theme_color_override("font_shadow_color", Color(0.92, 0.82, 0.62, 0.35))
+	card_text.add_theme_constant_override("shadow_offset_x", 1)
+	card_text.add_theme_constant_override("shadow_offset_y", 1)
+	card_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	card_text.offset_left = 20.0
+	card_text.offset_top = 70.0
+	card_text.offset_right = -20.0
+	card_text.offset_bottom = -46.0
+	button.add_child(card_text)
+
+	button.mouse_entered.connect(func() -> void:
+		_set_action_card_hover(card_key, true)
+	)
+	button.mouse_exited.connect(func() -> void:
+		_set_action_card_hover(card_key, false)
+	)
+
+
+func _set_action_card_hover(card_key: String, hovered: bool) -> void:
+	var overlays: Dictionary = action_card_overlays.get(card_key, {})
+	var hover := overlays.get("hover", null) as TextureRect
+	var selected := overlays.get("selected", null) as TextureRect
+	if hover != null:
+		hover.visible = hovered and not (selected != null and selected.visible)
+
+
+func _set_action_card_selected(card_key: String, selected_state: bool) -> void:
+	var overlays: Dictionary = action_card_overlays.get(card_key, {})
+	var selected := overlays.get("selected", null) as TextureRect
+	var hover := overlays.get("hover", null) as TextureRect
+	if selected != null:
+		selected.visible = selected_state
+	if hover != null and selected_state:
+		hover.visible = false
+
+
+func _set_action_card_text(button: Button, text: String) -> void:
+	button.text = text
+	var card_text := button.find_child("CardText", false, false) as Label
+	if card_text != null:
+		card_text.text = text
 
 
 func _apply_button_icon(button: Button, path: String) -> void:
@@ -1243,12 +1356,14 @@ func _enter_player_choice() -> void:
 func _refresh_card_button_texts() -> void:
 	var attack_bonus := int(bonuses.get("sickle", 0))
 	var defend_bonus := int(bonuses.get("hat", 0))
-	attack_button.text = "攻击\n命中D20 / 伤害D3"
-	defend_button.text = "防御\n抵挡D20"
+	var attack_text := "攻击\n命中D20 / 伤害D3"
+	var defend_text := "防御\n抵挡D20"
 	if attack_bonus > 0:
-		attack_button.text += "\n奖励D3 x%d" % attack_bonus
+		attack_text += "\n奖励D3 x%d" % attack_bonus
 	if defend_bonus > 0:
-		defend_button.text += "\n奖励D3 x%d" % defend_bonus
+		defend_text += "\n奖励D3 x%d" % defend_bonus
+	_set_action_card_text(attack_button, attack_text)
+	_set_action_card_text(defend_button, defend_text)
 
 
 func _choose_action(player_action: int) -> void:
@@ -1269,6 +1384,8 @@ func _set_action_selection(index: int) -> void:
 	action_selection_index = wrapi(index, 0, 2)
 	attack_button.button_pressed = action_selection_index == 0
 	defend_button.button_pressed = action_selection_index == 1
+	_set_action_card_selected("attack", action_selection_index == 0)
+	_set_action_card_selected("defend", action_selection_index == 1)
 	if action_selection_index == 0:
 		attack_button.grab_focus()
 		dice_label.text = "[center][b]攻击牌[/b]\nA/D 切换，Enter / Space 打出。\n命中 D20，命中后掷 D3 伤害。[/center]"
