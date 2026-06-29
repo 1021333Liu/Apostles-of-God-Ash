@@ -64,24 +64,14 @@ def upper_shift(img: Image.Image, dx: int = 0, dy: int = 0, cutoff: int = 430, f
     return out
 
 
-def rotate_about_center(img: Image.Image, degrees: float, translate=(0, 0), center=(384, 430)) -> Image.Image:
-    return img.rotate(
-        degrees,
-        resample=Image.Resampling.BICUBIC,
-        center=center,
-        translate=translate,
-        fillcolor=(0, 0, 0, 0),
-    )
-
-
 def normalize_anchor(img: Image.Image) -> Image.Image:
     bbox = alpha_bbox(img)
     if not bbox:
         return img
     dx = ANCHOR[0] - ((bbox[0] + bbox[2]) // 2)
     dy = ANCHOR[1] - bbox[3]
-    # Keep horizontal movement readable but protect the requested foot anchor.
-    dx = int(dx * 0.35)
+    # Protect the requested foot anchor; avoid recentering away intentional pose.
+    dx = int(dx * 0.15)
     shifted = Image.new("RGBA", SIZE, (0, 0, 0, 0))
     shifted.alpha_composite(img, (dx, dy))
     return shifted
@@ -101,10 +91,10 @@ def make_frame(base: Image.Image, action: str, index: int) -> Image.Image:
         img = lean(img, l)
     elif action == "walk":
         settings = [
-            (0.998, 1.000, -18, 2, -14, 10),
-            (1.003, 0.997, -5, 0, -6, -4),
-            (0.998, 1.000, 16, 2, 14, -10),
-            (1.002, 1.000, 5, 0, 7, 5),
+            (0.999, 1.000, -10, 1, -6, 5),
+            (1.002, 0.998, -3, 0, -3, -2),
+            (0.999, 1.000, 9, 1, 6, -5),
+            (1.001, 1.000, 3, 0, 3, 2),
         ][index]
         sx, sy, dx, dy, l, upper_dx = settings
         img = scale_about_anchor(img, sx, sy, dx, dy)
@@ -112,28 +102,25 @@ def make_frame(base: Image.Image, action: str, index: int) -> Image.Image:
         img = upper_shift(img, upper_dx, 0, cutoff=500, feather=120)
     elif action == "attack":
         settings = [
-            (-16, -2, -16, 0, 0),
-            (-42, -8, -42, 5, -4),
-            (-70, -16, -70, 9, -7),
-            (-30, -5, -28, 3, -2),
+            (-8, -2, -12, 0),
+            (-18, -6, -26, 3),
+            (-28, -10, -38, 5),
+            (-12, -4, -18, 2),
         ][index]
-        l, dx, upper_dx, upper_dy, rot = settings
+        l, dx, upper_dx, upper_dy = settings
         img = lean(img, l)
         img = upper_shift(img, upper_dx, upper_dy, cutoff=470, feather=120)
-        if rot:
-            img = rotate_about_center(img, rot, translate=(dx, 0), center=(384, 450))
-        else:
-            img = scale_about_anchor(img, 1.0, 1.0, dx, 0)
+        img = scale_about_anchor(img, 1.0, 1.0, dx, 0)
     elif action == "hit":
         settings = [
-            (24, 18, 24, -5, 7),
-            (40, 30, 36, -8, 9),
-            (14, 10, 10, -2, 4),
+            (10, 8, 10, -2),
+            (18, 14, 16, -4),
+            (6, 5, 4, 0),
         ][index]
-        l, dx, upper_dx, upper_dy, rot = settings
+        l, dx, upper_dx, upper_dy = settings
         img = lean(img, l)
         img = upper_shift(img, upper_dx, upper_dy, cutoff=430, feather=130)
-        img = rotate_about_center(img, rot, translate=(dx, 0), center=(384, 470))
+        img = scale_about_anchor(img, 1.0, 1.0, dx, 0)
     return normalize_anchor(img)
 
 

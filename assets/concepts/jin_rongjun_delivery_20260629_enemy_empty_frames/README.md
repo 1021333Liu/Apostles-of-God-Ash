@@ -2,7 +2,9 @@
 
 Source request read from `origin/handoff/to-jin-rongjun@8389c29`.
 
-This pass implements the requested first runtime frame set for `enemy_empty`, based only on the provided clean reference:
+This pass implements the requested first runtime frame set for `enemy_empty`, based only on the provided clean reference.
+
+2026-06-29 v2 note: the frame generation was rebuilt conservatively after review feedback. No old enemy, farmer, scarecrow, boss, or previous proxy body image is used for these frames.
 
 ```text
 assets/concepts/jin_rongjun_delivery_20260629_enemy_empty_frames/source/enemy_empty_fullbody_clean_reference.png
@@ -52,7 +54,7 @@ assets/sprites/characters/enemies/enemy_empty_idle.png
 - `attack`: forward bowl reach / grasping posture.
 - `hit`: upper body recoils, bowl stays with the character.
 
-The process is intentionally conservative to preserve:
+The v2 process is intentionally conservative to preserve:
 
 - face
 - hair
@@ -72,4 +74,4 @@ The process is intentionally conservative to preserve:
 
 ## Known Limits
 
-These are first-pass production frames made by controlled 2D transforms from one source image. They keep identity and anchor stability, but a later human polish pass can improve limb-specific deformation and robe overlap.
+These are first-pass production frames made by controlled 2D transforms from one source image. They keep identity and anchor stability. The action poses are deliberately restrained so the frames do not drift away from the approved `enemy_empty` reference; a later human polish pass can improve limb-specific deformation and robe overlap.
