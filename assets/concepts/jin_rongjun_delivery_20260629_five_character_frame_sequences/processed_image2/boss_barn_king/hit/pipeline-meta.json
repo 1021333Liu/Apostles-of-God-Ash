@@ -1,0 +1,175 @@
+{
+  "target": "creature",
+  "mode": "hurt",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/kim/Documents/Codex/2026-06-18/files-mentioned-by-the-user-27/work/Apostles-of-God-Ash/assets/concepts/jin_rongjun_delivery_20260629_five_character_frame_sequences/image2_raw/boss_barn_king/boss_barn_king_hit_sheet_image2.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 768,
+  "fit_scale": 0.85,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "boss_barn_king_hit-1",
+    "boss_barn_king_hit-2",
+    "boss_barn_king_hit-3",
+    "boss_barn_king_hit-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 19,
+      "selected_component_area": 108438,
+      "selected_component_bbox": [
+        183,
+        40,
+        542,
+        562
+      ],
+      "crop_bbox": [
+        183,
+        40,
+        542,
+        562
+      ],
+      "edge_touch": false,
+      "output_size": [
+        439,
+        639
+      ],
+      "paste_position": [
+        164,
+        72
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 21,
+      "selected_component_area": 134218,
+      "selected_component_bbox": [
+        20,
+        52,
+        517,
+        562
+      ],
+      "crop_bbox": [
+        20,
+        52,
+        517,
+        562
+      ],
+      "edge_touch": false,
+      "output_size": [
+        608,
+        624
+      ],
+      "paste_position": [
+        80,
+        87
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 13,
+      "selected_component_area": 129140,
+      "selected_component_bbox": [
+        97,
+        48,
+        619,
+        543
+      ],
+      "crop_bbox": [
+        97,
+        48,
+        619,
+        543
+      ],
+      "edge_touch": false,
+      "output_size": [
+        639,
+        606
+      ],
+      "paste_position": [
+        64,
+        105
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 12,
+      "selected_component_area": 110747,
+      "selected_component_bbox": [
+        128,
+        5,
+        482,
+        538
+      ],
+      "crop_bbox": [
+        128,
+        5,
+        482,
+        538
+      ],
+      "edge_touch": false,
+      "output_size": [
+        433,
+        652
+      ],
+      "paste_position": [
+        167,
+        59
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

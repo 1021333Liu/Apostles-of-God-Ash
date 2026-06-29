@@ -1,0 +1,254 @@
+{
+  "target": "npc",
+  "mode": "attack",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/kim/Documents/Codex/2026-06-18/files-mentioned-by-the-user-27/work/Apostles-of-God-Ash/assets/concepts/jin_rongjun_delivery_20260629_five_character_frame_sequences/image2_raw/enemy_farmer/enemy_farmer_attack_sheet_image2.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 3,
+  "cell_size": 768,
+  "fit_scale": 0.85,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "enemy_farmer_attack-1",
+    "enemy_farmer_attack-2",
+    "enemy_farmer_attack-3",
+    "enemy_farmer_attack-4",
+    "enemy_farmer_attack-5",
+    "enemy_farmer_attack-6"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 16,
+      "selected_component_area": 55442,
+      "selected_component_bbox": [
+        92,
+        76,
+        434,
+        483
+      ],
+      "crop_bbox": [
+        92,
+        76,
+        434,
+        483
+      ],
+      "edge_touch": false,
+      "output_size": [
+        495,
+        589
+      ],
+      "paste_position": [
+        136,
+        122
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 17,
+      "selected_component_area": 58942,
+      "selected_component_bbox": [
+        17,
+        36,
+        389,
+        487
+      ],
+      "crop_bbox": [
+        17,
+        36,
+        389,
+        487
+      ],
+      "edge_touch": false,
+      "output_size": [
+        538,
+        652
+      ],
+      "paste_position": [
+        115,
+        59
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        1024,
+        0,
+        1536,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 19,
+      "selected_component_area": 52594,
+      "selected_component_bbox": [
+        0,
+        130,
+        405,
+        483
+      ],
+      "crop_bbox": [
+        0,
+        130,
+        405,
+        483
+      ],
+      "edge_touch": true,
+      "output_size": [
+        586,
+        510
+      ],
+      "paste_position": [
+        91,
+        201
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        512,
+        512,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 5,
+      "selected_component_area": 53485,
+      "selected_component_bbox": [
+        122,
+        67,
+        457,
+        435
+      ],
+      "crop_bbox": [
+        122,
+        67,
+        457,
+        435
+      ],
+      "edge_touch": false,
+      "output_size": [
+        484,
+        532
+      ],
+      "paste_position": [
+        142,
+        179
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        512,
+        512,
+        1024,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 14,
+      "selected_component_area": 51714,
+      "selected_component_bbox": [
+        78,
+        74,
+        466,
+        440
+      ],
+      "crop_bbox": [
+        78,
+        74,
+        466,
+        440
+      ],
+      "edge_touch": false,
+      "output_size": [
+        561,
+        529
+      ],
+      "paste_position": [
+        103,
+        182
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        1024,
+        512,
+        1536,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 12,
+      "selected_component_area": 58362,
+      "selected_component_bbox": [
+        29,
+        15,
+        329,
+        452
+      ],
+      "crop_bbox": [
+        29,
+        15,
+        329,
+        452
+      ],
+      "edge_touch": false,
+      "output_size": [
+        434,
+        632
+      ],
+      "paste_position": [
+        167,
+        79
+      ]
+    }
+  ],
+  "edge_touch_frames": [
+    [
+      0,
+      2
+    ]
+  ]
+}

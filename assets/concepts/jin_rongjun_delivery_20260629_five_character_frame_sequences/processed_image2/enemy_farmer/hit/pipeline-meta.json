@@ -1,0 +1,175 @@
+{
+  "target": "npc",
+  "mode": "hurt",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/kim/Documents/Codex/2026-06-18/files-mentioned-by-the-user-27/work/Apostles-of-God-Ash/assets/concepts/jin_rongjun_delivery_20260629_five_character_frame_sequences/image2_raw/enemy_farmer/enemy_farmer_hit_sheet_image2.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 768,
+  "fit_scale": 0.85,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "enemy_farmer_hit-1",
+    "enemy_farmer_hit-2",
+    "enemy_farmer_hit-3",
+    "enemy_farmer_hit-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 15,
+      "selected_component_area": 91713,
+      "selected_component_bbox": [
+        139,
+        28,
+        518,
+        608
+      ],
+      "crop_bbox": [
+        139,
+        28,
+        518,
+        608
+      ],
+      "edge_touch": false,
+      "output_size": [
+        426,
+        652
+      ],
+      "paste_position": [
+        171,
+        59
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 20,
+      "selected_component_area": 93539,
+      "selected_component_bbox": [
+        37,
+        34,
+        449,
+        605
+      ],
+      "crop_bbox": [
+        37,
+        34,
+        449,
+        605
+      ],
+      "edge_touch": false,
+      "output_size": [
+        463,
+        642
+      ],
+      "paste_position": [
+        152,
+        69
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 17,
+      "selected_component_area": 93248,
+      "selected_component_bbox": [
+        53,
+        158,
+        619,
+        561
+      ],
+      "crop_bbox": [
+        53,
+        158,
+        619,
+        561
+      ],
+      "edge_touch": false,
+      "output_size": [
+        637,
+        453
+      ],
+      "paste_position": [
+        65,
+        258
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 13,
+      "selected_component_area": 90567,
+      "selected_component_bbox": [
+        49,
+        31,
+        439,
+        577
+      ],
+      "crop_bbox": [
+        49,
+        31,
+        439,
+        577
+      ],
+      "edge_touch": false,
+      "output_size": [
+        438,
+        614
+      ],
+      "paste_position": [
+        165,
+        97
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

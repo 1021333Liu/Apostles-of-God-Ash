@@ -1,0 +1,249 @@
+{
+  "target": "creature",
+  "mode": "walk",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/kim/Documents/Codex/2026-06-18/files-mentioned-by-the-user-27/work/Apostles-of-God-Ash/assets/concepts/jin_rongjun_delivery_20260629_five_character_frame_sequences/image2_raw/enemy_scarecrow/enemy_scarecrow_walk_sheet_image2.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 3,
+  "cell_size": 768,
+  "fit_scale": 0.85,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "enemy_scarecrow_walk-1",
+    "enemy_scarecrow_walk-2",
+    "enemy_scarecrow_walk-3",
+    "enemy_scarecrow_walk-4",
+    "enemy_scarecrow_walk-5",
+    "enemy_scarecrow_walk-6"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 58,
+      "selected_component_area": 88411,
+      "selected_component_bbox": [
+        114,
+        42,
+        475,
+        498
+      ],
+      "crop_bbox": [
+        114,
+        42,
+        475,
+        498
+      ],
+      "edge_touch": false,
+      "output_size": [
+        514,
+        649
+      ],
+      "paste_position": [
+        127,
+        62
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 57,
+      "selected_component_area": 74257,
+      "selected_component_bbox": [
+        77,
+        40,
+        441,
+        498
+      ],
+      "crop_bbox": [
+        77,
+        40,
+        441,
+        498
+      ],
+      "edge_touch": false,
+      "output_size": [
+        518,
+        652
+      ],
+      "paste_position": [
+        125,
+        59
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        1024,
+        0,
+        1536,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 68,
+      "selected_component_area": 91821,
+      "selected_component_bbox": [
+        17,
+        44,
+        409,
+        500
+      ],
+      "crop_bbox": [
+        17,
+        44,
+        409,
+        500
+      ],
+      "edge_touch": false,
+      "output_size": [
+        558,
+        649
+      ],
+      "paste_position": [
+        105,
+        62
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        512,
+        512,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 54,
+      "selected_component_area": 83888,
+      "selected_component_bbox": [
+        38,
+        14,
+        484,
+        465
+      ],
+      "crop_bbox": [
+        38,
+        14,
+        484,
+        465
+      ],
+      "edge_touch": false,
+      "output_size": [
+        635,
+        642
+      ],
+      "paste_position": [
+        66,
+        69
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        512,
+        512,
+        1024,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 47,
+      "selected_component_area": 79957,
+      "selected_component_bbox": [
+        80,
+        25,
+        373,
+        462
+      ],
+      "crop_bbox": [
+        80,
+        25,
+        373,
+        462
+      ],
+      "edge_touch": false,
+      "output_size": [
+        417,
+        622
+      ],
+      "paste_position": [
+        175,
+        89
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        1024,
+        512,
+        1536,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 95,
+      "selected_component_area": 90331,
+      "selected_component_bbox": [
+        52,
+        8,
+        402,
+        462
+      ],
+      "crop_bbox": [
+        52,
+        8,
+        402,
+        462
+      ],
+      "edge_touch": false,
+      "output_size": [
+        498,
+        647
+      ],
+      "paste_position": [
+        135,
+        64
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}
