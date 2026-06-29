@@ -92,6 +92,18 @@ def band_shift(img: Image.Image, upper_dx=0, upper_dy=0, mid_dx=0, lower_dx=0, c
     return out
 
 
+def vertical_pulse(img: Image.Image, shoulder=0, waist=0, hem=0) -> Image.Image:
+    out = Image.new("RGBA", SIZE, (0, 0, 0, 0))
+    for y in range(0, SIZE[1], 2):
+        band = img.crop((0, y, SIZE[0], min(SIZE[1], y + 2)))
+        shoulder_t = max(0.0, 1.0 - abs(y - 220) / 220)
+        waist_t = max(0.0, 1.0 - abs(y - 430) / 170)
+        hem_t = max(0.0, min(1.0, (y - 500) / 190))
+        dy = int(shoulder * shoulder_t + waist * waist_t + hem * hem_t)
+        out.alpha_composite(band, (0, y + dy))
+    return out
+
+
 def lean(img: Image.Image, amount=0, top=60, bottom=720) -> Image.Image:
     out = Image.new("RGBA", SIZE, (0, 0, 0, 0))
     for y in range(0, SIZE[1], 2):
@@ -117,57 +129,56 @@ def postprocess(img: Image.Image) -> Image.Image:
 
 
 def pose_values(profile: str, action: str, index: int, count: int):
-    phase = index / max(1, count - 1)
     wave = [0, -1, 1, 0, -1, 1, 0, 0][index % 8]
 
     if action == "idle":
-        return dict(sx=1.0 + 0.002 * wave, sy=1.0 - 0.003 * wave, lean=2 * wave, upper_dy=wave)
+        return dict(sx=1.0 + 0.004 * wave, sy=1.0 - 0.006 * wave, lean=5 * wave, upper_dy=2 * wave, shoulder=2 * wave)
 
     if action in ("walk", "advance"):
-        cycle = [-1.0, -0.55, 0.15, 0.85, 0.45, 0.0][index % 6]
+        cycle = [-1.0, -0.65, 0.35, 1.0, 0.55, 0.0][index % 6]
         if profile == "scarecrow":
-            return dict(lean=-10 * cycle, upper_dx=-8 * cycle, mid_dx=6 * cycle, lower_dx=-5 * cycle, dx=3 * cycle)
+            return dict(lean=-28 * cycle, upper_dx=-24 * cycle, mid_dx=18 * cycle, lower_dx=-18 * cycle, dx=8 * cycle, hem=6 * abs(cycle))
         if profile == "boss":
-            return dict(lean=-8 * cycle, upper_dx=-7 * cycle, mid_dx=-4 * cycle, dx=-4 * cycle, sy=1.0 + 0.004 * abs(cycle))
-        return dict(lean=-7 * cycle, upper_dx=-8 * cycle, mid_dx=3 * cycle, dx=-5 * cycle, sy=1.0 + 0.003 * abs(cycle))
+            return dict(lean=-22 * cycle, upper_dx=-22 * cycle, mid_dx=-12 * cycle, lower_dx=8 * cycle, dx=-10 * cycle, sy=1.0 + 0.012 * abs(cycle), shoulder=4 * abs(cycle))
+        return dict(lean=-24 * cycle, upper_dx=-30 * cycle, mid_dx=12 * cycle, lower_dx=-12 * cycle, dx=-12 * cycle, sy=1.0 + 0.009 * abs(cycle), hem=4 * abs(cycle))
 
     if action == "attack":
         # Anticipation -> extension -> hold -> recovery, no baked slash.
         seq6 = [
-            dict(lean=4, upper_dx=6, upper_dy=1, dx=0),
-            dict(lean=-8, upper_dx=-14, upper_dy=1, dx=-2),
-            dict(lean=-18, upper_dx=-28, upper_dy=2, dx=-5),
-            dict(lean=-24, upper_dx=-36, upper_dy=3, dx=-7),
-            dict(lean=-12, upper_dx=-18, upper_dy=1, dx=-3),
-            dict(lean=-3, upper_dx=-5, upper_dy=0, dx=0),
+            dict(lean=18, upper_dx=22, upper_dy=4, mid_dx=8, dx=2, shoulder=4),
+            dict(lean=-16, upper_dx=-34, upper_dy=2, mid_dx=-10, dx=-7, shoulder=2),
+            dict(lean=-42, upper_dx=-72, upper_dy=5, mid_dx=-24, dx=-14, shoulder=-2),
+            dict(lean=-58, upper_dx=-96, upper_dy=8, mid_dx=-36, dx=-18, shoulder=-4),
+            dict(lean=-28, upper_dx=-44, upper_dy=3, mid_dx=-12, dx=-7, shoulder=0),
+            dict(lean=0, upper_dx=0, upper_dy=0, mid_dx=0, dx=0),
         ]
         seq8 = [
-            dict(lean=5, upper_dx=8, upper_dy=1, dx=0),
-            dict(lean=-4, upper_dx=-10, upper_dy=1, dx=-2),
-            dict(lean=-12, upper_dx=-22, upper_dy=2, dx=-4),
-            dict(lean=-22, upper_dx=-36, upper_dy=3, dx=-7),
-            dict(lean=-26, upper_dx=-42, upper_dy=3, dx=-8),
-            dict(lean=-18, upper_dx=-28, upper_dy=1, dx=-5),
-            dict(lean=-8, upper_dx=-12, upper_dy=0, dx=-2),
-            dict(lean=0, upper_dx=0, upper_dy=0, dx=0),
+            dict(lean=18, upper_dx=20, upper_dy=3, mid_dx=8, dx=1),
+            dict(lean=4, upper_dx=0, upper_dy=4, mid_dx=0, dx=0),
+            dict(lean=-16, upper_dx=-30, upper_dy=3, mid_dx=-8, dx=-5),
+            dict(lean=-34, upper_dx=-58, upper_dy=5, mid_dx=-18, dx=-11),
+            dict(lean=-48, upper_dx=-78, upper_dy=7, mid_dx=-28, dx=-15),
+            dict(lean=-46, upper_dx=-70, upper_dy=6, mid_dx=-22, dx=-13),
+            dict(lean=-20, upper_dx=-28, upper_dy=2, mid_dx=-6, dx=-5),
+            dict(lean=0, upper_dx=0, upper_dy=0, mid_dx=0, dx=0),
         ]
         values = seq8 if count == 8 else seq6
         v = values[index]
         if profile == "boss":
-            v = {k: val * 0.75 if isinstance(val, (int, float)) else val for k, val in v.items()}
+            v = {k: val * 0.9 if isinstance(val, (int, float)) else val for k, val in v.items()}
         if profile == "scarecrow":
-            v = {k: val * 0.65 if isinstance(val, (int, float)) else val for k, val in v.items()}
+            v = {k: val * 0.58 if isinstance(val, (int, float)) else val for k, val in v.items()}
         return v
 
     if action == "heavy_attack":
         seq = [
-            dict(lean=8, upper_dx=8, upper_dy=2, sy=0.995),
-            dict(lean=3, upper_dx=2, upper_dy=3, sy=0.990),
-            dict(lean=-8, upper_dx=-14, upper_dy=1, sy=1.000),
-            dict(lean=-16, upper_dx=-26, upper_dy=0, sy=1.004),
-            dict(lean=-24, upper_dx=-38, upper_dy=1, sy=1.006),
-            dict(lean=-22, upper_dx=-34, upper_dy=1, sy=1.004),
-            dict(lean=-10, upper_dx=-16, upper_dy=0, sy=1.000),
+            dict(lean=28, upper_dx=26, upper_dy=8, mid_dx=10, sy=0.985, shoulder=8),
+            dict(lean=18, upper_dx=10, upper_dy=12, mid_dx=3, sy=0.975, shoulder=12),
+            dict(lean=-10, upper_dx=-24, upper_dy=4, mid_dx=-8, sy=1.000),
+            dict(lean=-34, upper_dx=-58, upper_dy=2, mid_dx=-20, sy=1.010),
+            dict(lean=-58, upper_dx=-96, upper_dy=4, mid_dx=-36, sy=1.016),
+            dict(lean=-60, upper_dx=-92, upper_dy=5, mid_dx=-30, sy=1.012),
+            dict(lean=-26, upper_dx=-38, upper_dy=1, mid_dx=-10, sy=1.000),
             dict(lean=0, upper_dx=0, upper_dy=0, sy=1.000),
         ]
         return seq[index]
@@ -175,21 +186,21 @@ def pose_values(profile: str, action: str, index: int, count: int):
     if action == "defend":
         seq = [
             dict(lean=0, upper_dx=0, upper_dy=0, sy=1.0),
-            dict(lean=5, upper_dx=8, upper_dy=-2, sy=0.998),
-            dict(lean=8, upper_dx=12, upper_dy=-4, sy=0.996),
-            dict(lean=7, upper_dx=10, upper_dy=-3, sy=0.997),
+            dict(lean=16, upper_dx=22, upper_dy=-4, mid_dx=8, sy=0.992),
+            dict(lean=26, upper_dx=34, upper_dy=-7, mid_dx=14, sy=0.986),
+            dict(lean=20, upper_dx=28, upper_dy=-5, mid_dx=10, sy=0.990),
         ]
         return seq[index]
 
     if action == "ultimate_cast":
         seq = [
             dict(lean=0, upper_dx=0, upper_dy=0),
-            dict(lean=3, upper_dx=4, upper_dy=2),
-            dict(lean=-2, upper_dx=-3, upper_dy=-3),
-            dict(lean=-7, upper_dx=-10, upper_dy=-5),
-            dict(lean=-10, upper_dx=-14, upper_dy=-7),
-            dict(lean=-8, upper_dx=-11, upper_dy=-5),
-            dict(lean=-3, upper_dx=-5, upper_dy=-2),
+            dict(lean=12, upper_dx=16, upper_dy=8, mid_dx=6, sy=0.990),
+            dict(lean=-8, upper_dx=-12, upper_dy=-8, mid_dx=-3, sy=1.004),
+            dict(lean=-24, upper_dx=-36, upper_dy=-12, mid_dx=-12, sy=1.010),
+            dict(lean=-34, upper_dx=-50, upper_dy=-16, mid_dx=-18, sy=1.014),
+            dict(lean=-24, upper_dx=-34, upper_dy=-8, mid_dx=-10, sy=1.006),
+            dict(lean=-12, upper_dx=-18, upper_dy=-5, mid_dx=-6, sy=1.002),
             dict(lean=0, upper_dx=0, upper_dy=0),
         ]
         return seq[index]
@@ -197,13 +208,13 @@ def pose_values(profile: str, action: str, index: int, count: int):
     if action == "hit":
         seq4 = [
             dict(lean=0, upper_dx=0, upper_dy=0),
-            dict(lean=10, upper_dx=14, upper_dy=-2, dx=3),
-            dict(lean=16, upper_dx=22, upper_dy=-4, dx=5),
-            dict(lean=5, upper_dx=6, upper_dy=0, dx=1),
+            dict(lean=26, upper_dx=38, upper_dy=-5, mid_dx=12, dx=7, shoulder=-2),
+            dict(lean=42, upper_dx=60, upper_dy=-9, mid_dx=20, dx=12, shoulder=-4),
+            dict(lean=12, upper_dx=18, upper_dy=-2, mid_dx=4, dx=3),
         ]
         v = seq4[index]
         if profile == "boss":
-            v = {k: val * 0.55 if isinstance(val, (int, float)) else val for k, val in v.items()}
+            v = {k: val * 0.8 if isinstance(val, (int, float)) else val for k, val in v.items()}
         return v
 
     return {}
@@ -212,6 +223,7 @@ def pose_values(profile: str, action: str, index: int, count: int):
 def make_frame(base: Image.Image, profile: str, action: str, index: int, count: int) -> Image.Image:
     v = pose_values(profile, action, index, count)
     img = scale_anchor(base, sx=v.get("sx", 1.0), sy=v.get("sy", 1.0), dx=int(v.get("dx", 0)), dy=int(v.get("dy", 0)))
+    img = vertical_pulse(img, shoulder=int(v.get("shoulder", 0)), waist=int(v.get("waist", 0)), hem=int(v.get("hem", 0)))
     img = lean(img, int(v.get("lean", 0)))
     img = band_shift(
         img,

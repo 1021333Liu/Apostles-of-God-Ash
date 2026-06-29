@@ -8,6 +8,8 @@ This delivery builds first-pass runtime frame sequences from the five approved 7
 assets/concepts/artist_thread_image2_scene_round_20260620/character_frame_sequence_brief_20260629/
 ```
 
+2026-06-29 v3 update: regenerated the similar-looking frames with stronger pose separation. Walk, attack, heavy attack, hit, advance, and ultimate cast now use larger upper-body pressure, recovery poses, and recoil while still preserving the approved mother images, transparent canvas, and foot anchor.
+
 The five source images copied into `source/` are:
 
 ```text
