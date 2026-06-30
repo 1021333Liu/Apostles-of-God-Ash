@@ -13,9 +13,9 @@ const ENCOUNTER_DATA_PATH: String = "res://data/encounters/low_whispering_field.
 const CARD_ART_ROOT: String = "res://assets/card_demo"
 const BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_card_field_entrance.png"
 const SANCTUM_BACKGROUND_ART_PATH: String = CARD_ART_ROOT + "/backgrounds/bg_silent_casket_collector_intro.png"
-const COLLECTOR_PORTRAIT_PATH: String = CARD_ART_ROOT + "/actors/collector/source/collector_fullbody_front_20260625_alpha.png"
+const COLLECTOR_PORTRAIT_PATH: String = "res://assets/portraits/portrait_collector_halfbody.png"
 const ENCOUNTER_BACKGROUND_ART_PATHS: Dictionary = {
-	"empty_stomach": CARD_ART_ROOT + "/backgrounds/bg_empty_stomach_queue.png",
+	"empty_stomach": CARD_ART_ROOT + "/backgrounds/bg_empty_stomach_first_enemy.png",
 	"famine_farmer": CARD_ART_ROOT + "/backgrounds/bg_farmer_field_register.png",
 	"hungry_scarecrow": CARD_ART_ROOT + "/backgrounds/bg_scarecrow_blood_wheat.png",
 	"barn_king": CARD_ART_ROOT + "/backgrounds/bg_barn_king_chamber.png"
@@ -29,45 +29,89 @@ const ENEMY_ACTOR_SOURCES: Dictionary = {
 	"barn_king": {"root": CARD_ART_ROOT + "/actors/boss_barn_king", "prefix": "boss_barn_king"}
 }
 const REWARD_ICON_PATHS: Dictionary = {
-	"sickle": CARD_ART_ROOT + "/ui/rewards/reward_farmer_sickle.png",
-	"hat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_hat.png",
-	"wheat": CARD_ART_ROOT + "/ui/rewards/reward_farmer_wheat.png"
+	"attack_bonus": CARD_ART_ROOT + "/ui/items/loot_dirty_silver_registry_tag.png",
+	"defense_bonus": CARD_ART_ROOT + "/ui/items/loot_empty_bowl_shard.png",
+	"heal": CARD_ART_ROOT + "/ui/items/loot_memory_shard.png",
+	"empty_bowl": CARD_ART_ROOT + "/ui/items/loot_empty_bowl_shard.png",
+	"gnawed_wheat": CARD_ART_ROOT + "/ui/items/loot_old_grain_ticket.png",
+	"queue_scrap": CARD_ART_ROOT + "/ui/items/loot_memory_shard.png",
+	"farmer_sickle": CARD_ART_ROOT + "/ui/items/loot_dirty_silver_registry_tag.png",
+	"farmer_hat": CARD_ART_ROOT + "/ui/items/loot_broken_field_contract.png",
+	"farmer_wheat": CARD_ART_ROOT + "/ui/items/loot_old_grain_ticket.png",
+	"scarecrow_straw": CARD_ART_ROOT + "/ui/items/loot_broken_field_contract.png",
+	"tooth_wheat": CARD_ART_ROOT + "/ui/items/loot_old_grain_ticket.png",
+	"stolen_cloth": CARD_ART_ROOT + "/ui/items/loot_memory_shard.png",
+	"barn_key": CARD_ART_ROOT + "/ui/items/loot_barn_key_fragment.png",
+	"king_ledger": CARD_ART_ROOT + "/ui/items/loot_dirty_silver_registry_tag.png",
+	"god_stomach_seed": CARD_ART_ROOT + "/ui/items/loot_memory_shard.png"
 }
 const INTENT_ICON_PATHS: Dictionary = {
 	"attack": CARD_ART_ROOT + "/ui/intent/bubble_attack.png",
 	"defend": CARD_ART_ROOT + "/ui/intent/bubble_defend.png"
 }
 const DICE_ICON_PATHS: Dictionary = {
-	"hit": CARD_ART_ROOT + "/ui/dice/d20_attack_die.png",
-	"defense": CARD_ART_ROOT + "/ui/dice/d20_defense_die.png",
-	"effect": CARD_ART_ROOT + "/ui/dice/d3_effect_die.png"
+	"hit": CARD_ART_ROOT + "/ui/dice/die_d20_judgement.png",
+	"defense": CARD_ART_ROOT + "/ui/dice/die_d20_judgement.png",
+	"effect": CARD_ART_ROOT + "/ui/dice/die_d3_effect.png",
+	"ultimate": CARD_ART_ROOT + "/ui/dice/die_d6_ultimate.png"
 }
-const DICE_ROLL_STAGE_PATH: String = CARD_ART_ROOT + "/ui/dice/dice_roll_stage.png"
+const DICE_ROLL_STAGE_PATH: String = CARD_ART_ROOT + "/ui/dice/dice_roll_stage_final.png"
 const CARD_UI_PATHS: Dictionary = {
-	"attack": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
-	"heavy": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
-	"defend": CARD_ART_ROOT + "/ui/cards/card_defend_base.png",
-	"ultimate": CARD_ART_ROOT + "/ui/cards/card_attack_base.png",
+	"attack": CARD_ART_ROOT + "/ui/skills/skill_silver_blade_sign.png",
+	"heavy": CARD_ART_ROOT + "/ui/skills/skill_execution_falling_blade.png",
+	"defend": CARD_ART_ROOT + "/ui/skills/skill_old_book_shelter.png",
+	"ultimate": CARD_ART_ROOT + "/ui/skills/skill_gray_candle_verdict.png",
 	"selected": CARD_ART_ROOT + "/ui/cards/card_selected_frame.png",
 	"hover": CARD_ART_ROOT + "/ui/cards/card_hover_frame.png"
 }
-const PLAYER_POSES: Array[String] = ["idle", "attack", "defend", "hit", "victory"]
-const FARMER_POSES: Array[String] = ["idle", "mutter", "attack", "defend", "hit", "confess"]
+const PLAYER_POSES: Array[String] = ["idle", "walk", "attack", "heavy_attack", "defend", "hit", "ultimate_cast"]
+const FARMER_POSES: Array[String] = ["idle", "walk", "mutter", "attack", "defend", "hit", "confess"]
 const ACTOR_ACTION_ALIASES: Dictionary = {
 	"player": {
-		"idle": ["field_idle", "idle"],
-		"attack": ["card_attack", "attack"],
-		"defend": ["card_defend", "defend"],
-		"hit": ["card_hurt", "hit"],
-		"victory": ["card_win", "victory"]
+		"idle": ["image2_player_echo_idle", "source/player_echo_fullbody_20260610_alpha"],
+		"walk": ["image2_player_echo_walk", "field_walk", "source/player_echo_fullbody_20260610_alpha"],
+		"attack": ["image2_player_echo_attack", "actor_player_echo_attack", "source/player_echo_fullbody_20260610_alpha"],
+		"heavy_attack": ["image2_player_echo_heavy_attack", "image2_player_echo_attack", "actor_player_echo_attack", "source/player_echo_fullbody_20260610_alpha"],
+		"defend": ["image2_player_echo_defend", "actor_player_echo_defend", "source/player_echo_fullbody_20260610_alpha"],
+		"hit": ["image2_player_echo_hit", "actor_player_echo_hit", "source/player_echo_fullbody_20260610_alpha"],
+		"ultimate_cast": ["image2_player_echo_ultimate_cast", "image2_player_echo_attack", "source/player_echo_fullbody_20260610_alpha"],
+		"victory": ["source/player_echo_fullbody_20260610_alpha"]
 	},
 	"farmer": {
-		"idle": ["idle", "field_idle"],
-		"mutter": ["idle"],
-		"attack": ["idle"],
-		"defend": ["idle"],
-		"hit": ["idle"],
-		"confess": ["idle"]
+		"idle": ["image2_enemy_farmer_idle", "source/fullbody_clean"],
+		"walk": ["image2_enemy_farmer_walk", "image2_enemy_farmer_idle", "source/fullbody_clean"],
+		"mutter": ["image2_enemy_farmer_idle", "source/fullbody_clean"],
+		"attack": ["image2_enemy_farmer_attack", "actor_enemy_farmer_attack", "source/fullbody_clean"],
+		"defend": ["image2_enemy_farmer_idle", "source/fullbody_clean"],
+		"hit": ["image2_enemy_farmer_hit", "actor_enemy_farmer_hit", "source/fullbody_clean"],
+		"confess": ["image2_enemy_farmer_hit", "image2_enemy_farmer_idle", "source/fullbody_clean"]
+	},
+	"empty": {
+		"idle": ["image2_enemy_empty_idle", "source/fullbody_clean"],
+		"walk": ["image2_enemy_empty_walk", "image2_enemy_empty_idle", "source/fullbody_clean"],
+		"mutter": ["image2_enemy_empty_idle", "source/fullbody_clean"],
+		"attack": ["image2_enemy_empty_attack", "source/fullbody_clean"],
+		"defend": ["image2_enemy_empty_idle", "source/fullbody_clean"],
+		"hit": ["image2_enemy_empty_hit", "source/fullbody_clean"],
+		"confess": ["image2_enemy_empty_hit", "image2_enemy_empty_idle", "source/fullbody_clean"]
+	},
+	"scarecrow": {
+		"idle": ["image2_enemy_scarecrow_idle", "source/fullbody_clean"],
+		"walk": ["image2_enemy_scarecrow_walk", "image2_enemy_scarecrow_idle", "source/fullbody_clean"],
+		"mutter": ["image2_enemy_scarecrow_idle", "source/fullbody_clean"],
+		"attack": ["image2_enemy_scarecrow_attack", "source/fullbody_clean"],
+		"defend": ["image2_enemy_scarecrow_idle", "source/fullbody_clean"],
+		"hit": ["image2_enemy_scarecrow_hit", "source/fullbody_clean"],
+		"confess": ["image2_enemy_scarecrow_hit", "image2_enemy_scarecrow_idle", "source/fullbody_clean"]
+	},
+	"barn_king": {
+		"idle": ["image2_boss_barn_king_idle", "source/fullbody_clean"],
+		"walk": ["image2_boss_barn_king_advance", "image2_boss_barn_king_idle", "source/fullbody_clean"],
+		"mutter": ["image2_boss_barn_king_idle", "source/fullbody_clean"],
+		"attack": ["image2_boss_barn_king_attack", "source/fullbody_clean"],
+		"defend": ["image2_boss_barn_king_idle", "source/fullbody_clean"],
+		"hit": ["image2_boss_barn_king_hit", "source/fullbody_clean"],
+		"confess": ["image2_boss_barn_king_hit", "image2_boss_barn_king_idle", "source/fullbody_clean"]
 	}
 }
 const FIELD_PLAYER_START: Vector2 = Vector2(300.0, 540.0)
@@ -147,6 +191,7 @@ var action_card_overlays: Dictionary = {}
 var player_bubble: PanelContainer
 var farmer_bubble: PanelContainer
 var field_player_position: Vector2 = FIELD_PLAYER_START
+var auto_resolving_enemy_turn: bool = false
 var collector_intro_index: int = 0
 var collector_intro_lines: Array[String] = [
 	"你醒了。很好，这具身体还没有拒绝你。",
@@ -426,14 +471,14 @@ func _has_next_encounter() -> bool:
 
 func _build_theme() -> void:
 	var root_style := StyleBoxFlat.new()
-	root_style.bg_color = Color(0.055, 0.047, 0.036, 0.94)
-	root_style.border_color = Color(0.60, 0.52, 0.38, 0.95)
+	root_style.bg_color = Color(0.025, 0.020, 0.016, 0.98)
+	root_style.border_color = Color(0.78, 0.67, 0.44, 1.0)
 	root_style.set_border_width_all(2)
 	root_style.set_corner_radius_all(3)
 
 	var actor_style := StyleBoxFlat.new()
-	actor_style.bg_color = Color(0.035, 0.032, 0.028, 0.72)
-	actor_style.border_color = Color(0.50, 0.43, 0.32, 0.88)
+	actor_style.bg_color = Color(0.018, 0.016, 0.014, 0.84)
+	actor_style.border_color = Color(0.64, 0.55, 0.38, 0.95)
 	actor_style.set_border_width_all(1)
 	actor_style.set_corner_radius_all(2)
 
@@ -443,17 +488,17 @@ func _build_theme() -> void:
 		panel.add_theme_stylebox_override("panel", actor_style)
 
 	var button_style := StyleBoxFlat.new()
-	button_style.bg_color = Color(0.17, 0.125, 0.080, 1.0)
-	button_style.border_color = Color(0.74, 0.62, 0.38, 1.0)
+	button_style.bg_color = Color(0.055, 0.042, 0.032, 0.96)
+	button_style.border_color = Color(0.70, 0.58, 0.36, 1.0)
 	button_style.set_border_width_all(2)
 	button_style.set_corner_radius_all(3)
 
 	var button_hover_style := button_style.duplicate() as StyleBoxFlat
-	button_hover_style.bg_color = Color(0.24, 0.18, 0.105, 1.0)
+	button_hover_style.bg_color = Color(0.10, 0.075, 0.048, 1.0)
 	button_hover_style.border_color = Color(0.92, 0.76, 0.45, 1.0)
 
 	var button_pressed_style := button_style.duplicate() as StyleBoxFlat
-	button_pressed_style.bg_color = Color(0.10, 0.075, 0.055, 1.0)
+	button_pressed_style.bg_color = Color(0.13, 0.075, 0.050, 1.0)
 	button_pressed_style.border_color = Color(0.92, 0.43, 0.28, 1.0)
 
 	for button: Button in [attack_button, defend_button, continue_button, reward_sickle_button, reward_hat_button, reward_wheat_button]:
@@ -478,18 +523,22 @@ func _build_theme() -> void:
 		button.toggle_mode = true
 
 	for label: Label in [title_label, state_label, player_hp_label, farmer_hp_label, intent_label, player_actor_label, farmer_actor_label]:
-		label.add_theme_color_override("font_color", Color(0.92, 0.86, 0.73, 1.0))
-		label.add_theme_color_override("font_shadow_color", Color(0.02, 0.015, 0.012, 0.90))
-		label.add_theme_constant_override("shadow_offset_x", 1)
-		label.add_theme_constant_override("shadow_offset_y", 1)
-	title_label.add_theme_font_size_override("font_size", 20)
-	state_label.add_theme_font_size_override("font_size", 15)
-	intent_label.add_theme_font_size_override("font_size", 15)
+		label.add_theme_color_override("font_color", Color(0.98, 0.91, 0.72, 1.0))
+		label.add_theme_color_override("font_outline_color", Color(0.015, 0.012, 0.010, 1.0))
+		label.add_theme_constant_override("outline_size", 5)
+		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
+		label.add_theme_constant_override("shadow_offset_x", 2)
+		label.add_theme_constant_override("shadow_offset_y", 2)
+	title_label.add_theme_font_size_override("font_size", 22)
+	state_label.add_theme_font_size_override("font_size", 17)
+	intent_label.add_theme_font_size_override("font_size", 17)
 
 	for rich_label: RichTextLabel in [dialogue_label, dice_label, archive_label]:
-		rich_label.add_theme_color_override("default_color", Color(0.86, 0.78, 0.62, 1.0))
+		rich_label.add_theme_color_override("default_color", Color(0.97, 0.88, 0.68, 1.0))
 		rich_label.add_theme_color_override("font_selected_color", Color(0.95, 0.86, 0.66, 1.0))
-		rich_label.add_theme_font_size_override("normal_font_size", 16)
+		rich_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+		rich_label.add_theme_constant_override("outline_size", 2)
+		rich_label.add_theme_font_size_override("normal_font_size", 18)
 		rich_label.add_theme_font_size_override("bold_font_size", 18)
 
 	background.color = Color(0.13, 0.115, 0.075, 1.0)
@@ -920,8 +969,10 @@ func _setup_field_layer() -> void:
 	field_dialogue_label.scroll_active = false
 	field_dialogue_label.text = ""
 	field_dialogue_label.add_theme_color_override("default_color", Color(0.86, 0.78, 0.62, 1.0))
+	field_dialogue_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+	field_dialogue_label.add_theme_constant_override("outline_size", 2)
 	field_dialogue_label.add_theme_font_size_override("normal_font_size", 19)
-	field_dialogue_label.add_theme_font_size_override("bold_font_size", 22)
+	field_dialogue_label.add_theme_font_size_override("bold_font_size", 19)
 	dialogue_margin.add_child(field_dialogue_label)
 	_update_field_positions()
 
@@ -972,6 +1023,8 @@ func _load_actor_frames(actor_key: String, root_path: String, file_prefix: Strin
 
 func _actor_action_names(actor_key: String, pose: String) -> Array[String]:
 	var action_map: Dictionary = ACTOR_ACTION_ALIASES.get(actor_key, {})
+	if action_map.is_empty() and ENEMY_ACTOR_SOURCES.has(actor_key):
+		action_map = ACTOR_ACTION_ALIASES.get("farmer", {})
 	if action_map.has(pose):
 		var aliases: Array[String] = []
 		for alias: String in action_map[pose]:
@@ -983,6 +1036,12 @@ func _actor_action_names(actor_key: String, pose: String) -> Array[String]:
 func _load_actor_frame_sequence(root_path: String, file_prefix: String, action_name: String) -> Array[Texture2D]:
 	var frames: Array[Texture2D] = []
 	for frame_index: int in range(16):
+		if frame_index == 0:
+			var direct_single_path := "%s/%s.png" % [root_path, action_name]
+			var direct_single_texture := _load_texture(direct_single_path)
+			if direct_single_texture != null:
+				frames.append(direct_single_texture)
+				break
 		var path := "%s/%s_%d.png" % [root_path, action_name, frame_index]
 		var texture := _load_texture(path)
 		if texture == null:
@@ -1031,9 +1090,9 @@ func _setup_reward_icons() -> void:
 		button.custom_minimum_size = Vector2(190.0, 72.0)
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		button.add_theme_font_size_override("font_size", 20)
-	_apply_button_icon(reward_sickle_button, REWARD_ICON_PATHS["sickle"])
-	_apply_button_icon(reward_hat_button, REWARD_ICON_PATHS["hat"])
-	_apply_button_icon(reward_wheat_button, REWARD_ICON_PATHS["wheat"])
+	_apply_button_icon(reward_sickle_button, String(REWARD_ICON_PATHS.get("attack_bonus", "")))
+	_apply_button_icon(reward_hat_button, String(REWARD_ICON_PATHS.get("defense_bonus", "")))
+	_apply_button_icon(reward_wheat_button, String(REWARD_ICON_PATHS.get("heal", "")))
 
 
 func _setup_action_card_buttons() -> void:
@@ -1060,30 +1119,36 @@ func _configure_action_card_button(button: Button, card_key: String) -> void:
 	var base_texture := _load_texture(String(CARD_UI_PATHS.get(card_key, "")))
 	if base_texture == null:
 		return
-	button.custom_minimum_size = Vector2(172.0, 214.0)
+	button.text = ""
+	button.custom_minimum_size = Vector2(168.0, 124.0)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.clip_contents = true
 	button.icon = null
 	button.expand_icon = false
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-	button.add_theme_font_size_override("font_size", 16)
-	button.add_theme_color_override("font_color", Color(0.16, 0.10, 0.055, 1.0))
-	button.add_theme_color_override("font_hover_color", Color(0.09, 0.055, 0.032, 1.0))
-	button.add_theme_color_override("font_pressed_color", Color(0.08, 0.04, 0.025, 1.0))
+	button.add_theme_font_size_override("font_size", 15)
+	button.add_theme_color_override("font_color", Color(0.92, 0.82, 0.58, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.68, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.76, 0.46, 1.0))
 
 	var base := TextureRect.new()
 	base.name = "CardBaseArt"
 	base.texture = base_texture
 	base.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	base.stretch_mode = TextureRect.STRETCH_SCALE
+	base.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	base.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	base.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	base.offset_left = 62.0
+	base.offset_top = 6.0
+	base.offset_right = -62.0
+	base.offset_bottom = 46.0
 	button.add_child(base)
 	button.move_child(base, 0)
 
 	var hover := TextureRect.new()
 	hover.name = "CardHoverArt"
-	hover.texture = _load_texture(String(CARD_UI_PATHS.get("hover", "")))
+	hover.texture = null
 	hover.visible = false
 	hover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	hover.stretch_mode = TextureRect.STRETCH_SCALE
@@ -1093,7 +1158,7 @@ func _configure_action_card_button(button: Button, card_key: String) -> void:
 
 	var selected := TextureRect.new()
 	selected.name = "CardSelectedArt"
-	selected.texture = _load_texture(String(CARD_UI_PATHS.get("selected", "")))
+	selected.texture = null
 	selected.visible = false
 	selected.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	selected.stretch_mode = TextureRect.STRETCH_SCALE
@@ -1107,17 +1172,19 @@ func _configure_action_card_button(button: Button, card_key: String) -> void:
 	card_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	card_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	card_text.add_theme_font_size_override("font_size", 15)
-	card_text.add_theme_color_override("font_color", Color(0.12, 0.075, 0.04, 1.0))
-	card_text.add_theme_color_override("font_shadow_color", Color(0.92, 0.82, 0.62, 0.35))
-	card_text.add_theme_constant_override("shadow_offset_x", 1)
-	card_text.add_theme_constant_override("shadow_offset_y", 1)
+	card_text.add_theme_font_size_override("font_size", 14)
+	card_text.add_theme_color_override("font_color", Color(0.99, 0.89, 0.62, 1.0))
+	card_text.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	card_text.add_theme_constant_override("outline_size", 3)
+	card_text.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 1.0))
+	card_text.add_theme_constant_override("shadow_offset_x", 2)
+	card_text.add_theme_constant_override("shadow_offset_y", 2)
 	card_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	card_text.offset_left = 20.0
-	card_text.offset_top = 70.0
-	card_text.offset_right = -20.0
-	card_text.offset_bottom = -46.0
+	card_text.offset_left = 8.0
+	card_text.offset_top = 40.0
+	card_text.offset_right = -8.0
+	card_text.offset_bottom = -10.0
 	button.add_child(card_text)
 
 	button.mouse_entered.connect(func() -> void:
@@ -1147,7 +1214,7 @@ func _set_action_card_selected(card_key: String, selected_state: bool) -> void:
 
 
 func _set_action_card_text(button: Button, text: String) -> void:
-	button.text = text
+	button.text = ""
 	var card_text := button.find_child("CardText", false, false) as Label
 	if card_text != null:
 		card_text.text = text
@@ -1209,8 +1276,8 @@ func _show_collector_intro_line() -> void:
 	if field_dialogue_panel != null:
 		field_dialogue_panel.visible = true
 	if field_dialogue_label != null:
-		field_dialogue_label.text = "[b]收藏家[/b]\n%s\n\n[color=#c7b277]Enter / Space 继续[/color]" % line
-	dialogue_label.text = "[b]收藏家[/b]\n%s" % line
+		field_dialogue_label.text = "[color=#e6d0a2]收藏家[/color]\n%s\n\n[color=#c7b277]Enter / Space 继续[/color]" % line
+	dialogue_label.text = "[color=#e6d0a2]收藏家[/color]\n%s" % line
 	dice_label.text = "[center][b]无声圣匣[/b]\n一具银白空壳在档案匣中醒来。收藏家的正式立绘尚未接入。[/center]"
 	intent_label.text = "开场：收藏家记录样本 | 按 空格 / 回车 或继续"
 	player_actor_label.text = "无韵回响\n[刚醒来]\n\n脏银残片 / 胃纹未稳定"
@@ -1259,6 +1326,7 @@ func _enter_field_exploration() -> void:
 
 func _update_field_exploration(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	actor_pose["player"] = "walk" if input_dir != Vector2.ZERO else "idle"
 	if input_dir != Vector2.ZERO:
 		if not is_zero_approx(input_dir.x):
 			field_player_facing = signf(input_dir.x)
@@ -1274,6 +1342,10 @@ func _update_field_positions() -> void:
 		return
 	field_player_sprite.position = field_player_position - field_player_sprite.custom_minimum_size * 0.5
 	field_player_sprite.scale.x = field_player_facing
+	var player_frames := _get_actor_frames("player", String(actor_pose.get("player", "idle")))
+	if not player_frames.is_empty():
+		var index: int = clampi(int(actor_frame_index.get("player", 0)), 0, player_frames.size() - 1)
+		field_player_sprite.texture = player_frames[index]
 	if field_interact_hint_label != null:
 		field_interact_hint_label.position = FIELD_FARMER_POS + Vector2(-60.0, -152.0)
 	if field_farmer_sprite != null:
@@ -1327,7 +1399,7 @@ func _show_field_dialogue_line() -> void:
 	if field_dialogue_label == null:
 		return
 	var lines := _current_lines("field_dialogue", field_dialogue_lines)
-	field_dialogue_label.text = "[b]%s[/b]\n%s" % [_current_encounter_name(), lines[clampi(field_dialogue_index, 0, lines.size() - 1)]]
+	field_dialogue_label.text = "[color=#e6d0a2]%s[/color]\n%s" % [_current_encounter_name(), lines[clampi(field_dialogue_index, 0, lines.size() - 1)]]
 
 
 func _set_duel_ui_visible(visible: bool) -> void:
@@ -1375,6 +1447,7 @@ func _enter_player_choice() -> void:
 	if field_dialogue_panel != null:
 		field_dialogue_panel.visible = false
 	_set_duel_ui_visible(true)
+	_set_action_buttons_visible(true)
 	_set_action_buttons_enabled(true)
 	continue_button.visible = false
 	reward_panel.visible = false
@@ -1400,14 +1473,23 @@ func _refresh_card_button_texts() -> void:
 		heavy_text += "\n奖励D3 x%d" % attack_bonus
 	if defend_bonus > 0:
 		defend_text += "\n奖励D3 x%d" % defend_bonus
+	attack_text = "攻击\nD20命中 / D3"
+	heavy_text = "重击\n高出5 / D3x2"
+	defend_text = "蓄防\n防御2D20取高"
+	ultimate_text = "大招\nD6直伤 %s" % ("可用" if _ultimate_ready() else "%d/3" % player_attack_count)
+	if attack_bonus > 0:
+		attack_text += "\n+%dD3" % attack_bonus
+		heavy_text += "\n+%dD3" % attack_bonus
+	if defend_bonus > 0:
+		defend_text += "\n+%dD3" % defend_bonus
 	_set_action_card_text(attack_button, attack_text)
 	_set_action_card_text(heavy_button, heavy_text)
 	_set_action_card_text(defend_button, defend_text)
 	_set_action_card_text(ultimate_button, ultimate_text)
 
 
-func _choose_action(player_action: int) -> void:
-	if state != DuelState.PLAYER_CHOICE:
+func _choose_action(player_action: int, allow_auto: bool = false) -> void:
+	if state != DuelState.PLAYER_CHOICE or (auto_resolving_enemy_turn and not allow_auto):
 		return
 
 	state = DuelState.RESOLVING
@@ -1456,7 +1538,6 @@ func _set_action_selection(index: int) -> void:
 
 func _confirm_action_selection() -> void:
 	if _is_enemy_turn():
-		_choose_action(Dice.Action.DEFEND)
 		return
 	if action_selection_index == 3 and not _ultimate_ready():
 		_set_action_selection(action_selection_index)
@@ -1476,10 +1557,24 @@ func _finish_resolved_action(result: Dictionary) -> void:
 		_enter_defeat()
 	else:
 		state = DuelState.PLAYER_CHOICE
-		_set_action_buttons_enabled(true)
 		_refresh_card_button_texts()
+		_set_action_buttons_enabled(not _is_enemy_turn())
 		_set_action_selection(action_selection_index)
 		_update_ui()
+		if _is_enemy_turn():
+			_resolve_auto_enemy_turn.call_deferred()
+
+
+func _resolve_auto_enemy_turn() -> void:
+	if state != DuelState.PLAYER_CHOICE or not _is_enemy_turn() or auto_resolving_enemy_turn:
+		return
+	auto_resolving_enemy_turn = true
+	await get_tree().create_timer(0.45).timeout
+	if state == DuelState.PLAYER_CHOICE and _is_enemy_turn():
+		auto_resolving_enemy_turn = false
+		await _choose_action(Dice.Action.DEFEND, true)
+	else:
+		auto_resolving_enemy_turn = false
 
 
 func _play_combat_presentation(result: Dictionary) -> void:
@@ -1577,7 +1672,8 @@ func _roll_single_die(label: String, final_value: int, kind: String, sides: int,
 	if dice_roll_stage == null or dice_roll_label == null:
 		return
 	if dice_roll_icon != null:
-		dice_roll_icon.texture = _load_texture(DICE_ICON_PATHS.get(kind, DICE_ICON_PATHS["hit"]))
+		var dice_kind := "ultimate" if sides == 6 else kind
+		dice_roll_icon.texture = _load_texture(DICE_ICON_PATHS.get(dice_kind, DICE_ICON_PATHS["hit"]))
 	dice_roll_stage.visible = true
 	dice_roll_stage.scale = Vector2(0.88, 0.88)
 	if dice_roll_icon != null:
@@ -1647,8 +1743,8 @@ func _roll_result_flash_color(final_value: int, sides: int) -> Color:
 
 
 func _play_result_motion(result: Dictionary) -> void:
-	var player_pose: String = _pose_for_action(int(result["player_action"]))
-	var farmer_pose: String = _pose_for_action(int(result["enemy_action"]))
+	var player_pose: String = _player_pose_for_action(int(result["player_action"]))
+	var farmer_pose: String = _enemy_pose_for_action(int(result["enemy_action"]))
 	if int(result["enemy_hp_delta"]) < 0:
 		farmer_pose = "hit"
 	if int(result["player_hp_delta"]) < 0:
@@ -1828,7 +1924,7 @@ func _result_banner_color(result: Dictionary) -> Color:
 
 
 func _nudge_actor_panels(player_pose: String, farmer_pose: String) -> void:
-	if player_pose == "attack":
+	if player_pose in ["attack", "heavy_attack", "ultimate_cast"]:
 		_nudge_panel(player_actor, Vector2(26.0, 0.0))
 	elif player_pose == "hit":
 		_nudge_panel(player_actor, Vector2(-18.0, 0.0))
@@ -1873,8 +1969,8 @@ func _show_result(result: Dictionary) -> void:
 	var farmer_bark: String = String(barks.get("defend" if result["enemy_action"] == Dice.Action.DEFEND else "attack", "……"))
 	dialogue_label.text = "[b]%s[/b]\n%s" % [_current_encounter_name(), farmer_bark]
 
-	var player_pose: String = _pose_for_action(int(result["player_action"]))
-	var farmer_pose: String = _pose_for_action(int(result["enemy_action"]))
+	var player_pose: String = _player_pose_for_action(int(result["player_action"]))
+	var farmer_pose: String = _enemy_pose_for_action(int(result["enemy_action"]))
 	if int(result["enemy_hp_delta"]) < 0:
 		farmer_pose = "hit"
 	if int(result["player_hp_delta"]) < 0:
@@ -1882,12 +1978,24 @@ func _show_result(result: Dictionary) -> void:
 	_update_actor_pose(player_pose, farmer_pose)
 
 
-func _pose_for_action(action: int) -> String:
+func _player_pose_for_action(action: int) -> String:
+	match action:
+		Dice.Action.ATTACK:
+			return "attack"
+		Dice.Action.HEAVY:
+			return "heavy_attack"
+		Dice.Action.ULTIMATE:
+			return "ultimate_cast"
+		Dice.Action.DEFEND:
+			return "defend"
+		_:
+			return "idle"
+
+
+func _enemy_pose_for_action(action: int) -> String:
 	match action:
 		Dice.Action.ATTACK, Dice.Action.HEAVY, Dice.Action.ULTIMATE:
 			return "attack"
-		Dice.Action.DEFEND:
-			return "defend"
 		_:
 			return "idle"
 
@@ -1916,6 +2024,7 @@ func _combat_feedback_line(result: Dictionary) -> String:
 func _enter_victory_story() -> void:
 	state = DuelState.VICTORY_STORY
 	_set_action_buttons_enabled(false)
+	_set_action_buttons_visible(false)
 	continue_button.visible = true
 	continue_button.text = "归档日志"
 	dialogue_label.text = _format_lines(_current_lines("victory_story", victory_story), _current_encounter_name())
@@ -1926,6 +2035,7 @@ func _enter_victory_story() -> void:
 
 func _enter_reward_choice() -> void:
 	state = DuelState.REWARD_CHOICE
+	_set_action_buttons_visible(false)
 	continue_button.visible = false
 	reward_panel.visible = true
 	archive_panel.visible = false
@@ -1947,6 +2057,7 @@ func _apply_reward_button_texts() -> void:
 	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
 	for i: int in range(buttons.size()):
 		var reward := _reward_at(i)
+		_apply_reward_button_icon(buttons[i], reward)
 		var prefix := "> 选择 " if i == reward_selection_index else "  "
 		buttons[i].text = "%s%s\n[%s]\n%s" % [
 			prefix,
@@ -1954,6 +2065,13 @@ func _apply_reward_button_texts() -> void:
 			_reward_kind_label(String(reward.get("kind", ""))),
 			_reward_effect_short(String(reward.get("kind", "")))
 		]
+
+
+func _apply_reward_button_icon(button: Button, reward: Dictionary) -> void:
+	var reward_id := String(reward.get("id", ""))
+	var reward_kind := String(reward.get("kind", ""))
+	var path := String(REWARD_ICON_PATHS.get(reward_id, REWARD_ICON_PATHS.get(reward_kind, "")))
+	_apply_button_icon(button, path)
 
 
 func _choose_reward_by_index(index: int) -> void:
@@ -1994,6 +2112,7 @@ Defense bonus D3 x%d[/center]" % [reward_title, reward_description, int(bonuses[
 
 	state = DuelState.COMPLETE
 	reward_panel.visible = false
+	_set_action_buttons_visible(false)
 	for button: Button in [reward_sickle_button, reward_hat_button, reward_wheat_button]:
 		button.button_pressed = false
 	continue_button.visible = true
@@ -2226,6 +2345,12 @@ func _set_action_buttons_enabled(enabled: bool) -> void:
 	ultimate_button.disabled = not enabled or enemy_turn or not _ultimate_ready()
 
 
+func _set_action_buttons_visible(visible: bool) -> void:
+	for button: Button in [attack_button, heavy_button, defend_button, ultimate_button]:
+		if button != null:
+			button.visible = visible
+
+
 func _is_enemy_turn() -> bool:
 	return turn_index % 2 == 1
 
@@ -2241,7 +2366,7 @@ func _turn_phase_text() -> String:
 
 
 func _update_actor_pose(player_pose: String, farmer_pose: String) -> void:
-	_set_actor_pose("player", player_pose, player_pose in ["attack", "defend", "hit"])
+	_set_actor_pose("player", player_pose, player_pose in ["attack", "heavy_attack", "defend", "hit", "ultimate_cast"])
 	_set_actor_pose(_current_enemy_actor_key(), farmer_pose, farmer_pose in ["attack", "defend", "hit"])
 	player_actor_label.text = "无韵回响\n[%s]\n\n脏银残片 / 胃纹微亮" % player_pose
 	farmer_actor_label.text = "%s\n[%s]\n\n%s / 样本 %d" % [_current_encounter_name(), farmer_pose, _current_room_name(), current_encounter_index + 1]
@@ -2331,7 +2456,7 @@ func _pose_duration(actor_key: String, pose: String) -> float:
 
 func _pose_fps(pose: String) -> float:
 	match pose:
-		"attack", "hit":
+		"attack", "heavy_attack", "ultimate_cast", "hit":
 			return 12.0
 		"defend":
 			return 9.0
@@ -2342,7 +2467,7 @@ func _pose_fps(pose: String) -> float:
 
 
 func _format_lines(lines: Array[String], speaker: String) -> String:
-	var formatted: Array[String] = ["[b]%s[/b]" % speaker]
+	var formatted: Array[String] = ["[color=#e6d0a2]%s[/color]" % speaker]
 	for line: String in lines:
 		formatted.append("“%s”" % line)
 	return "\n".join(formatted)

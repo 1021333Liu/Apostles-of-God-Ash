@@ -35,6 +35,30 @@ func _init() -> void:
 			push_error("Missing summary in card duel result")
 			quit(1)
 			return
+	for seed_value: int in range(200):
+		rng.seed = seed_value
+		var unguarded := Dice.resolve_enemy_attack(rng, {}, false)
+		if int(unguarded["player_defense_roll"]) >= int(unguarded["enemy_hit_roll"]):
+			if int(unguarded["player_hp_delta"]) != 0:
+				push_error("Successful automatic defense should not damage player")
+				quit(1)
+				return
+			if int(unguarded["enemy_hp_delta"]) != 0:
+				push_error("Unguarded automatic defense should not reflect")
+				quit(1)
+				return
+		rng.seed = seed_value
+		var guarded := Dice.resolve_enemy_attack(rng, {}, true)
+		var best_defense: int = maxi(int(guarded["player_defense_roll"]), int(guarded["player_defense_roll_2"]))
+		if best_defense >= int(guarded["enemy_hit_roll"]):
+			if int(guarded["player_hp_delta"]) != 0:
+				push_error("Charged guard success should not damage player")
+				quit(1)
+				return
+			if int(guarded["enemy_hp_delta"]) > 0:
+				push_error("Charged guard reflect should not heal enemy")
+				quit(1)
+				return
 	var demo := scene.instantiate()
 	root.add_child(demo)
 	await process_frame

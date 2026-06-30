@@ -58,6 +58,7 @@
 | `28_CARD_DICE_PIVOT_DESIGN.md` | 策划、程序、UI、文案 | 从实时动作战斗转向卡牌骰子决斗的核心规则、首关数值、奖励和 Godot MVP 方案 |
 | `29_CARD_DEMO_ART_BRIEF.md` | 画师、美术负责人、程序接入 | 卡牌骰子 Demo 的 P0/P1 美术资产清单、格式、交付目录和画师任务单 |
 | `32_NANOBANANA_CARD_COMBAT_ART_PROMPTS.md` | 美术处理、生成线程、真人画师、程序接入 | 新版攻击/重击/蓄防/大招战斗所需角色动作、卡牌、骰子、FX 的 nanobanana / image-to-image 提示词、负面提示词和接入规格 |
+| `33_CURRENT_ASSET_SORT_AND_I2I_NEXT_STEPS.md` | 美术处理、生成线程、真人画师、程序接入 | 当前确定采用资产分级、收藏家半身像清洁、角色动作、四张行动牌、骰子、FX 的 i2i 执行顺序与验收标准 |
 
 根目录的 `Communication.md` 用于记录尚未完成的试玩意见、待确认事项和团队沟通。已经落地的修改必须写入 `CHANGELOG.md`。
 

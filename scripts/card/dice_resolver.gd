@@ -104,6 +104,7 @@ static func _resolve_player_attack(result: Dictionary, rng: RandomNumberGenerato
 		return
 
 	if attack_roll == HIT_MAX:
+		result["player_effect_roll"] = EFFECT_MAX
 		var critical_damage := EFFECT_MAX * (2 if heavy else 1)
 		critical_damage += _apply_bonus_rolls(result, rng, int(bonuses.get("sickle", 0)))
 		_apply_attack_damage(result, true, critical_damage, "攻击大成功", "攻击骰掷出 20，直接撕开防线。")
@@ -144,6 +145,19 @@ static func _resolve_enemy_attack(result: Dictionary, rng: RandomNumberGenerator
 		result["player_defense_roll_2"] = second_defense_roll
 		defense_roll = maxi(defense_roll, second_defense_roll)
 	defense_roll += _apply_bonus_rolls(result, rng, int(bonuses.get("hat", 0)))
+	if attack_roll == HIT_MIN:
+		result["event"] = "敌人失手"
+		result["summary"] = "对方攻击骰为 0，攻击落空。"
+		return
+	if defense_roll >= attack_roll:
+		if player_guarded:
+			var reflect_damage: int = EFFECT_MAX if defense_roll >= HIT_MAX else roll_effect(rng)
+			result["player_effect_roll"] = reflect_damage
+			_apply_reflect(result, false, reflect_damage, "防御反弹", "蓄防生效：防御成功后反弹伤害。")
+		else:
+			result["event"] = "防御成功"
+			result["summary"] = "你的防御骰挡住了攻击，本次没有受到伤害。"
+		return
 
 	if defense_roll >= HIT_MAX:
 		_apply_reflect(result, false, EFFECT_MAX, "完美防御", "你的防御骰达到 20，攻击被完全封住并触发反弹。")
@@ -287,9 +301,9 @@ static func _apply_attack_damage(result: Dictionary, player_is_attacker: bool, d
 
 static func _apply_reflect(result: Dictionary, attacker_is_player: bool, damage: int, event: String, summary: String) -> void:
 	if attacker_is_player:
-		result["enemy_hp_delta"] = -damage
-	else:
 		result["player_hp_delta"] = -damage
+	else:
+		result["enemy_hp_delta"] = -damage
 	result["event"] = event
 	result["summary"] = summary
 
