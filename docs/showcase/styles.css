@@ -182,7 +182,7 @@ img {
 }
 
 .hero-copy {
-  width: min(760px, 88vw);
+  width: min(980px, 88vw);
 }
 
 .eyebrow,
@@ -199,7 +199,7 @@ img {
   font-size: 168px;
   line-height: 0.88;
   letter-spacing: 0;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 
 .latin {
@@ -209,10 +209,10 @@ img {
 }
 
 .hero-line {
-  width: min(620px, 92vw);
+  width: min(900px, 92vw);
   margin: 0;
   color: rgba(244,234,214,0.86);
-  font-size: 38px;
+  font-size: 36px;
   line-height: 1.34;
 }
 
