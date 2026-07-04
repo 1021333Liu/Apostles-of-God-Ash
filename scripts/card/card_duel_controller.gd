@@ -64,6 +64,18 @@ const CARD_UI_PATHS: Dictionary = {
 	"selected": CARD_ART_ROOT + "/ui/cards/card_selected_frame.png",
 	"hover": CARD_ART_ROOT + "/ui/cards/card_hover_frame.png"
 }
+const CUTSCENE_PATHS: Dictionary = {
+	"opening": CARD_ART_ROOT + "/videos/001_opening.ogv",
+	"field_entry": CARD_ART_ROOT + "/videos/002_field_entry.ogv",
+	"first_enemy_pre": CARD_ART_ROOT + "/videos/003_first_enemy_pre.ogv",
+	"first_enemy_post": CARD_ART_ROOT + "/videos/004_first_enemy_post.ogv",
+	"farmer_pre": CARD_ART_ROOT + "/videos/005_farmer_pre.ogv",
+	"barn_king_entry": CARD_ART_ROOT + "/videos/006_barn_king_entry.ogv",
+	"barn_king_pre": CARD_ART_ROOT + "/videos/007_barn_king_pre.ogv",
+	"barn_king_defeat": CARD_ART_ROOT + "/videos/009_barn_king_defeat.ogv",
+	"generic_defeat": CARD_ART_ROOT + "/videos/010_generic_defeat.ogv",
+	"barn_king_victory": CARD_ART_ROOT + "/videos/011_barn_king_victory.ogv"
+}
 const PLAYER_POSES: Array[String] = ["idle", "walk", "attack", "heavy_attack", "defend", "hit", "ultimate_cast"]
 const FARMER_POSES: Array[String] = ["idle", "walk", "mutter", "attack", "defend", "hit", "confess"]
 const ACTOR_ACTION_ALIASES: Dictionary = {
@@ -188,6 +200,13 @@ var ultimate_button: Button
 var result_banner: PanelContainer
 var result_banner_label: Label
 var action_card_overlays: Dictionary = {}
+var cutscene_overlay: CanvasLayer
+var cutscene_root: Control
+var cutscene_player: VideoStreamPlayer
+var cutscene_caption: Label
+var cutscene_finished_callback: Callable = Callable()
+var active_cutscene_key: String = ""
+var cutscenes_played: Dictionary = {}
 var player_bubble: PanelContainer
 var farmer_bubble: PanelContainer
 var field_player_position: Vector2 = FIELD_PLAYER_START
@@ -269,10 +288,14 @@ func _ready() -> void:
 	_connect_signals()
 	_build_theme()
 	_setup_art_assets()
+	_setup_cutscene_video_layer()
 	_enter_sanctum_intro()
+	_play_cutscene_once("opening")
 
 
 func _process(delta: float) -> void:
+	if _cutscene_is_active():
+		return
 	_update_actor_animation("player", delta)
 	var enemy_actor_key := _current_enemy_actor_key()
 	_update_actor_animation(enemy_actor_key, delta)
@@ -360,6 +383,10 @@ func _set_current_encounter(index: int) -> void:
 
 func _current_encounter_name() -> String:
 	return String(current_encounter.get("display_name", "未知样本"))
+
+
+func _current_encounter_id() -> String:
+	return String(current_encounter.get("id", ""))
 
 
 func _current_enemy_actor_key() -> String:
@@ -575,6 +602,11 @@ func _action_has_physical_key(action_name: String, physical_keycode: int) -> boo
 
 
 func _input(event: InputEvent) -> void:
+	if _cutscene_is_active():
+		if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel"):
+			_finish_cutscene()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("menu_left"):
 		if _archive_has_input_focus():
 			_step_archive_fragment(-1)
@@ -703,6 +735,102 @@ func _load_enemy_actor_frames() -> void:
 		actor_frames[actor_key] = {}
 		var source: Dictionary = ENEMY_ACTOR_SOURCES[actor_key]
 		_load_actor_frames(actor_key, String(source["root"]), String(source["prefix"]), FARMER_POSES)
+
+
+func _setup_cutscene_video_layer() -> void:
+	cutscene_overlay = CanvasLayer.new()
+	cutscene_overlay.name = "CutsceneOverlay"
+	cutscene_overlay.layer = 80
+	cutscene_overlay.visible = false
+	add_child(cutscene_overlay)
+
+	cutscene_root = Control.new()
+	cutscene_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	cutscene_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cutscene_overlay.add_child(cutscene_root)
+
+	var backing := ColorRect.new()
+	backing.color = Color(0.0, 0.0, 0.0, 1.0)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backing.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cutscene_root.add_child(backing)
+
+	cutscene_player = VideoStreamPlayer.new()
+	cutscene_player.name = "CutscenePlayer"
+	cutscene_player.expand = true
+	cutscene_player.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cutscene_player.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cutscene_player.finished.connect(_on_cutscene_finished)
+	cutscene_root.add_child(cutscene_player)
+
+	cutscene_caption = Label.new()
+	cutscene_caption.text = "Enter / Space 跳过"
+	cutscene_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cutscene_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cutscene_caption.add_theme_font_size_override("font_size", 18)
+	cutscene_caption.add_theme_color_override("font_color", Color(0.88, 0.82, 0.68, 0.90))
+	cutscene_caption.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.92))
+	cutscene_caption.add_theme_constant_override("shadow_offset_x", 2)
+	cutscene_caption.add_theme_constant_override("shadow_offset_y", 2)
+	cutscene_caption.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	cutscene_caption.offset_left = 32.0
+	cutscene_caption.offset_right = -32.0
+	cutscene_caption.offset_top = -54.0
+	cutscene_caption.offset_bottom = -18.0
+	cutscene_root.add_child(cutscene_caption)
+
+
+func _play_cutscene_once(cutscene_key: String, finished_callback: Callable = Callable()) -> bool:
+	if bool(cutscenes_played.get(cutscene_key, false)):
+		return false
+	cutscenes_played[cutscene_key] = true
+	_play_cutscene(cutscene_key, finished_callback)
+	return true
+
+
+func _play_cutscene(cutscene_key: String, finished_callback: Callable = Callable()) -> void:
+	active_cutscene_key = cutscene_key
+	cutscene_finished_callback = finished_callback
+	var path := String(CUTSCENE_PATHS.get(cutscene_key, ""))
+	if path.is_empty() or not FileAccess.file_exists(path):
+		push_warning("Cutscene video missing: %s" % path)
+		_finish_cutscene()
+		return
+
+	var resource := ResourceLoader.load(path)
+	var stream := resource as VideoStream
+	if stream == null:
+		push_warning("Cutscene video is not a Godot-readable VideoStream: %s" % path)
+		_finish_cutscene()
+		return
+
+	cutscene_player.stream = stream
+	cutscene_overlay.visible = true
+	cutscene_root.visible = true
+	get_viewport().gui_release_focus()
+	cutscene_player.play()
+
+
+func _cutscene_is_active() -> bool:
+	return cutscene_overlay != null and cutscene_overlay.visible
+
+
+func _on_cutscene_finished() -> void:
+	_finish_cutscene()
+
+
+func _finish_cutscene() -> void:
+	if cutscene_player != null:
+		if cutscene_player.is_playing():
+			cutscene_player.stop()
+		cutscene_player.stream = null
+	if cutscene_overlay != null:
+		cutscene_overlay.visible = false
+	active_cutscene_key = ""
+	var callback := cutscene_finished_callback
+	cutscene_finished_callback = Callable()
+	if callback.is_valid():
+		callback.call()
 
 
 func _setup_combat_presentation_layer() -> void:
@@ -1265,6 +1393,8 @@ func _enter_sanctum_intro() -> void:
 func _advance_sanctum_intro() -> void:
 	collector_intro_index += 1
 	if collector_intro_index >= _collector_intro().size():
+		if _play_cutscene_once("field_entry", Callable(self, "_enter_field_exploration")):
+			return
 		_enter_field_exploration()
 		return
 	_show_collector_intro_line()
@@ -1377,6 +1507,21 @@ func _is_near_farmer() -> bool:
 
 
 func _enter_field_dialogue() -> void:
+	var encounter_id := _current_encounter_id()
+	var cutscene_key := ""
+	match encounter_id:
+		"empty_stomach":
+			cutscene_key = "first_enemy_pre"
+		"famine_farmer":
+			cutscene_key = "farmer_pre"
+		"barn_king":
+			cutscene_key = "barn_king_pre"
+	if not cutscene_key.is_empty() and _play_cutscene_once(cutscene_key, Callable(self, "_begin_field_dialogue")):
+		return
+	_begin_field_dialogue()
+
+
+func _begin_field_dialogue() -> void:
 	state = DuelState.FIELD_DIALOGUE
 	field_dialogue_index = 0
 	continue_button.visible = false
@@ -2022,6 +2167,18 @@ func _combat_feedback_line(result: Dictionary) -> String:
 
 
 func _enter_victory_story() -> void:
+	var cutscene_key := ""
+	match _current_encounter_id():
+		"empty_stomach":
+			cutscene_key = "first_enemy_post"
+		"barn_king":
+			cutscene_key = "barn_king_victory"
+	if not cutscene_key.is_empty() and _play_cutscene_once(cutscene_key, Callable(self, "_begin_victory_story")):
+		return
+	_begin_victory_story()
+
+
+func _begin_victory_story() -> void:
 	state = DuelState.VICTORY_STORY
 	_set_action_buttons_enabled(false)
 	_set_action_buttons_visible(false)
@@ -2250,6 +2407,11 @@ func _failure_record_text() -> String:
 
 
 func _enter_defeat() -> void:
+	var cutscene_key := "barn_king_defeat" if _current_encounter_id() == "barn_king" else "generic_defeat"
+	_play_cutscene(cutscene_key, Callable(self, "_begin_defeat"))
+
+
+func _begin_defeat() -> void:
 	state = DuelState.DEFEAT
 	failed_recoveries += 1
 	last_failure_record = _failure_record_text()
@@ -2287,6 +2449,8 @@ func _on_continue_pressed() -> void:
 func _advance_to_next_encounter() -> void:
 	_set_current_encounter(current_encounter_index + 1)
 	selected_reward = ""
+	if _current_encounter_id() == "barn_king" and _play_cutscene_once("barn_king_entry", Callable(self, "_enter_field_exploration")):
+		return
 	_enter_field_exploration()
 
 
