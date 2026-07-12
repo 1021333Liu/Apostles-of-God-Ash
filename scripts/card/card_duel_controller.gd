@@ -1,6 +1,10 @@
 extends Control
 
 const Dice := preload("res://scripts/card/dice_resolver.gd")
+const ProductShellScene := preload("res://scripts/card/product_shell.gd")
+const RunSave := preload("res://scripts/card/run_save_store.gd")
+const GameSettings := preload("res://scripts/card/game_settings_store.gd")
+const GameAudioScene := preload("res://scripts/card/game_audio.gd")
 const PLAYER_MAX_HP_START: int = 12
 const FARMER_MAX_HP: int = 9
 const FARMER_PATTERN: Array[int] = [
@@ -130,6 +134,19 @@ const FIELD_PLAYER_START: Vector2 = Vector2(300.0, 540.0)
 const FIELD_FARMER_POS: Vector2 = Vector2(640.0, 360.0)
 const FIELD_INTERACT_DISTANCE: float = 135.0
 const FIELD_PLAYER_SPEED: float = 260.0
+const FIELD_WALK_PHASE_SPEED: float = TAU * 2.0
+const FIELD_WALK_FRAME_ORDER: Array[int] = [0, 1, 2, 4, 5]
+const FIELD_WALK_FRAME_X_OFFSETS: Array[float] = [-4.0, 0.0, -1.0, 2.0, -1.0]
+const AUTO_ENEMY_TURN_DELAY: float = 0.28
+const COMBAT_WINDUP_TIME: float = 0.32
+const COMBAT_RECOVERY_TIME: float = 0.34
+const PASSIVE_DEFEND_WINDUP_TIME: float = 0.18
+const PASSIVE_DEFEND_RECOVERY_TIME: float = 0.16
+const DICE_ROLL_TICKS: int = 6
+const DICE_TICK_BASE_TIME: float = 0.035
+const DICE_TICK_STEP_TIME: float = 0.006
+const DICE_RESULT_HOLD_TIME: float = 0.24
+const SETTINGS_SAVE_DEBOUNCE_TIME: float = 0.25
 
 enum DuelState { SANCTUM_INTRO, FIELD_EXPLORATION, FIELD_DIALOGUE, PRE_DIALOGUE, PLAYER_CHOICE, RESOLVING, VICTORY_STORY, REWARD_CHOICE, COMPLETE, DEFEAT }
 
@@ -140,6 +157,7 @@ var player_hp: int = PLAYER_MAX_HP_START
 var enemy_hp: int = FARMER_MAX_HP
 var enemy_max_hp: int = FARMER_MAX_HP
 var turn_index: int = 0
+var enemy_intent_index: int = 0
 var player_attack_count: int = 0
 var player_guard_charged: bool = false
 var selected_reward: String = ""
@@ -195,11 +213,15 @@ var dice_roll_stage: PanelContainer
 var dice_roll_icon: TextureRect
 var dice_roll_label: Label
 var dice_roll_icon_tween: Tween
+var result_banner_intro_tween: Tween
+var result_banner_fade_tween: Tween
+var result_banner_generation: int = 0
 var heavy_button: Button
 var ultimate_button: Button
 var result_banner: PanelContainer
 var result_banner_label: Label
 var action_card_overlays: Dictionary = {}
+var texture_cache: Dictionary[String, Texture2D] = {}
 var cutscene_overlay: CanvasLayer
 var cutscene_root: Control
 var cutscene_player: VideoStreamPlayer
@@ -221,6 +243,9 @@ var collector_intro_lines: Array[String] = [
 ]
 var field_dialogue_index: int = 0
 var field_player_facing: float = 1.0
+var field_walk_phase: float = 0.0
+var field_last_walk_sequence_index: int = -1
+var field_was_near_target: bool = false
 var field_dialogue_lines: Array[String] = [
 	"咕噜……饿了。",
 	"名单别乱。孩子还在田边等我。",
@@ -255,6 +280,16 @@ var archived_fragments: Array[Dictionary] = []
 var archive_fragment_index: int = 0
 var failed_recoveries: int = 0
 var last_failure_record: String = ""
+var selected_reward_ids: Array[String] = []
+var run_checkpoint: Dictionary = {}
+var game_settings: Dictionary = {}
+var product_shell: Variant
+var game_audio: Variant
+var settings_save_timer: Timer
+var settings_save_pending: bool = false
+var checkpoint_save_pending: bool = false
+var pending_checkpoint_index: int = -1
+var pending_checkpoint_complete: bool = false
 
 @onready var background: ColorRect = %Background
 @onready var title_label: Label = %TitleLabel
@@ -283,23 +318,30 @@ var last_failure_record: String = ""
 
 func _ready() -> void:
 	_ensure_gameplay_input_actions()
+	game_settings = GameSettings.load_settings()
+	GameSettings.apply_settings(game_settings)
 	rng.randomize()
 	_load_encounter_data()
 	_connect_signals()
 	_build_theme()
 	_setup_art_assets()
+	_setup_game_audio()
 	_setup_cutscene_video_layer()
-	_enter_sanctum_intro()
-	_play_cutscene_once("opening")
+	_setup_product_shell()
+	_show_title_screen()
+
+
+func _exit_tree() -> void:
+	_flush_game_settings()
 
 
 func _process(delta: float) -> void:
-	if _cutscene_is_active():
+	if _cutscene_is_active() or (product_shell != null and product_shell.is_open()):
 		return
 	_update_actor_animation("player", delta)
 	var enemy_actor_key := _current_enemy_actor_key()
 	_update_actor_animation(enemy_actor_key, delta)
-	if state == DuelState.FIELD_EXPLORATION and not _archive_has_input_focus():
+	if state == DuelState.FIELD_EXPLORATION and not _archive_has_input_focus() and not checkpoint_save_pending:
 		_update_field_exploration(delta)
 
 
@@ -310,6 +352,342 @@ func _connect_signals() -> void:
 	reward_sickle_button.pressed.connect(func() -> void: _choose_reward_by_index(0))
 	reward_hat_button.pressed.connect(func() -> void: _choose_reward_by_index(1))
 	reward_wheat_button.pressed.connect(func() -> void: _choose_reward_by_index(2))
+
+
+func _setup_product_shell() -> void:
+	settings_save_timer = Timer.new()
+	settings_save_timer.name = "SettingsSaveTimer"
+	settings_save_timer.one_shot = true
+	settings_save_timer.wait_time = SETTINGS_SAVE_DEBOUNCE_TIME
+	settings_save_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	settings_save_timer.timeout.connect(_persist_game_settings)
+	add_child(settings_save_timer)
+	product_shell = ProductShellScene.new()
+	add_child(product_shell)
+	product_shell.new_game_requested.connect(_start_new_run)
+	product_shell.continue_requested.connect(_continue_saved_run)
+	product_shell.resume_requested.connect(_resume_from_pause)
+	product_shell.return_to_title_requested.connect(_return_to_title)
+	product_shell.exit_requested.connect(_exit_game)
+	product_shell.settings_changed.connect(_on_shell_settings_changed)
+	product_shell.set_settings(game_settings)
+	product_shell.set_audio_player(game_audio)
+
+
+func _setup_game_audio() -> void:
+	game_audio = GameAudioScene.new()
+	add_child(game_audio)
+	GameSettings.apply_settings(game_settings)
+
+
+func _show_title_screen(status_message: String = "") -> void:
+	_cancel_result_banner()
+	var saved := RunSave.load_run()
+	var has_save_files := RunSave.has_any_run_file()
+	var chapter_complete := not saved.is_empty() and bool(saved.get("chapter_complete", false))
+	var can_continue := not _validated_resumable_checkpoint(saved).is_empty()
+	product_shell.show_title(can_continue, chapter_complete, has_save_files)
+	if not status_message.is_empty():
+		product_shell.show_status(status_message)
+	elif saved.is_empty() and has_save_files:
+		product_shell.show_status("检测到损坏或不受支持的存档。开始新游戏将覆盖这些文件。")
+	elif not saved.is_empty() and not chapter_complete and not can_continue:
+		product_shell.show_status("现有存档与当前章节内容不兼容，请开始新游戏。")
+
+
+func _resume_from_pause() -> void:
+	product_shell.hide_shell()
+	get_tree().paused = false
+	_restore_gameplay_focus()
+
+
+func _return_to_title() -> void:
+	get_tree().paused = false
+	_show_title_screen()
+
+
+func _exit_game() -> void:
+	get_tree().paused = false
+	_flush_game_settings()
+	get_tree().quit()
+
+
+func _on_shell_settings_changed(settings: Dictionary) -> void:
+	game_settings = settings.duplicate(true)
+	GameSettings.apply_settings(game_settings)
+	settings_save_pending = true
+	settings_save_timer.start()
+
+
+func _flush_game_settings() -> void:
+	if not settings_save_pending:
+		return
+	if settings_save_timer != null:
+		settings_save_timer.stop()
+	_persist_game_settings()
+
+
+func _persist_game_settings() -> void:
+	if not settings_save_pending:
+		return
+	settings_save_pending = false
+	var error := GameSettings.save_settings(game_settings)
+	if error != OK:
+		push_error("CardDuelController: cannot save settings (%d)" % error)
+		if product_shell != null and is_instance_valid(product_shell) and product_shell.is_inside_tree():
+			product_shell.show_settings_status("设置保存失败（错误 %d）。本次运行仍会生效。" % error, true)
+	else:
+		if product_shell != null and is_instance_valid(product_shell) and product_shell.is_inside_tree():
+			product_shell.show_settings_status("设置已保存。")
+
+
+func _restore_gameplay_focus() -> void:
+	if _archive_has_input_focus():
+		get_viewport().gui_release_focus()
+		return
+	match state:
+		DuelState.PLAYER_CHOICE:
+			_set_action_selection(action_selection_index)
+		DuelState.REWARD_CHOICE:
+			_set_reward_selection(reward_selection_index)
+		_:
+			get_viewport().gui_release_focus()
+
+
+func _can_open_pause_menu() -> bool:
+	if _cutscene_is_active() or auto_resolving_enemy_turn or state == DuelState.RESOLVING:
+		return false
+	return not (state == DuelState.PLAYER_CHOICE and _is_enemy_turn())
+
+
+func _open_pause_menu() -> void:
+	product_shell.show_pause()
+	get_tree().paused = true
+
+
+func _start_new_run() -> void:
+	get_tree().paused = false
+	_cancel_result_banner()
+	var delete_error := RunSave.delete_run()
+	if delete_error != OK:
+		_show_title_screen("无法清除旧存档（错误 %d）。为避免进度混淆，新游戏尚未启动。" % delete_error)
+		return
+	run_checkpoint.clear()
+	product_shell.hide_shell()
+	_reset_run()
+	_play_cutscene_once("opening")
+
+
+func _continue_saved_run() -> void:
+	get_tree().paused = false
+	_cancel_result_banner()
+	var checkpoint := _validated_resumable_checkpoint(RunSave.load_run())
+	if checkpoint.is_empty():
+		_show_title_screen("无法读取可继续的章节检查点，请开始新游戏。")
+		return
+	product_shell.hide_shell()
+	if not _apply_entry_checkpoint(checkpoint):
+		_show_title_screen("检查点内容已失效，请开始新游戏。")
+
+
+func _validated_resumable_checkpoint(raw_checkpoint: Dictionary) -> Dictionary:
+	if raw_checkpoint.is_empty() or bool(raw_checkpoint.get("chapter_complete", false)):
+		return {}
+	if String(raw_checkpoint.get("checkpoint_kind", "")) != "encounter_start":
+		return {}
+	if String(raw_checkpoint.get("content_revision", "")) != _content_revision():
+		return {}
+	if _resolve_checkpoint_encounter_index(raw_checkpoint) < 0:
+		return {}
+	return raw_checkpoint.duplicate(true)
+
+
+func _content_revision() -> String:
+	return String(encounter_data.get("schema", "godash.low_whispering_field.encounters.v1"))
+
+
+func _encounter_id_at(index: int) -> String:
+	if index < 0 or index >= encounters.size():
+		return ""
+	var encounter_variant: Variant = encounters[index]
+	if not encounter_variant is Dictionary:
+		return ""
+	return String((encounter_variant as Dictionary).get("id", ""))
+
+
+func _resolve_checkpoint_encounter_index(checkpoint: Dictionary) -> int:
+	var saved_id := String(checkpoint.get("encounter_id", ""))
+	if not saved_id.is_empty():
+		for i: int in range(encounters.size()):
+			if _encounter_id_at(i) == saved_id:
+				return i
+		return -1
+	var saved_index := int(checkpoint.get("encounter_index", -1))
+	if saved_index >= 0 and saved_index < encounters.size():
+		return saved_index
+	return -1
+
+
+func _make_entry_checkpoint(encounter_index: int, chapter_complete: bool = false) -> Dictionary:
+	var safe_index := clampi(encounter_index, 0, maxi(encounters.size() - 1, 0))
+	var archived_fragment_ids: Array[String] = []
+	for fragment: Dictionary in archived_fragments:
+		var fragment_id := String(fragment.get("id", ""))
+		if not fragment_id.is_empty():
+			archived_fragment_ids.append(fragment_id)
+	return {
+		"checkpoint_kind": "encounter_start",
+		"content_revision": _content_revision(),
+		"encounter_index": safe_index,
+		"encounter_id": _encounter_id_at(safe_index),
+		"player_max_hp": player_max_hp,
+		"player_hp": player_hp,
+		"player_attack_count": player_attack_count,
+		"bonuses": bonuses.duplicate(true),
+		"archived_fragment_ids": archived_fragment_ids,
+		"selected_reward_ids": selected_reward_ids.duplicate(),
+		"failed_recoveries": failed_recoveries,
+		"last_failure_record": last_failure_record,
+		"cutscenes_played": cutscenes_played.duplicate(true),
+		"chapter_complete": chapter_complete
+	}
+
+
+func _store_entry_checkpoint(encounter_index: int, chapter_complete: bool = false) -> bool:
+	var checkpoint := _make_entry_checkpoint(encounter_index, chapter_complete)
+	run_checkpoint = checkpoint.duplicate(true)
+	var error := RunSave.save_run(checkpoint)
+	if error != OK:
+		push_error("CardDuelController: cannot save encounter checkpoint (%d)" % error)
+		return false
+	return true
+
+
+func _store_required_checkpoint(encounter_index: int, chapter_complete: bool) -> bool:
+	if _store_entry_checkpoint(encounter_index, chapter_complete):
+		_clear_pending_checkpoint_save()
+		return true
+	checkpoint_save_pending = true
+	pending_checkpoint_index = encounter_index
+	pending_checkpoint_complete = chapter_complete
+	return false
+
+
+func _clear_pending_checkpoint_save() -> void:
+	checkpoint_save_pending = false
+	pending_checkpoint_index = -1
+	pending_checkpoint_complete = false
+
+
+func _retry_pending_checkpoint_save() -> void:
+	if not checkpoint_save_pending:
+		return
+	var retry_state := state
+	if not _store_required_checkpoint(pending_checkpoint_index, pending_checkpoint_complete):
+		_show_checkpoint_save_error()
+		return
+	if retry_state == DuelState.COMPLETE:
+		_apply_checkpoint_saved_feedback()
+	elif retry_state == DuelState.FIELD_EXPLORATION:
+		continue_button.visible = false
+		_update_field_prompt()
+	_show_center_banner("检查点已保存", Color(0.08, 0.16, 0.10, 0.96), 0.62)
+
+
+func _show_checkpoint_save_error() -> void:
+	continue_button.visible = true
+	continue_button.text = "重试保存"
+	if state == DuelState.FIELD_EXPLORATION and field_prompt_label != null:
+		field_prompt_label.text = "检查点保存失败。按 Enter 或点击“重试保存”后再继续。"
+	else:
+		dialogue_label.text = "[center][color=#ff9a78]检查点保存失败。奖励仍保留在当前运行中，请重试保存后再离开。[/color][/center]"
+	_show_center_banner("检查点保存失败\n请重试", Color(0.24, 0.055, 0.04, 0.97), 0.82)
+
+
+func _apply_checkpoint_saved_feedback() -> void:
+	continue_button.text = "进入下一处" if _has_next_encounter() else "返回标题"
+	if _has_next_encounter():
+		dialogue_label.text = "[center]%s样本结束。圣匣已保存本轮日志，下一处异常正在打开。[/center]" % _current_encounter_name()
+	else:
+		dialogue_label.text = "[center]第一章样本完成。神之胃囊已归档低语田野的四段故事。[/center]"
+
+
+func _store_failure_metadata() -> void:
+	var checkpoint := run_checkpoint.duplicate(true)
+	if checkpoint.is_empty():
+		checkpoint = _validated_resumable_checkpoint(RunSave.load_run())
+	if checkpoint.is_empty():
+		push_warning("CardDuelController: no stable checkpoint available for failure metadata")
+		return
+	checkpoint["failed_recoveries"] = failed_recoveries
+	checkpoint["last_failure_record"] = last_failure_record
+	checkpoint["cutscenes_played"] = cutscenes_played.duplicate(true)
+	run_checkpoint = checkpoint.duplicate(true)
+	var error := RunSave.save_run(checkpoint)
+	if error != OK:
+		push_error("CardDuelController: cannot update failure metadata (%d)" % error)
+		return
+
+
+func _apply_entry_checkpoint(checkpoint: Dictionary) -> bool:
+	var encounter_index := _resolve_checkpoint_encounter_index(checkpoint)
+	if encounter_index < 0:
+		return false
+	_set_current_encounter(encounter_index)
+	player_max_hp = maxi(int(checkpoint.get("player_max_hp", PLAYER_MAX_HP_START)), 1)
+	player_hp = clampi(int(checkpoint.get("player_hp", player_max_hp)), 1, player_max_hp)
+	player_attack_count = maxi(int(checkpoint.get("player_attack_count", 0)), 0)
+	var saved_bonuses: Dictionary = checkpoint.get("bonuses", {})
+	bonuses = {
+		"sickle": maxi(int(saved_bonuses.get("sickle", 0)), 0),
+		"hat": maxi(int(saved_bonuses.get("hat", 0)), 0)
+	}
+	selected_reward_ids.clear()
+	var raw_reward_ids: Array = checkpoint.get("selected_reward_ids", [])
+	for reward_id: Variant in raw_reward_ids:
+		selected_reward_ids.append(String(reward_id))
+	_restore_archived_fragments(checkpoint)
+	failed_recoveries = maxi(int(checkpoint.get("failed_recoveries", 0)), 0)
+	last_failure_record = String(checkpoint.get("last_failure_record", ""))
+	var saved_cutscenes: Variant = checkpoint.get("cutscenes_played", {})
+	cutscenes_played = (saved_cutscenes as Dictionary).duplicate(true) if saved_cutscenes is Dictionary else {}
+	run_checkpoint = checkpoint.duplicate(true)
+	_clear_pending_checkpoint_save()
+	selected_reward = ""
+	if _current_encounter_id() == "barn_king" and _play_cutscene_once("barn_king_entry", Callable(self, "_enter_field_exploration")):
+		return true
+	_enter_field_exploration(false)
+	return true
+
+
+func _restore_archived_fragments(checkpoint: Dictionary) -> void:
+	archived_fragments.clear()
+	var raw_ids: Array = checkpoint.get("archived_fragment_ids", [])
+	for raw_id: Variant in raw_ids:
+		var fragment := _log_fragment_by_id(String(raw_id))
+		if not fragment.is_empty():
+			archived_fragments.append(fragment)
+	if not archived_fragments.is_empty():
+		archive_fragment_index = archived_fragments.size() - 1
+		return
+	var legacy_fragments: Array = checkpoint.get("archived_fragments", [])
+	for item: Variant in legacy_fragments:
+		if item is Dictionary:
+			archived_fragments.append((item as Dictionary).duplicate(true))
+	archive_fragment_index = maxi(archived_fragments.size() - 1, 0)
+
+
+func _log_fragment_by_id(fragment_id: String) -> Dictionary:
+	for encounter_variant: Variant in encounters:
+		if not encounter_variant is Dictionary:
+			continue
+		var encounter: Dictionary = encounter_variant
+		var fragment_variant: Variant = encounter.get("log_fragment", {})
+		if fragment_variant is Dictionary:
+			var fragment: Dictionary = fragment_variant
+			if String(fragment.get("id", "")) == fragment_id:
+				return fragment.duplicate(true)
+	return {}
 
 
 func _load_encounter_data() -> void:
@@ -373,6 +751,9 @@ func _set_current_encounter(index: int) -> void:
 	enemy_max_hp = maxi(int(current_encounter.get("max_hp", FARMER_MAX_HP)), 1)
 	enemy_hp = enemy_max_hp
 	turn_index = 0
+	enemy_intent_index = 0
+	player_guard_charged = false
+	auto_resolving_enemy_turn = false
 	action_selection_index = 0
 	reward_selection_index = 0
 	archived_log = false
@@ -452,7 +833,7 @@ func _chapter_title() -> String:
 func _pattern_text() -> String:
 	var names: Array[String] = []
 	for action: int in _current_enemy_pattern():
-		names.append(_action_name(action))
+		names.append(_enemy_intent_name(action))
 	return " - ".join(names)
 
 
@@ -460,10 +841,23 @@ func _upcoming_pattern_text(count: int = 4) -> String:
 	var pattern := _current_enemy_pattern()
 	var names: Array[String] = []
 	for i in count:
-		var action: int = pattern[(turn_index + i) % pattern.size()]
+		var action: int = pattern[(enemy_intent_index + i) % pattern.size()]
 		var prefix := "> " if i == 0 else ""
-		names.append("%s%s" % [prefix, _action_name(action)])
+		names.append("%s%s" % [prefix, _enemy_intent_name(action)])
 	return " / ".join(names)
+
+
+func _intent_forecast_text() -> String:
+	var pattern := _current_enemy_pattern()
+	var current_action: int = pattern[enemy_intent_index % pattern.size()]
+	var next_action: int = pattern[(enemy_intent_index + 1) % pattern.size()]
+	return "本轮：%s  >  下轮：%s" % [_enemy_intent_name(current_action), _enemy_intent_name(next_action)]
+
+
+func _intent_decision_text() -> String:
+	if _current_enemy_action() == Dice.Action.ATTACK:
+		return "敌方将在你行动后攻击；蓄防可让自动防御投 2 次 D20。"
+	return "敌方正在防御：普通攻击面对 2D20 取高；重击可破防，随后敌方不会攻击。"
 
 
 func _current_enemy_pattern() -> Array[int]:
@@ -580,6 +974,32 @@ func _ensure_gameplay_input_actions() -> void:
 	_ensure_key_action("menu_right", [KEY_D, KEY_RIGHT])
 	_ensure_key_action("toggle_archive", [KEY_P])
 	_ensure_key_action("ui_accept", [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER])
+	_ensure_key_action("ui_cancel", [KEY_ESCAPE])
+	_ensure_key_action("ui_up", [KEY_W, KEY_UP])
+	_ensure_key_action("ui_down", [KEY_S, KEY_DOWN])
+	_ensure_key_action("pause_game", [KEY_ESCAPE])
+	_ensure_joy_button_action("move_left", [JOY_BUTTON_DPAD_LEFT])
+	_ensure_joy_button_action("move_right", [JOY_BUTTON_DPAD_RIGHT])
+	_ensure_joy_button_action("move_up", [JOY_BUTTON_DPAD_UP])
+	_ensure_joy_button_action("move_down", [JOY_BUTTON_DPAD_DOWN])
+	_ensure_joy_axis_action("move_left", JOY_AXIS_LEFT_X, -1.0)
+	_ensure_joy_axis_action("move_right", JOY_AXIS_LEFT_X, 1.0)
+	_ensure_joy_axis_action("move_up", JOY_AXIS_LEFT_Y, -1.0)
+	_ensure_joy_axis_action("move_down", JOY_AXIS_LEFT_Y, 1.0)
+	_ensure_joy_button_action("menu_left", [JOY_BUTTON_DPAD_LEFT])
+	_ensure_joy_button_action("menu_right", [JOY_BUTTON_DPAD_RIGHT])
+	_ensure_joy_axis_action("menu_left", JOY_AXIS_LEFT_X, -1.0)
+	_ensure_joy_axis_action("menu_right", JOY_AXIS_LEFT_X, 1.0)
+	_ensure_joy_button_action("toggle_archive", [JOY_BUTTON_Y])
+	_ensure_joy_button_action("ui_accept", [JOY_BUTTON_A])
+	_ensure_joy_button_action("ui_cancel", [JOY_BUTTON_B])
+	_ensure_joy_button_action("ui_up", [JOY_BUTTON_DPAD_UP])
+	_ensure_joy_button_action("ui_down", [JOY_BUTTON_DPAD_DOWN])
+	_ensure_joy_axis_action("ui_up", JOY_AXIS_LEFT_Y, -1.0)
+	_ensure_joy_axis_action("ui_down", JOY_AXIS_LEFT_Y, 1.0)
+	_ensure_joy_button_action("pause_game", [JOY_BUTTON_START])
+	for action_name: String in ["move_left", "move_right", "move_up", "move_down", "menu_left", "menu_right", "ui_up", "ui_down"]:
+		InputMap.action_set_deadzone(action_name, 0.25)
 
 
 func _ensure_key_action(action_name: String, physical_keycodes: Array[int]) -> void:
@@ -601,10 +1021,59 @@ func _action_has_physical_key(action_name: String, physical_keycode: int) -> boo
 	return false
 
 
+func _ensure_joy_button_action(action_name: String, button_indexes: Array[int]) -> void:
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name)
+	for button_index: int in button_indexes:
+		if _action_has_joy_button(action_name, button_index):
+			continue
+		var event := InputEventJoypadButton.new()
+		event.button_index = button_index
+		InputMap.action_add_event(action_name, event)
+
+
+func _action_has_joy_button(action_name: String, button_index: int) -> bool:
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		var button_event := event as InputEventJoypadButton
+		if button_event != null and button_event.button_index == button_index:
+			return true
+	return false
+
+
+func _ensure_joy_axis_action(action_name: String, axis: int, axis_value: float) -> void:
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name)
+	for event: InputEvent in InputMap.action_get_events(action_name):
+		var axis_event := event as InputEventJoypadMotion
+		if axis_event != null and axis_event.axis == axis and is_equal_approx(axis_event.axis_value, axis_value):
+			return
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = axis_value
+	InputMap.action_add_event(action_name, event)
+
+
 func _input(event: InputEvent) -> void:
 	if _cutscene_is_active():
-		if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel"):
+		if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
 			_finish_cutscene()
+		get_viewport().set_input_as_handled()
+		return
+	if product_shell != null and product_shell.is_open():
+		if event.is_action_pressed("pause_game") and product_shell.is_pause_context():
+			product_shell.handle_pause_action()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("ui_cancel"):
+			product_shell.handle_back()
+			get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("pause_game"):
+		if _can_open_pause_menu():
+			_open_pause_menu()
+			get_viewport().set_input_as_handled()
+		return
+	if checkpoint_save_pending and event.is_action_pressed("ui_accept"):
+		_retry_pending_checkpoint_save()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("menu_left"):
@@ -628,7 +1097,10 @@ func _input(event: InputEvent) -> void:
 			_set_reward_selection(reward_selection_index + 1)
 			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("toggle_archive"):
-		_toggle_archive_panel()
+		if checkpoint_save_pending:
+			_show_checkpoint_save_error()
+		elif _can_toggle_archive():
+			_toggle_archive_panel()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_accept"):
 		if state == DuelState.SANCTUM_INTRO:
@@ -652,6 +1124,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _toggle_archive_panel() -> void:
+	if checkpoint_save_pending:
+		_show_checkpoint_save_error()
+		return
+	if game_audio != null:
+		game_audio.play_sfx("archive", -4.0, 0.92 if archive_panel.visible else 1.04)
 	if archive_panel.visible:
 		archive_panel.visible = false
 		_set_archive_expanded(false)
@@ -663,6 +1140,10 @@ func _toggle_archive_panel() -> void:
 	archive_panel.visible = true
 	_enter_archive_overlay()
 	_update_ui()
+
+
+func _can_toggle_archive() -> bool:
+	return not _cutscene_is_active() and not auto_resolving_enemy_turn and state != DuelState.RESOLVING
 
 
 func _set_archive_expanded(expanded: bool) -> void:
@@ -681,6 +1162,7 @@ func _set_archive_expanded(expanded: bool) -> void:
 
 
 func _enter_archive_overlay() -> void:
+	_hide_action_bubbles()
 	for node: Control in [player_actor, farmer_actor, dice_panel, dialogue_panel, attack_button, defend_button, continue_button, reward_panel]:
 		node.visible = false
 	for node: Control in [heavy_button, ultimate_button]:
@@ -713,6 +1195,15 @@ func _restore_ui_after_archive() -> void:
 			_set_action_buttons_enabled(false)
 		DuelState.PLAYER_CHOICE:
 			_enter_player_choice()
+		DuelState.VICTORY_STORY, DuelState.COMPLETE, DuelState.DEFEAT:
+			_set_duel_ui_visible(true)
+			if field_layer != null:
+				field_layer.visible = false
+			_set_action_buttons_visible(false)
+			_set_action_buttons_enabled(false)
+			continue_button.visible = true
+			reward_panel.visible = false
+			archive_panel.visible = false
 		_:
 			pass
 
@@ -764,7 +1255,7 @@ func _setup_cutscene_video_layer() -> void:
 	cutscene_root.add_child(cutscene_player)
 
 	cutscene_caption = Label.new()
-	cutscene_caption.text = "Enter / Space 跳过"
+	cutscene_caption.text = "确认 / 返回 / Start 跳过"
 	cutscene_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cutscene_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	cutscene_caption.add_theme_font_size_override("font_size", 18)
@@ -804,6 +1295,8 @@ func _play_cutscene(cutscene_key: String, finished_callback: Callable = Callable
 		_finish_cutscene()
 		return
 
+	if game_audio != null:
+		game_audio.stop_all()
 	cutscene_player.stream = stream
 	cutscene_overlay.visible = true
 	cutscene_root.visible = true
@@ -1274,22 +1767,26 @@ func _configure_action_card_button(button: Button, card_key: String) -> void:
 	button.add_child(base)
 	button.move_child(base, 0)
 
-	var hover := TextureRect.new()
+	var hover := NinePatchRect.new()
 	hover.name = "CardHoverArt"
-	hover.texture = null
+	hover.texture = _load_texture(String(CARD_UI_PATHS.get("hover", "")))
 	hover.visible = false
-	hover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	hover.stretch_mode = TextureRect.STRETCH_SCALE
+	hover.patch_margin_left = 48
+	hover.patch_margin_top = 48
+	hover.patch_margin_right = 48
+	hover.patch_margin_bottom = 48
 	hover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	button.add_child(hover)
 
-	var selected := TextureRect.new()
+	var selected := NinePatchRect.new()
 	selected.name = "CardSelectedArt"
-	selected.texture = null
+	selected.texture = _load_texture(String(CARD_UI_PATHS.get("selected", "")))
 	selected.visible = false
-	selected.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	selected.stretch_mode = TextureRect.STRETCH_SCALE
+	selected.patch_margin_left = 48
+	selected.patch_margin_top = 48
+	selected.patch_margin_right = 48
+	selected.patch_margin_bottom = 48
 	selected.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	selected.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	button.add_child(selected)
@@ -1325,16 +1822,16 @@ func _configure_action_card_button(button: Button, card_key: String) -> void:
 
 func _set_action_card_hover(card_key: String, hovered: bool) -> void:
 	var overlays: Dictionary = action_card_overlays.get(card_key, {})
-	var hover := overlays.get("hover", null) as TextureRect
-	var selected := overlays.get("selected", null) as TextureRect
+	var hover := overlays.get("hover", null) as NinePatchRect
+	var selected := overlays.get("selected", null) as NinePatchRect
 	if hover != null:
 		hover.visible = hovered and not (selected != null and selected.visible)
 
 
 func _set_action_card_selected(card_key: String, selected_state: bool) -> void:
 	var overlays: Dictionary = action_card_overlays.get(card_key, {})
-	var selected := overlays.get("selected", null) as TextureRect
-	var hover := overlays.get("hover", null) as TextureRect
+	var selected := overlays.get("selected", null) as NinePatchRect
+	var hover := overlays.get("hover", null) as NinePatchRect
 	if selected != null:
 		selected.visible = selected_state
 	if hover != null and selected_state:
@@ -1358,19 +1855,30 @@ func _apply_button_icon(button: Button, path: String) -> void:
 
 
 func _load_texture(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
+	if texture_cache.has(path):
+		return texture_cache[path]
 	if not FileAccess.file_exists(path):
 		return null
+	var texture: Texture2D = null
 	if path.begins_with(CARD_ART_ROOT) or not FileAccess.file_exists("%s.import" % path):
 		var direct_image := Image.load_from_file(ProjectSettings.globalize_path(path))
 		if direct_image != null and not direct_image.is_empty():
-			return ImageTexture.create_from_image(direct_image)
+			texture = ImageTexture.create_from_image(direct_image)
+			texture_cache[path] = texture
+			return texture
 	var resource := ResourceLoader.load(path)
 	if resource is Texture2D:
-		return resource
+		texture = resource as Texture2D
+		texture_cache[path] = texture
+		return texture
 	var image := Image.load_from_file(ProjectSettings.globalize_path(path))
 	if image == null or image.is_empty():
 		return null
-	return ImageTexture.create_from_image(image)
+	texture = ImageTexture.create_from_image(image)
+	texture_cache[path] = texture
+	return texture
 
 
 func _enter_sanctum_intro() -> void:
@@ -1397,6 +1905,8 @@ func _advance_sanctum_intro() -> void:
 			return
 		_enter_field_exploration()
 		return
+	if game_audio != null:
+		game_audio.play_sfx("dialogue", -7.0)
 	_show_collector_intro_line()
 
 
@@ -1431,12 +1941,15 @@ func _collector_intro() -> Array[String]:
 	return lines
 
 
-func _enter_field_exploration() -> void:
+func _enter_field_exploration(write_checkpoint: bool = true) -> void:
 	state = DuelState.FIELD_EXPLORATION
 	_refresh_background_art()
 	_set_collector_intro_art_visible(false)
 	field_player_position = FIELD_PLAYER_START
 	field_player_facing = 1.0
+	field_walk_phase = 0.0
+	field_last_walk_sequence_index = -1
+	field_was_near_target = false
 	field_dialogue_index = 0
 	get_viewport().gui_release_focus()
 	_set_duel_ui_visible(false)
@@ -1452,17 +1965,23 @@ func _enter_field_exploration() -> void:
 	_update_field_positions()
 	_update_field_prompt()
 	_show_room_entry_banner()
+	if write_checkpoint and not _store_required_checkpoint(current_encounter_index, false):
+		_show_checkpoint_save_error()
 
 
 func _update_field_exploration(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	actor_pose["player"] = "walk" if input_dir != Vector2.ZERO else "idle"
-	if input_dir != Vector2.ZERO:
+	var is_moving := input_dir != Vector2.ZERO
+	actor_pose["player"] = "walk" if is_moving else "idle"
+	if is_moving:
+		field_walk_phase = fmod(field_walk_phase + delta * FIELD_WALK_PHASE_SPEED, TAU)
 		if not is_zero_approx(input_dir.x):
 			field_player_facing = signf(input_dir.x)
 		field_player_position += input_dir * FIELD_PLAYER_SPEED * delta
 		field_player_position.x = clampf(field_player_position.x, 150.0, 1130.0)
 		field_player_position.y = clampf(field_player_position.y, 250.0, 620.0)
+	else:
+		field_walk_phase = 0.0
 	_update_field_positions()
 	_update_field_prompt()
 
@@ -1470,12 +1989,24 @@ func _update_field_exploration(delta: float) -> void:
 func _update_field_positions() -> void:
 	if field_player_sprite == null:
 		return
-	field_player_sprite.position = field_player_position - field_player_sprite.custom_minimum_size * 0.5
-	field_player_sprite.scale.x = field_player_facing
+	var is_walking := String(actor_pose.get("player", "idle")) == "walk"
+	var walk_sequence_index := 0
+	if is_walking:
+		walk_sequence_index = int(floor(field_walk_phase / TAU * FIELD_WALK_FRAME_ORDER.size())) % FIELD_WALK_FRAME_ORDER.size()
+		if walk_sequence_index != field_last_walk_sequence_index:
+			field_last_walk_sequence_index = walk_sequence_index
+			if walk_sequence_index in [0, 3] and game_audio != null:
+				game_audio.play_step()
+	else:
+		field_last_walk_sequence_index = -1
+	var frame_x_offset := FIELD_WALK_FRAME_X_OFFSETS[walk_sequence_index] if is_walking else 0.0
+	field_player_sprite.position = field_player_position - field_player_sprite.custom_minimum_size * 0.5 + Vector2(frame_x_offset * field_player_facing, 0.0)
+	field_player_sprite.scale = Vector2(field_player_facing, 1.0)
+	field_player_sprite.rotation = 0.0
 	var player_frames := _get_actor_frames("player", String(actor_pose.get("player", "idle")))
 	if not player_frames.is_empty():
-		var index: int = clampi(int(actor_frame_index.get("player", 0)), 0, player_frames.size() - 1)
-		field_player_sprite.texture = player_frames[index]
+		var source_frame_index := FIELD_WALK_FRAME_ORDER[walk_sequence_index] if is_walking else 0
+		field_player_sprite.texture = player_frames[clampi(source_frame_index, 0, player_frames.size() - 1)]
 	if field_interact_hint_label != null:
 		field_interact_hint_label.position = FIELD_FARMER_POS + Vector2(-60.0, -152.0)
 	if field_farmer_sprite != null:
@@ -1490,6 +2021,9 @@ func _update_field_prompt() -> void:
 	if field_prompt_label == null:
 		return
 	var near_target := _is_near_farmer()
+	if near_target and not field_was_near_target and game_audio != null:
+		game_audio.play_ui_cue("ui_focus", -5.0, 0.82)
+	field_was_near_target = near_target
 	field_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.58, 1.0) if near_target else Color(0.96, 0.88, 0.68, 1.0))
 	if field_farmer_sprite != null:
 		field_farmer_sprite.modulate = Color(1.0, 0.90, 0.62, 1.0) if near_target else Color.WHITE
@@ -1522,6 +2056,8 @@ func _enter_field_dialogue() -> void:
 
 
 func _begin_field_dialogue() -> void:
+	if game_audio != null:
+		game_audio.play_sfx("dialogue", -5.0, 0.88)
 	state = DuelState.FIELD_DIALOGUE
 	field_dialogue_index = 0
 	continue_button.visible = false
@@ -1533,6 +2069,8 @@ func _begin_field_dialogue() -> void:
 
 
 func _advance_field_dialogue() -> void:
+	if game_audio != null:
+		game_audio.play_sfx("dialogue", -7.0, 0.96)
 	field_dialogue_index += 1
 	if field_dialogue_index >= _current_lines("field_dialogue", field_dialogue_lines).size():
 		_enter_pre_dialogue()
@@ -1603,7 +2141,7 @@ func _enter_player_choice() -> void:
 	_update_ui()
 	_refresh_card_button_texts()
 	_set_action_selection(action_selection_index)
-	_hide_action_bubbles()
+	_show_enemy_intent_preview()
 
 
 func _refresh_card_button_texts() -> void:
@@ -1611,22 +2149,22 @@ func _refresh_card_button_texts() -> void:
 	var defend_bonus := int(bonuses.get("hat", 0))
 	var attack_text := "攻击\nD20 > 防御\n命中掷 D3"
 	var heavy_text := "重击\n高出5点\nD3 x2"
-	var defend_text := "蓄防\n下次受击\n防御投2取高"
+	var defend_text := "蓄防\n已就绪\n等待受击" if player_guard_charged else "蓄防\n下次受击\n防御投2取高"
 	var ultimate_text := "大招\n%s\nD6直伤" % ("可用" if _ultimate_ready() else "%d/3" % player_attack_count)
 	if attack_bonus > 0:
-		attack_text += "\n奖励D3 x%d" % attack_bonus
-		heavy_text += "\n奖励D3 x%d" % attack_bonus
+		attack_text += "\n奖励骰 x%d" % attack_bonus
+		heavy_text += "\n奖励骰 x%d" % attack_bonus
 	if defend_bonus > 0:
-		defend_text += "\n奖励D3 x%d" % defend_bonus
+		defend_text += "\n奖励骰 x%d" % defend_bonus
 	attack_text = "攻击\nD20命中 / D3"
 	heavy_text = "重击\n高出5 / D3x2"
-	defend_text = "蓄防\n防御2D20取高"
+	defend_text = "蓄防\n已就绪 等待受击" if player_guard_charged else "蓄防\n防御2D20取高"
 	ultimate_text = "大招\nD6直伤 %s" % ("可用" if _ultimate_ready() else "%d/3" % player_attack_count)
 	if attack_bonus > 0:
-		attack_text += "\n+%dD3" % attack_bonus
-		heavy_text += "\n+%dD3" % attack_bonus
+		attack_text += "\n+%d奖励骰" % attack_bonus
+		heavy_text += "\n+%d奖励骰" % attack_bonus
 	if defend_bonus > 0:
-		defend_text += "\n+%dD3" % defend_bonus
+		defend_text += "\n+%d奖励骰" % defend_bonus
 	_set_action_card_text(attack_button, attack_text)
 	_set_action_card_text(heavy_button, heavy_text)
 	_set_action_card_text(defend_button, defend_text)
@@ -1642,11 +2180,14 @@ func _choose_action(player_action: int, allow_auto: bool = false) -> void:
 	attack_button.button_pressed = false
 	defend_button.button_pressed = false
 	var result: Dictionary
+	var resolved_enemy_action: int = -1
 	if _is_enemy_turn():
-		result = Dice.resolve_enemy_attack(rng, bonuses, player_guard_charged)
-		player_guard_charged = false
+		var enemy_action: int = _current_enemy_action()
+		result = Dice.resolve_enemy_action(enemy_action, rng, bonuses, player_guard_charged)
+		resolved_enemy_action = enemy_action
 	else:
-		result = Dice.resolve_player_action(player_action, rng, bonuses, _ultimate_ready())
+		var enemy_guarded := _current_enemy_action() == Dice.Action.DEFEND
+		result = Dice.resolve_player_action(player_action, rng, bonuses, _ultimate_ready(), enemy_guarded)
 		if player_action in [Dice.Action.ATTACK, Dice.Action.HEAVY]:
 			player_attack_count += 1
 		elif player_action == Dice.Action.DEFEND:
@@ -1654,31 +2195,48 @@ func _choose_action(player_action: int, allow_auto: bool = false) -> void:
 		elif player_action == Dice.Action.ULTIMATE and int(result.get("enemy_hp_delta", 0)) < 0:
 			player_attack_count = 0
 	await _play_combat_presentation(result)
-	_finish_resolved_action(result)
+	_finish_resolved_action(result, resolved_enemy_action)
 
 
 func _set_action_selection(index: int) -> void:
-	action_selection_index = wrapi(index, 0, 4)
-	if _is_enemy_turn():
-		action_selection_index = 2
+	var previous_index := action_selection_index
 	var buttons: Array[Button] = [attack_button, heavy_button, defend_button, ultimate_button]
 	var keys: Array[String] = ["attack", "heavy", "defend", "ultimate"]
+	var enemy_turn := _is_enemy_turn()
+	var requested_index := 2 if enemy_turn else wrapi(index, 0, buttons.size())
+	if not enemy_turn:
+		var direction := -1 if index < action_selection_index else 1
+		for unused: int in range(buttons.size()):
+			if not buttons[requested_index].disabled:
+				break
+			requested_index = wrapi(requested_index + direction, 0, buttons.size())
+	action_selection_index = requested_index
+	if action_selection_index != previous_index and game_audio != null:
+		game_audio.play_ui_cue("ui_focus", -5.0)
 	for i: int in range(buttons.size()):
 		buttons[i].button_pressed = action_selection_index == i
 		_set_action_card_selected(keys[i], action_selection_index == i)
-	buttons[action_selection_index].grab_focus()
-	if _is_enemy_turn():
-		dice_label.text = "[center][b]敌方攻击轮[/b]\nEnter / Space 结算自动防御。\n%s[/center]" % ("蓄防已就绪：防御骰投两次取最高。" if player_guard_charged else "未蓄防：防御骰投一次。")
+	if not buttons[action_selection_index].disabled:
+		buttons[action_selection_index].grab_focus()
+	else:
+		get_viewport().gui_release_focus()
+	if enemy_turn:
+		if _current_enemy_action() == Dice.Action.DEFEND:
+			dice_label.text = "[center][b]敌方防御轮[/b]\n对方放弃攻击并收紧防线。\n你的蓄防会保留到下一次敌方攻击。[/center]"
+		else:
+			dice_label.text = "[center][b]敌方攻击轮[/b]\n即将结算自动防御。\n%s[/center]" % ("蓄防已就绪：防御骰投两次取最高。" if player_guard_charged else "未蓄防：防御骰投一次。")
 		return
+	var action_help := ""
 	match action_selection_index:
 		0:
-			dice_label.text = "[center][b]攻击[/b]\nD20 对抗敌方防御，成功后掷 D3 伤害。[/center]"
+			action_help = "[b]攻击[/b]\nD20 对抗敌方防御，成功后掷 D3 伤害。"
 		1:
-			dice_label.text = "[center][b]重击[/b]\nD20 必须比敌方防御高 5 点，命中后 D3 伤害翻倍。[/center]"
+			action_help = "[b]重击[/b]\nD20 必须比敌方防御高 5 点，命中后 D3 伤害翻倍。"
 		2:
-			dice_label.text = "[center][b]蓄防[/b]\n本轮不攻击。下一次敌方攻击时，防御 D20 投两次取最高。[/center]"
+			action_help = "[b]蓄防[/b]\n本轮不攻击。下一次敌方攻击时，防御 D20 投两次取最高。" if not player_guard_charged else "[b]蓄防已就绪[/b]\n这层防御会保留到下一次敌方攻击。"
 		_:
-			dice_label.text = "[center][b]大招[/b]\n攻击累计 3 次后可用。无视防御，造成 D6 直伤。当前 %d/3。[/center]" % player_attack_count
+			action_help = "[b]大招[/b]\n攻击累计 3 次后可用。无视防御，造成 D6 直伤。当前 %d/3。" % player_attack_count
+	dice_label.text = "[center]%s\n\n[color=#e8c16a]%s[/color][/center]" % [action_help, _intent_decision_text()]
 
 
 func _confirm_action_selection() -> void:
@@ -1691,10 +2249,13 @@ func _confirm_action_selection() -> void:
 	_choose_action(actions[action_selection_index])
 
 
-func _finish_resolved_action(result: Dictionary) -> void:
+func _finish_resolved_action(result: Dictionary, resolved_enemy_action: int = -1) -> void:
+	var resolved_enemy_turn := _is_enemy_turn()
 	_apply_result(result)
 	_show_result(result)
-	turn_index += 1
+	if resolved_enemy_action >= 0:
+		_consume_player_guard_for_enemy_action(resolved_enemy_action)
+	_advance_turn_counters(resolved_enemy_turn)
 
 	if enemy_hp <= 0:
 		_enter_victory_story()
@@ -1706,15 +2267,27 @@ func _finish_resolved_action(result: Dictionary) -> void:
 		_set_action_buttons_enabled(not _is_enemy_turn())
 		_set_action_selection(action_selection_index)
 		_update_ui()
+		_show_enemy_intent_preview()
 		if _is_enemy_turn():
 			_resolve_auto_enemy_turn.call_deferred()
+
+
+func _advance_turn_counters(resolved_enemy_turn: bool) -> void:
+	if resolved_enemy_turn:
+		enemy_intent_index += 1
+	turn_index += 1
+
+
+func _consume_player_guard_for_enemy_action(enemy_action: int) -> void:
+	if enemy_action == Dice.Action.ATTACK:
+		player_guard_charged = false
 
 
 func _resolve_auto_enemy_turn() -> void:
 	if state != DuelState.PLAYER_CHOICE or not _is_enemy_turn() or auto_resolving_enemy_turn:
 		return
 	auto_resolving_enemy_turn = true
-	await get_tree().create_timer(0.45).timeout
+	await get_tree().create_timer(AUTO_ENEMY_TURN_DELAY).timeout
 	if state == DuelState.PLAYER_CHOICE and _is_enemy_turn():
 		auto_resolving_enemy_turn = false
 		await _choose_action(Dice.Action.DEFEND, true)
@@ -1725,23 +2298,36 @@ func _resolve_auto_enemy_turn() -> void:
 func _play_combat_presentation(result: Dictionary) -> void:
 	var player_action: int = result["player_action"]
 	var enemy_action: int = result["enemy_action"]
+	var player_active: bool = bool(result.get("player_active", true))
+	var passive_enemy_defense := not player_active and enemy_action == Dice.Action.DEFEND
 	dialogue_label.text = "[center]%s[/center]" % _turn_phase_text()
-	dice_label.text = "[center]骰子正在落下。[/center]"
-	_show_action_bubbles(player_action, enemy_action)
+	dice_label.text = "[center]骰子正在落下。[/center]" if player_active or enemy_action == Dice.Action.ATTACK else "[center]敌方正在收紧防线。[/center]"
+	_show_action_bubbles(player_action, enemy_action, player_active)
+	if game_audio != null:
+		if passive_enemy_defense:
+			game_audio.play_intent(false)
+		else:
+			game_audio.play_action(player_action, player_active)
 	_update_actor_pose("idle", "mutter")
-	await get_tree().create_timer(0.55).timeout
+	await get_tree().create_timer(PASSIVE_DEFEND_WINDUP_TIME if passive_enemy_defense else COMBAT_WINDUP_TIME).timeout
+	if passive_enemy_defense:
+		_hide_action_bubbles()
+		_play_result_motion(result)
+		await get_tree().create_timer(PASSIVE_DEFEND_RECOVERY_TIME).timeout
+		return
 	await _roll_relevant_dice(result)
 	_hide_action_bubbles()
 	await _play_result_banner(result)
 	_play_result_motion(result)
-	await get_tree().create_timer(0.65).timeout
+	await get_tree().create_timer(COMBAT_RECOVERY_TIME).timeout
 
 
-func _show_action_bubbles(player_action: int, enemy_action: int) -> void:
+func _show_action_bubbles(player_action: int, enemy_action: int, show_player_action: bool = true) -> void:
 	if player_bubble != null:
-		_configure_action_bubble(player_bubble, player_action)
-		player_bubble.visible = true
-		_pop_node(player_bubble)
+		player_bubble.visible = show_player_action
+		if show_player_action:
+			_configure_action_bubble(player_bubble, player_action)
+			_pop_node(player_bubble)
 	if farmer_bubble != null:
 		_configure_action_bubble(farmer_bubble, enemy_action)
 		farmer_bubble.visible = true
@@ -1751,6 +2337,8 @@ func _show_action_bubbles(player_action: int, enemy_action: int) -> void:
 func _show_enemy_intent_preview() -> void:
 	if farmer_bubble == null:
 		return
+	if game_audio != null and not _is_enemy_turn():
+		game_audio.play_intent(_current_enemy_action() == Dice.Action.ATTACK)
 	_configure_action_bubble(farmer_bubble, _current_enemy_action())
 	farmer_bubble.visible = true
 	_pop_node(farmer_bubble)
@@ -1797,13 +2385,14 @@ func _roll_relevant_dice(result: Dictionary) -> void:
 		_add_roll_step(roll_steps, "%s命中 D20" % _current_encounter_name(), result["enemy_hit_roll"], "hit", 20, farmer_actor)
 	elif enemy_action == Dice.Action.DEFEND:
 		_add_roll_step(roll_steps, "%s防御 D20" % _current_encounter_name(), result["enemy_defense_roll"], "defense", 20, farmer_actor)
+		_add_roll_step(roll_steps, "%s防御取高 D20" % _current_encounter_name(), result.get("enemy_defense_roll_2", -1), "defense", 20, farmer_actor)
 	if int(result["player_effect_roll"]) >= 0:
 		_add_roll_step(roll_steps, "我方效果 D%d" % int(result.get("player_effect_sides", 3)), result["player_effect_roll"], "effect", int(result.get("player_effect_sides", 3)))
 	elif int(result["enemy_effect_roll"]) >= 0:
 		_add_roll_step(roll_steps, "%s效果 D%d" % [_current_encounter_name(), int(result.get("enemy_effect_sides", 3))], result["enemy_effect_roll"], "effect", int(result.get("enemy_effect_sides", 3)))
 	var bonus_rolls: Array = result.get("player_bonus_rolls", [])
 	for i: int in range(bonus_rolls.size()):
-		_add_roll_step(roll_steps, "Bonus D3 #%d" % [i + 1], int(bonus_rolls[i]), "effect", 3)
+		_add_roll_step(roll_steps, "奖励 0-3 #%d" % [i + 1], int(bonus_rolls[i]), "effect", 3)
 	for step: Dictionary in roll_steps:
 		await _roll_single_die(step["label"], int(step["value"]), step["kind"], int(step["sides"]), step.get("owner", null))
 
@@ -1826,29 +2415,33 @@ func _roll_single_die(label: String, final_value: int, kind: String, sides: int,
 		dice_roll_icon.scale = Vector2.ONE
 		dice_roll_icon.pivot_offset = dice_roll_icon.custom_minimum_size * 0.5
 	_pop_node(dice_roll_stage)
-	for i: int in range(8):
+	for i: int in range(DICE_ROLL_TICKS):
 		var face := _roll_tick_face(sides, final_value, i)
 		dice_roll_label.text = "%s\n%d" % [label, face]
+		if game_audio != null:
+			game_audio.play_dice_tick(i, sides)
 		if dice_roll_icon != null:
 			_tumble_die_icon(i)
-		await get_tree().create_timer(0.055 + float(i) * 0.012).timeout
+		await get_tree().create_timer(DICE_TICK_BASE_TIME + float(i) * DICE_TICK_STEP_TIME).timeout
 	dice_roll_label.text = _roll_result_label(label, final_value, sides)
+	if game_audio != null:
+		game_audio.play_dice_result(final_value, sides)
 	if dice_roll_icon != null:
 		if dice_roll_icon_tween != null:
 			dice_roll_icon_tween.kill()
 		dice_roll_icon.rotation = 0.0
 		dice_roll_icon.scale = Vector2.ONE
 	_flash_node(dice_roll_stage, _roll_result_flash_color(final_value, sides))
-	if owner != null and sides == 20 and (final_value == 20 or final_value == 0):
+	if owner != null and sides == 20 and (final_value == Dice.HIT_MAX or final_value == Dice.HIT_MIN):
 		_flash_actor_panel(owner, _roll_result_flash_color(final_value, sides))
-	await get_tree().create_timer(0.42).timeout
+	await get_tree().create_timer(DICE_RESULT_HOLD_TIME).timeout
 	dice_roll_stage.visible = false
 
 
 func _roll_tick_face(sides: int, final_value: int, tick_index: int) -> int:
-	if tick_index >= 7:
+	if tick_index >= DICE_ROLL_TICKS - 1:
 		return final_value
-	return randi_range(0, sides)
+	return randi_range(1, sides)
 
 
 func _tumble_die_icon(tick_index: int) -> void:
@@ -1864,10 +2457,10 @@ func _tumble_die_icon(tick_index: int) -> void:
 
 
 func _roll_result_label(label: String, final_value: int, sides: int) -> String:
-	if sides == 20 and final_value == 20:
+	if sides == 20 and final_value == Dice.HIT_MAX:
 		return "%s\n20 大成功" % label
-	if sides == 20 and final_value == 0:
-		return "%s\n0 大失败" % label
+	if sides == 20 and final_value == Dice.HIT_MIN:
+		return "%s\n1 大失败" % label
 	if sides == 3 and final_value == 3:
 		return "%s\n3 满值" % label
 	if sides == 3 and final_value == 0:
@@ -1876,9 +2469,9 @@ func _roll_result_label(label: String, final_value: int, sides: int) -> String:
 
 
 func _roll_result_flash_color(final_value: int, sides: int) -> Color:
-	if sides == 20 and final_value == 20:
+	if sides == 20 and final_value == Dice.HIT_MAX:
 		return Color(1.0, 0.42, 0.25, 1.0)
-	if sides == 20 and final_value == 0:
+	if sides == 20 and final_value == Dice.HIT_MIN:
 		return Color(0.42, 0.34, 0.22, 1.0)
 	if sides == 3 and final_value == 3:
 		return Color(0.96, 0.68, 0.28, 1.0)
@@ -1888,7 +2481,7 @@ func _roll_result_flash_color(final_value: int, sides: int) -> Color:
 
 
 func _play_result_motion(result: Dictionary) -> void:
-	var player_pose: String = _player_pose_for_action(int(result["player_action"]))
+	var player_pose: String = _player_pose_for_action(int(result["player_action"])) if bool(result.get("player_active", true)) else "idle"
 	var farmer_pose: String = _enemy_pose_for_action(int(result["enemy_action"]))
 	if int(result["enemy_hp_delta"]) < 0:
 		farmer_pose = "hit"
@@ -1896,6 +2489,8 @@ func _play_result_motion(result: Dictionary) -> void:
 		player_pose = "hit"
 	_update_actor_pose(player_pose, farmer_pose)
 	_show_hp_delta_popups(result)
+	if game_audio != null:
+		game_audio.play_combat_result(result)
 	_nudge_actor_panels(player_pose, farmer_pose)
 
 
@@ -1919,7 +2514,7 @@ func _flash_result_actor_panels(result: Dictionary) -> void:
 	var enemy_delta := int(result.get("enemy_hp_delta", 0))
 	if player_delta < 0:
 		_flash_actor_panel(player_actor, Color(1.0, 0.34, 0.24, 1.0))
-	elif int(result.get("player_action", Dice.Action.ATTACK)) == Dice.Action.DEFEND:
+	elif bool(result.get("player_active", true)) and int(result.get("player_action", Dice.Action.ATTACK)) == Dice.Action.DEFEND:
 		_flash_actor_panel(player_actor, Color(0.76, 0.90, 1.0, 1.0))
 	if enemy_delta < 0:
 		_flash_actor_panel(farmer_actor, Color(1.0, 0.34, 0.24, 1.0))
@@ -1980,16 +2575,20 @@ func _hp_delta_color(delta: int) -> Color:
 
 
 func _play_result_banner(result: Dictionary) -> void:
-	var hold_time := 0.52 if not _result_banner_hp_line(result).is_empty() else 0.34
+	var hold_time := 0.36 if not _result_banner_hp_line(result).is_empty() else 0.24
 	await _show_center_banner(_result_banner_text(result), _result_banner_color(result), hold_time)
 
 
 func _show_room_entry_banner() -> void:
+	if game_audio != null:
+		game_audio.play_sfx("room", -6.0)
 	var text := "%s\n%s" % [_encounter_progress_text(), _current_room_name()]
 	_show_center_banner(text, Color(0.10, 0.085, 0.065, 0.94), 0.72)
 
 
 func _show_log_fragment_banner() -> void:
+	if game_audio != null:
+		game_audio.play_sfx("archive", -2.0, 1.08)
 	var title := String(current_log_fragment.get("title", "未命名碎片"))
 	_show_center_banner("新碎片归档\n%s" % title, Color(0.13, 0.10, 0.055, 0.94), 0.82)
 
@@ -1997,6 +2596,8 @@ func _show_log_fragment_banner() -> void:
 func _show_center_banner(text: String, bg_color: Color, hold_time: float) -> void:
 	if result_banner == null or result_banner_label == null:
 		return
+	_cancel_result_banner()
+	var generation := result_banner_generation
 	var banner_style := StyleBoxFlat.new()
 	banner_style.bg_color = bg_color
 	banner_style.border_color = Color(0.96, 0.82, 0.48, 1.0)
@@ -2008,17 +2609,34 @@ func _show_center_banner(text: String, bg_color: Color, hold_time: float) -> voi
 	result_banner.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	result_banner.scale = Vector2(0.92, 0.92)
 	result_banner.pivot_offset = result_banner.size * 0.5
-	var tween := create_tween().set_parallel(true)
-	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(result_banner, "scale", Vector2.ONE, 0.16)
-	tween.tween_property(result_banner, "modulate:a", 1.0, 0.12)
-	await get_tree().create_timer(hold_time).timeout
-	var fade := create_tween()
-	fade.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	fade.tween_property(result_banner, "modulate:a", 0.0, 0.18)
-	await fade.finished
+	result_banner_intro_tween = create_tween().set_parallel(true)
+	result_banner_intro_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	result_banner_intro_tween.tween_property(result_banner, "scale", Vector2.ONE, 0.14)
+	result_banner_intro_tween.tween_property(result_banner, "modulate:a", 1.0, 0.10)
+	await get_tree().create_timer(hold_time, false).timeout
+	if generation != result_banner_generation or result_banner == null:
+		return
+	result_banner_fade_tween = create_tween()
+	result_banner_fade_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	result_banner_fade_tween.tween_property(result_banner, "modulate:a", 0.0, 0.14)
+	await result_banner_fade_tween.finished
+	if generation != result_banner_generation or result_banner == null:
+		return
 	result_banner.visible = false
 	result_banner.modulate = Color.WHITE
+
+
+func _cancel_result_banner() -> void:
+	result_banner_generation += 1
+	if result_banner_intro_tween != null and result_banner_intro_tween.is_valid():
+		result_banner_intro_tween.kill()
+	if result_banner_fade_tween != null and result_banner_fade_tween.is_valid():
+		result_banner_fade_tween.kill()
+	result_banner_intro_tween = null
+	result_banner_fade_tween = null
+	if result_banner != null:
+		result_banner.visible = false
+		result_banner.modulate = Color.WHITE
 
 
 func _result_banner_text(result: Dictionary) -> String:
@@ -2094,9 +2712,12 @@ func _apply_result(result: Dictionary) -> void:
 
 func _show_result(result: Dictionary) -> void:
 	var player_action_name: String = _action_name(result["player_action"])
-	var enemy_action_name: String = _action_name(result["enemy_action"])
+	var enemy_action_name: String = _enemy_intent_name(result["enemy_action"])
 	var lines: Array[String] = []
-	lines.append("[b]%s[/b] 你：%s / %s：%s" % [_turn_phase_text(), player_action_name, _current_encounter_name(), enemy_action_name])
+	if bool(result.get("player_active", true)):
+		lines.append("[b]%s[/b] 你：%s / %s：%s" % [_turn_phase_text(), player_action_name, _current_encounter_name(), enemy_action_name])
+	else:
+		lines.append("[b]%s[/b] %s：%s" % [_turn_phase_text(), _current_encounter_name(), enemy_action_name])
 	lines.append(_combat_feedback_line(result))
 	lines.append("[b]%s[/b]：%s" % [result["event"], result["summary"]])
 	_append_roll(lines, "你的攻击骰", result["player_hit_roll"])
@@ -2106,6 +2727,7 @@ func _show_result(result: Dictionary) -> void:
 	_append_roll(lines, "你的奖励骰", result["player_bonus_roll"])
 	_append_roll(lines, "%s攻击骰" % _current_encounter_name(), result["enemy_hit_roll"])
 	_append_roll(lines, "%s防御骰" % _current_encounter_name(), result["enemy_defense_roll"])
+	_append_roll(lines, "%s防御取高骰" % _current_encounter_name(), result.get("enemy_defense_roll_2", -1))
 	_append_roll(lines, "%s效果骰/伤害" % _current_encounter_name(), result["enemy_effect_roll"])
 	lines.append("HP 变化：你 %s，%s %s" % [_format_delta(result["player_hp_delta"]), _current_encounter_name(), _format_delta(result["enemy_hp_delta"])])
 	dice_label.text = "\n".join(lines)
@@ -2114,7 +2736,7 @@ func _show_result(result: Dictionary) -> void:
 	var farmer_bark: String = String(barks.get("defend" if result["enemy_action"] == Dice.Action.DEFEND else "attack", "……"))
 	dialogue_label.text = "[b]%s[/b]\n%s" % [_current_encounter_name(), farmer_bark]
 
-	var player_pose: String = _player_pose_for_action(int(result["player_action"]))
+	var player_pose: String = _player_pose_for_action(int(result["player_action"])) if bool(result.get("player_active", true)) else "idle"
 	var farmer_pose: String = _enemy_pose_for_action(int(result["enemy_action"]))
 	if int(result["enemy_hp_delta"]) < 0:
 		farmer_pose = "hit"
@@ -2141,6 +2763,8 @@ func _enemy_pose_for_action(action: int) -> String:
 	match action:
 		Dice.Action.ATTACK, Dice.Action.HEAVY, Dice.Action.ULTIMATE:
 			return "attack"
+		Dice.Action.DEFEND:
+			return "defend"
 		_:
 			return "idle"
 
@@ -2157,6 +2781,12 @@ func _combat_feedback_line(result: Dictionary) -> String:
 		return "[color=#e8c16a][b]防御反弹[/b] 防线反咬攻击者。[/color]"
 	if event_text.contains("大成功"):
 		return "[color=#ff8a5f][b]大成功[/b] 骰子咬穿了防线。[/color]"
+	if not bool(result.get("player_active", true)) and int(result.get("enemy_action", Dice.Action.ATTACK)) == Dice.Action.DEFEND:
+		return "[color=#9bd7de][b]敌方防御[/b] 对方收紧防线，暂时没有发动攻击。[/color]"
+	if bool(result.get("enemy_guarded", false)):
+		if enemy_delta < 0:
+			return "[color=#d9b06a][b]穿透防御[/b] 普通攻击越过了敌方两颗防御骰。[/color]"
+		return "[color=#9bd7de][b]敌方双骰防御[/b] 对方取两颗 D20 的较高值挡住攻击。[/color]"
 	if enemy_delta < 0 and player_delta < 0:
 		return "[color=#d9b06a][b]互相命中[/b] 双方都付出了血的代价。[/color]"
 	if enemy_delta < 0:
@@ -2180,6 +2810,8 @@ func _enter_victory_story() -> void:
 
 func _begin_victory_story() -> void:
 	state = DuelState.VICTORY_STORY
+	if game_audio != null:
+		game_audio.play_sfx("victory", -2.0)
 	_set_action_buttons_enabled(false)
 	_set_action_buttons_visible(false)
 	continue_button.visible = true
@@ -2241,8 +2873,12 @@ func _choose_reward_by_index(index: int) -> void:
 func _choose_reward(reward_id: String) -> void:
 	if state != DuelState.REWARD_CHOICE:
 		return
+	if game_audio != null:
+		game_audio.play_sfx("reward", -2.0)
 
 	selected_reward = reward_id
+	if not reward_id.is_empty() and not selected_reward_ids.has(reward_id):
+		selected_reward_ids.append(reward_id)
 	var reward: Dictionary = {}
 	for item: Variant in current_rewards:
 		if item is Dictionary and String(item.get("id", "")) == reward_id:
@@ -2255,12 +2891,12 @@ func _choose_reward(reward_id: String) -> void:
 		bonuses["sickle"] = int(bonuses.get("sickle", 0)) + 1
 		dice_label.text = "[center][b]%s[/b]
 %s
-Attack bonus D3 x%d[/center]" % [reward_title, reward_description, int(bonuses["sickle"])]
+攻击奖励骰 0-3 x%d[/center]" % [reward_title, reward_description, int(bonuses["sickle"])]
 	elif reward_kind == "defense_bonus":
 		bonuses["hat"] = int(bonuses.get("hat", 0)) + 1
 		dice_label.text = "[center][b]%s[/b]
 %s
-Defense bonus D3 x%d[/center]" % [reward_title, reward_description, int(bonuses["hat"])]
+防御奖励骰 0-3 x%d[/center]" % [reward_title, reward_description, int(bonuses["hat"])]
 	else:
 		var heal: int = Dice.roll_heal(rng)
 		player_max_hp += heal
@@ -2273,17 +2909,20 @@ Defense bonus D3 x%d[/center]" % [reward_title, reward_description, int(bonuses[
 	for button: Button in [reward_sickle_button, reward_hat_button, reward_wheat_button]:
 		button.button_pressed = false
 	continue_button.visible = true
-	continue_button.text = "进入下一处" if _has_next_encounter() else "重新开始"
 	archive_label.text = _archive_panel_text()
-	if _has_next_encounter():
-		dialogue_label.text = "[center]%s样本结束。圣匣已保存本轮日志，下一处异常正在打开。[/center]" % _current_encounter_name()
+	var checkpoint_index := current_encounter_index + 1 if _has_next_encounter() else current_encounter_index
+	if _store_required_checkpoint(checkpoint_index, not _has_next_encounter()):
+		_apply_checkpoint_saved_feedback()
 	else:
-		dialogue_label.text = "[center]第一章样本完成。神之胃囊已归档低语田野的四段故事。[/center]"
+		_show_checkpoint_save_error()
 	_update_ui()
 
 
 func _set_reward_selection(index: int) -> void:
+	var previous_index := reward_selection_index
 	reward_selection_index = wrapi(index, 0, 3)
+	if reward_selection_index != previous_index and game_audio != null:
+		game_audio.play_ui_cue("ui_focus", -5.0, 1.08)
 	var buttons: Array[Button] = [reward_sickle_button, reward_hat_button, reward_wheat_button]
 	for i: int in range(buttons.size()):
 		buttons[i].button_pressed = i == reward_selection_index
@@ -2319,9 +2958,9 @@ func _reward_kind_label(kind: String) -> String:
 func _reward_effect_short(kind: String) -> String:
 	match kind:
 		"attack_bonus":
-			return "攻击追加 D3"
+			return "攻击追加 0-3"
 		"defense_bonus":
-			return "防御追加 D3"
+			return "防御追加 0-3"
 		"heal":
 			return "最大 HP +1-3"
 		_:
@@ -2384,6 +3023,8 @@ func _archive_panel_text() -> String:
 func _step_archive_fragment(direction: int) -> void:
 	if archived_fragments.is_empty():
 		return
+	if game_audio != null:
+		game_audio.play_sfx("dialogue", -6.0, 0.90 if direction < 0 else 1.08)
 	archive_fragment_index = wrapi(archive_fragment_index + direction, 0, archived_fragments.size())
 	archive_label.text = _archive_panel_text()
 
@@ -2413,8 +3054,11 @@ func _enter_defeat() -> void:
 
 func _begin_defeat() -> void:
 	state = DuelState.DEFEAT
+	if game_audio != null:
+		game_audio.play_sfx("defeat", -1.0)
 	failed_recoveries += 1
 	last_failure_record = _failure_record_text()
+	_store_failure_metadata()
 	_set_action_buttons_enabled(false)
 	reward_panel.visible = false
 	archive_panel.visible = false
@@ -2428,6 +3072,9 @@ func _begin_defeat() -> void:
 
 
 func _on_continue_pressed() -> void:
+	if checkpoint_save_pending:
+		_retry_pending_checkpoint_save()
+		return
 	match state:
 		DuelState.SANCTUM_INTRO:
 			_advance_sanctum_intro()
@@ -2439,9 +3086,9 @@ func _on_continue_pressed() -> void:
 			if _has_next_encounter():
 				_advance_to_next_encounter()
 			else:
-				_reset_run()
+				_show_title_screen()
 		DuelState.DEFEAT:
-			_reset_run()
+			_retry_current_encounter()
 		_:
 			pass
 
@@ -2452,6 +3099,15 @@ func _advance_to_next_encounter() -> void:
 	if _current_encounter_id() == "barn_king" and _play_cutscene_once("barn_king_entry", Callable(self, "_enter_field_exploration")):
 		return
 	_enter_field_exploration()
+
+
+func _retry_current_encounter() -> void:
+	_cancel_result_banner()
+	var checkpoint := run_checkpoint.duplicate(true)
+	if checkpoint.is_empty():
+		checkpoint = _validated_resumable_checkpoint(RunSave.load_run())
+	if checkpoint.is_empty() or not _apply_entry_checkpoint(checkpoint):
+		_show_title_screen("当前遭遇检查点不可用，请开始新游戏。")
 
 
 func _reset_run() -> void:
@@ -2467,6 +3123,12 @@ func _reset_run() -> void:
 	reward_selection_index = 0
 	archived_log = false
 	archived_fragments.clear()
+	archive_fragment_index = 0
+	selected_reward_ids.clear()
+	failed_recoveries = 0
+	last_failure_record = ""
+	cutscenes_played.clear()
+	_clear_pending_checkpoint_save()
 	bonuses = {
 		"sickle": 0,
 		"hat": 0
@@ -2477,11 +3139,11 @@ func _reset_run() -> void:
 
 func _current_enemy_action() -> int:
 	var pattern := _current_enemy_pattern()
-	return pattern[turn_index % pattern.size()]
+	return pattern[enemy_intent_index % pattern.size()]
 
 
 func _update_ui() -> void:
-	player_hp_label.text = "无韵回响 HP %d / %d" % [player_hp, player_max_hp]
+	player_hp_label.text = "无韵回响 HP %d / %d\n%s" % [player_hp, player_max_hp, _combat_resource_text()]
 	farmer_hp_label.text = "%s HP %d / %d" % [_current_encounter_name(), enemy_hp, enemy_max_hp]
 	match state:
 		DuelState.SANCTUM_INTRO:
@@ -2491,21 +3153,21 @@ func _update_ui() -> void:
 			intent_label.text = "WASD / 方向键移动 | Space / Enter 对话"
 			farmer_hp_label.text = "目标：%s" % _current_field_target()
 		DuelState.FIELD_DIALOGUE, DuelState.PRE_DIALOGUE:
-			intent_label.text = "对话失败将进入卡牌骰子决斗"
+			intent_label.text = "对话失败将进入骰子判定战斗"
 		DuelState.PLAYER_CHOICE, DuelState.RESOLVING:
-			intent_label.text = "%s | %s | 大招 %d/3" % [_current_encounter_name(), _turn_phase_text(), mini(player_attack_count, 3)]
+			intent_label.text = _intent_forecast_text()
 		_:
 			intent_label.text = "样本归档 | 圣匣记录中"
 	var archive_hint := "P 返回" if archive_panel.visible else "P 圣匣日志"
 	state_label.text = "%s | %s | %s | %s" % [_encounter_progress_text(), _current_room_name(), _state_name(), archive_hint]
-	title_label.text = "神烬使徒：%s卡牌骰子 Demo" % _chapter_title()
+	title_label.text = "神烬使徒：%s骰子判定 Demo" % _chapter_title()
 
 
 func _set_action_buttons_enabled(enabled: bool) -> void:
 	var enemy_turn := _is_enemy_turn()
 	attack_button.disabled = not enabled or enemy_turn
 	heavy_button.disabled = not enabled or enemy_turn
-	defend_button.disabled = not enabled
+	defend_button.disabled = not enabled or enemy_turn or player_guard_charged
 	ultimate_button.disabled = not enabled or enemy_turn or not _ultimate_ready()
 
 
@@ -2523,10 +3185,20 @@ func _ultimate_ready() -> bool:
 	return player_attack_count >= 3
 
 
+func _combat_resource_text() -> String:
+	var guard_text := "蓄防 就绪" if player_guard_charged else "蓄防 未就绪"
+	var charge_cells: Array[String] = []
+	for i: int in range(3):
+		charge_cells.append("■" if i < mini(player_attack_count, 3) else "□")
+	return "%s  |  大招 %s" % [guard_text, "".join(charge_cells)]
+
+
 func _turn_phase_text() -> String:
 	if _is_enemy_turn():
+		if _current_enemy_action() == Dice.Action.DEFEND:
+			return "敌方防御轮：本轮不发动攻击"
 		return "敌方攻击轮：自动投防御骰%s" % (" x2取高" if player_guard_charged else "")
-	return "我方行动轮：攻击 / 重击 / 蓄防 / 大招"
+	return "我方行动轮 | 敌方意图：%s" % _enemy_intent_name(_current_enemy_action())
 
 
 func _update_actor_pose(player_pose: String, farmer_pose: String) -> void:
@@ -2670,6 +3342,14 @@ func _action_name(action: int) -> String:
 			return "大招"
 		_:
 			return "未知"
+
+
+func _enemy_intent_name(action: int) -> String:
+	if action == Dice.Action.ATTACK:
+		return "攻击"
+	if action == Dice.Action.DEFEND:
+		return "防御"
+	return _action_name(action)
 
 
 func _state_name() -> String:

@@ -1,10 +1,12 @@
 class_name DiceResolver
 extends RefCounted
 
-const HIT_MIN: int = 0
+const HIT_MIN: int = 1
 const HIT_MAX: int = 20
-const EFFECT_MIN: int = 0
+const EFFECT_MIN: int = 1
 const EFFECT_MAX: int = 3
+const BONUS_MIN: int = 0
+const BONUS_MAX: int = 3
 const ULTIMATE_MAX: int = 6
 const REFLECT_MARGIN: int = 5
 
@@ -19,6 +21,10 @@ static func roll_effect(rng: RandomNumberGenerator) -> int:
 	return rng.randi_range(EFFECT_MIN, EFFECT_MAX)
 
 
+static func roll_bonus(rng: RandomNumberGenerator) -> int:
+	return rng.randi_range(BONUS_MIN, BONUS_MAX)
+
+
 static func roll_heal(rng: RandomNumberGenerator) -> int:
 	return rng.randi_range(1, EFFECT_MAX)
 
@@ -27,8 +33,9 @@ static func roll_ultimate(rng: RandomNumberGenerator) -> int:
 	return rng.randi_range(1, ULTIMATE_MAX)
 
 
-static func resolve_player_action(player_action: Action, rng: RandomNumberGenerator, bonuses: Dictionary, ultimate_ready: bool = false) -> Dictionary:
+static func resolve_player_action(player_action: Action, rng: RandomNumberGenerator, bonuses: Dictionary, ultimate_ready: bool = false, enemy_guarded: bool = false) -> Dictionary:
 	var result := _base_result(player_action, Action.DEFEND)
+	result["enemy_guarded"] = enemy_guarded
 	if player_action == Action.DEFEND:
 		result["event"] = "蓄防"
 		result["summary"] = "你放弃本次攻击，把残片收回身前。下一次防御骰会投两次，取最高值。"
@@ -36,9 +43,9 @@ static func resolve_player_action(player_action: Action, rng: RandomNumberGenera
 	elif player_action == Action.ULTIMATE:
 		_resolve_ultimate(result, rng, ultimate_ready)
 	elif player_action == Action.HEAVY:
-		_resolve_player_attack(result, rng, bonuses, true)
+		_resolve_player_attack(result, rng, bonuses, true, false)
 	else:
-		_resolve_player_attack(result, rng, bonuses, false)
+		_resolve_player_attack(result, rng, bonuses, false, enemy_guarded)
 	return result
 
 
@@ -46,6 +53,18 @@ static func resolve_enemy_attack(rng: RandomNumberGenerator, bonuses: Dictionary
 	var result := _base_result(Action.DEFEND, Action.ATTACK)
 	result["player_guarded"] = player_guarded
 	_resolve_enemy_attack(result, rng, bonuses, player_guarded)
+	return result
+
+
+static func resolve_enemy_action(enemy_action: Action, rng: RandomNumberGenerator, bonuses: Dictionary, player_guarded: bool = false) -> Dictionary:
+	if enemy_action == Action.ATTACK:
+		return resolve_enemy_attack(rng, bonuses, player_guarded)
+
+	var result := _base_result(Action.DEFEND, Action.DEFEND)
+	result["player_active"] = false
+	result["player_guarded"] = player_guarded
+	result["event"] = "敌方防御"
+	result["summary"] = "对方放弃本轮攻击，收紧防线。你的蓄防不会被消耗。"
 	return result
 
 
@@ -68,6 +87,7 @@ static func _base_result(player_action: Action, enemy_action: Action) -> Diction
 	return {
 		"player_action": player_action,
 		"enemy_action": enemy_action,
+		"player_active": true,
 		"player_hp_delta": 0,
 		"enemy_hp_delta": 0,
 		"player_hit_roll": -1,
@@ -78,8 +98,10 @@ static func _base_result(player_action: Action, enemy_action: Action) -> Diction
 		"player_bonus_roll": -1,
 		"player_bonus_rolls": [],
 		"player_guarded": false,
+		"enemy_guarded": false,
 		"enemy_hit_roll": -1,
 		"enemy_defense_roll": -1,
+		"enemy_defense_roll_2": -1,
 		"enemy_effect_roll": -1,
 		"enemy_effect_sides": EFFECT_MAX,
 		"event": "",
@@ -87,20 +109,24 @@ static func _base_result(player_action: Action, enemy_action: Action) -> Diction
 	}
 
 
-static func _resolve_player_attack(result: Dictionary, rng: RandomNumberGenerator, bonuses: Dictionary, heavy: bool) -> void:
+static func _resolve_player_attack(result: Dictionary, rng: RandomNumberGenerator, bonuses: Dictionary, heavy: bool, enemy_guarded: bool = false) -> void:
 	var attack_roll: int = roll_hit(rng)
 	var defense_roll: int = roll_hit(rng)
 	result["player_hit_roll"] = attack_roll
 	result["enemy_defense_roll"] = defense_roll
+	if enemy_guarded and not heavy:
+		var second_defense_roll := roll_hit(rng)
+		result["enemy_defense_roll_2"] = second_defense_roll
+		defense_roll = maxi(defense_roll, second_defense_roll)
 
 	if defense_roll >= HIT_MAX:
 		result["event"] = "防御封死"
-		result["summary"] = "对方防御骰掷出 20，这次攻击被完全封住。"
+		result["summary"] = "敌方防御意图生效，2D20 取高掷出 20，这次攻击被完全封住。" if enemy_guarded else "对方防御骰掷出 20，这次攻击被完全封住。"
 		return
 
 	if attack_roll == HIT_MIN:
 		result["event"] = "攻击大失败"
-		result["summary"] = "攻击骰掷出 0，动作失去意义。"
+		result["summary"] = "攻击骰掷出 1，动作失去意义。"
 		return
 
 	if attack_roll == HIT_MAX:
@@ -125,14 +151,15 @@ static func _resolve_player_attack(result: Dictionary, rng: RandomNumberGenerato
 
 	if attack_roll <= defense_roll:
 		result["event"] = "防御成功"
-		result["summary"] = "对方防御骰挡住了你的攻击。"
+		result["summary"] = "敌方防御意图生效，2D20 取高挡住了你的普通攻击。" if enemy_guarded else "对方防御骰挡住了你的攻击。"
 		return
 
 	var damage: int = roll_effect(rng)
 	result["player_effect_roll"] = damage
 	if damage > 0:
 		damage += _apply_bonus_rolls(result, rng, int(bonuses.get("sickle", 0)))
-	_apply_attack_damage(result, true, damage, "攻击命中", "攻击骰高于防御骰，造成效果骰伤害。")
+	var hit_summary := "普通攻击穿过敌方 2D20 防御，造成效果骰伤害。" if enemy_guarded else "攻击骰高于防御骰，造成效果骰伤害。"
+	_apply_attack_damage(result, true, damage, "攻击命中", hit_summary)
 
 
 static func _resolve_enemy_attack(result: Dictionary, rng: RandomNumberGenerator, bonuses: Dictionary, player_guarded: bool) -> void:
@@ -147,7 +174,7 @@ static func _resolve_enemy_attack(result: Dictionary, rng: RandomNumberGenerator
 	defense_roll += _apply_bonus_rolls(result, rng, int(bonuses.get("hat", 0)))
 	if attack_roll == HIT_MIN:
 		result["event"] = "敌人失手"
-		result["summary"] = "对方攻击骰为 0，攻击落空。"
+		result["summary"] = "对方攻击骰为 1，攻击落空。"
 		return
 	if defense_roll >= attack_roll:
 		if player_guarded:
@@ -169,7 +196,7 @@ static func _resolve_enemy_attack(result: Dictionary, rng: RandomNumberGenerator
 
 	if attack_roll == HIT_MIN:
 		result["event"] = "敌人大失败"
-		result["summary"] = "对方攻击骰掷出 0，攻击落空。"
+		result["summary"] = "对方攻击骰掷出 1，攻击落空。"
 		return
 
 	if defense_roll >= attack_roll + REFLECT_MARGIN:
@@ -252,7 +279,7 @@ static func _resolve_attack_vs_defense(result: Dictionary, player_is_attacker: b
 
 	if attack_roll == HIT_MIN:
 		result["event"] = "攻击大失败"
-		result["summary"] = "攻击骰掷出 0，动作失去意义。"
+		result["summary"] = "攻击骰掷出 1，动作失去意义。"
 		return
 
 	if defense_roll >= attack_roll + REFLECT_MARGIN:
@@ -312,7 +339,7 @@ static func _apply_bonus_rolls(result: Dictionary, rng: RandomNumberGenerator, c
 	var total := 0
 	var rolls: Array = result.get("player_bonus_rolls", [])
 	for i: int in range(maxi(count, 0)):
-		var roll := roll_effect(rng)
+		var roll := roll_bonus(rng)
 		rolls.append(roll)
 		total += roll
 	result["player_bonus_rolls"] = rolls
