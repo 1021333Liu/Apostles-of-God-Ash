@@ -23,6 +23,35 @@ https://t.bilibili.com/1220737294506393657?share_source=pc_native
 
 ## 如何开始游玩
 
+### 从 GitHub 拉取源码后
+
+GitHub `main` 保存的是 Godot 工程源码，不包含本地 `export/` 里的 EXE 或 macOS App。通过源码游玩需要先安装 **Godot 4.6.3 Standard**；本项目不使用 .NET 版。
+
+1. 克隆并进入仓库：
+
+   ```bash
+   git clone https://github.com/1021333Liu/Apostles-of-God-Ash.git
+   cd Apostles-of-God-Ash
+   ```
+
+2. 打开 Godot Project Manager，选择 **Import**，再选择仓库根目录中的 `project.godot`。
+3. 第一次打开时等待 Godot 完成资源导入；底部导入进度结束后再运行游戏。
+4. 按 **F5** 或点击右上角“运行项目”，启动后在标题页选择“新游戏”。
+
+已经完成首次导入后，也可以在仓库根目录直接运行：
+
+```powershell
+# Windows PowerShell；把路径替换为自己的 Godot 4.6.3 可执行文件
+& "C:\Godot\Godot_v4.6.3-stable_win64.exe" --path .
+```
+
+```bash
+# macOS / Linux；godot 需要已经加入 PATH
+godot --path .
+```
+
+不想安装 Godot 的玩家需要获取团队单独分发的 Windows 或 macOS 临时包，不能只克隆源码仓库。
+
 ### Windows 临时包
 
 1. 保持 `Apostles-of-God-Ash.exe` 与 `Apostles-of-God-Ash.pck` 位于同一文件夹，并保留相同的主文件名。
@@ -171,14 +200,12 @@ assets/card_demo/videos/
 | `010_generic_defeat.ogv` | 其它失败 |
 | `011_barn_king_victory.ogv` | 战胜谷仓王后的胜利结算 |
 
-## 如何打开
+## 开发者入口
 
-推荐使用 Godot 4.6.3 打开项目。
-
-当前确定版工作区：
+从仓库根目录导入：
 
 ```text
-D:\Desktop\DeskHub\神烬使徒 Godot\.worktrees\card-duel-playtest
+project.godot
 ```
 
 主要场景：
