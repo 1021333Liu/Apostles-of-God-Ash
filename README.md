@@ -23,6 +23,14 @@ https://t.bilibili.com/1220737294506393657?share_source=pc_native
 
 ## 如何开始游玩
 
+### 直接下载试玩包（推荐）
+
+不需要安装 Godot，下载对应平台的压缩包并解压即可：
+
+- [Windows x64 试玩包](https://github.com/1021333Liu/Apostles-of-God-Ash/releases/download/playtest-2026-07-14/Apostles-of-God-Ash-Windows-x64.zip)
+- [macOS Universal 试玩包](https://github.com/1021333Liu/Apostles-of-God-Ash/releases/download/playtest-2026-07-14/Apostles-of-God-Ash-macOS-universal.zip)
+- [Release 说明与 SHA-256](https://github.com/1021333Liu/Apostles-of-God-Ash/releases/tag/playtest-2026-07-14)
+
 ### 从 GitHub 拉取源码后
 
 GitHub `main` 保存的是 Godot 工程源码，不包含本地 `export/` 里的 EXE 或 macOS App。通过源码游玩需要先安装 **Godot 4.6.3 Standard**；本项目不使用 .NET 版。
@@ -50,7 +58,7 @@ GitHub `main` 保存的是 Godot 工程源码，不包含本地 `export/` 里的
 godot --path .
 ```
 
-不想安装 Godot 的玩家需要获取团队单独分发的 Windows 或 macOS 临时包，不能只克隆源码仓库。
+不想安装 Godot 的玩家请直接下载上面的 GitHub Release 试玩包，不能只克隆源码仓库。
 
 ### Windows 临时包
 
@@ -64,7 +72,7 @@ godot --path .
 2. 打开其中的 `Apostles of God-Ash.app`，不需要安装 Godot。
 3. 当前是未签名、未公证的内部测试包；正式公开发行前仍需完成 Apple 签名与公证。
 
-本地临时包位于 `export/`，该目录不会提交到 Git。GitHub `main` 保存游戏源码；收到测试包时，应完整保留 Windows 文件夹，或直接分发 macOS ZIP。
+GitHub `main` 保存游戏源码，Windows 与 macOS 二进制包通过 GitHub Releases 单独分发，不写入 Git 历史。Windows 解压后应完整保留 EXE 与 PCK，macOS 应直接分发原始 ZIP 以保留可执行权限。
 
 ### 基本玩法
 
