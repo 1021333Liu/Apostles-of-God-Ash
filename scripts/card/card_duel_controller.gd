@@ -1859,24 +1859,18 @@ func _load_texture(path: String) -> Texture2D:
 		return null
 	if texture_cache.has(path):
 		return texture_cache[path]
-	if not FileAccess.file_exists(path):
-		return null
-	var texture: Texture2D = null
-	if path.begins_with(CARD_ART_ROOT) or not FileAccess.file_exists("%s.import" % path):
-		var direct_image := Image.load_from_file(ProjectSettings.globalize_path(path))
-		if direct_image != null and not direct_image.is_empty():
-			texture = ImageTexture.create_from_image(direct_image)
+	if ResourceLoader.exists(path):
+		var resource := ResourceLoader.load(path)
+		if resource is Texture2D:
+			var texture := resource as Texture2D
 			texture_cache[path] = texture
 			return texture
-	var resource := ResourceLoader.load(path)
-	if resource is Texture2D:
-		texture = resource as Texture2D
-		texture_cache[path] = texture
-		return texture
+	if not FileAccess.file_exists(path):
+		return null
 	var image := Image.load_from_file(ProjectSettings.globalize_path(path))
 	if image == null or image.is_empty():
 		return null
-	texture = ImageTexture.create_from_image(image)
+	var texture := ImageTexture.create_from_image(image)
 	texture_cache[path] = texture
 	return texture
 

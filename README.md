@@ -21,6 +21,30 @@ PV 与实机演示视频：
 
 https://t.bilibili.com/1220737294506393657?share_source=pc_native
 
+## 如何开始游玩
+
+### Windows 临时包
+
+1. 保持 `Apostles-of-God-Ash.exe` 与 `Apostles-of-God-Ash.pck` 位于同一文件夹，并保留相同的主文件名。
+2. 双击 `Apostles-of-God-Ash.exe` 启动，不需要安装 Godot。
+3. 首次体验选择“新游戏”；已有章节存档时可选择“继续游戏”。
+
+### macOS 临时包
+
+1. 解压 `Apostles-of-God-Ash-macOS-universal.zip`。
+2. 打开其中的 `Apostles of God-Ash.app`，不需要安装 Godot。
+3. 当前是未签名、未公证的内部测试包；正式公开发行前仍需完成 Apple 签名与公证。
+
+本地临时包位于 `export/`，该目录不会提交到 Git。GitHub `main` 保存游戏源码；收到测试包时，应完整保留 Windows 文件夹，或直接分发 macOS ZIP。
+
+### 基本玩法
+
+- 探索：使用 WASD / 方向键移动，靠近提示目标后按 Enter / Space 对话。
+- 战斗：根据敌人公开的“本轮 / 下轮意图”，选择攻击、重击、蓄防或大招，再由骰子完成判定。
+- 日志：按 P 打开圣匣日志，查看归档证词与掉落物。
+- 暂停：按 Esc 打开暂停菜单；过场中可按 Space / Enter 跳过。
+- 手柄：左摇杆 / 十字键移动，A 确认，B 返回，Y 打开日志，Start 暂停。
+
 ## 一句话
 
 这是一个关于旧神、饥饿、人格、残骸、三位研究生和一个代码劳动力试图按时做出游戏的项目。
